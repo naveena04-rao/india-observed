@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security or exposed personal-data issue
+    url: https://example.invalid/security-contact
+    about: Replace this placeholder with the protected security contact before launch.
