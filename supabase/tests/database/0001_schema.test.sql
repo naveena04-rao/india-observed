@@ -1,0 +1,18 @@
+begin;
+select plan(14);
+select has_table('public', 'events', 'events table exists');
+select has_table('public', 'claims', 'claims table exists');
+select has_table('public', 'sources', 'sources table exists');
+select has_table('public', 'claim_sources', 'claim_sources table exists');
+select has_table('public', 'organisations', 'organisations table exists');
+select has_table('public', 'event_organisations', 'event_organisations table exists');
+select has_table('public', 'corrections', 'corrections table exists');
+select has_pk('public', 'events', 'events has a primary key');
+select has_fk('public', 'claims', 'claims has an event foreign key');
+select has_fk('public', 'sources', 'sources has an event foreign key');
+select has_fk('public', 'claim_sources', 'claim_sources has foreign keys');
+select has_fk('public', 'event_organisations', 'event_organisations has foreign keys');
+select has_fk('public', 'corrections', 'corrections has an event foreign key');
+select is((select relrowsecurity from pg_class where oid = 'public.events'::regclass), true, 'events RLS is enabled');
+select * from finish();
+rollback;
