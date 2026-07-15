@@ -15,4 +15,5 @@
 - [ ] Staging deployment created — requires hosting authentication.
 
 ## Honest conclusion
+
 The code and database foundation are ready for installation and account-level setup. The external services are not live, and the application must not be described as deployed.

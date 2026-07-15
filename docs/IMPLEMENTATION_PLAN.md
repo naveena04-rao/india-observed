@@ -11,4 +11,5 @@
 9. Create the private GitHub repository, configure branch protection, create the hosted Supabase project, and deploy staging after account authentication is available.
 
 ## Rollback
+
 The initial schema is contained in one migration. Before public data exists, rollback is `supabase db reset` after removing or replacing that migration. After shared environments exist, use a forward migration rather than destructive history edits.

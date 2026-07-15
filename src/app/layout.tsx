@@ -7,7 +7,7 @@ const merriweather = Merriweather({ subsets: ["latin"], variable: "--font-serif"
 
 export const metadata: Metadata = {
   title: "India Observed",
-  description: "A curated, source-linked repository of protests and civic movements in India."
+  description: "A curated, source-linked repository of protests and civic movements in India.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

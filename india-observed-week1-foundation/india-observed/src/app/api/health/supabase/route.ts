@@ -14,7 +14,7 @@ export async function GET() {
   if (!client) {
     return NextResponse.json(
       { ok: false, configured: false, checked: false, error: "Supabase credentials missing" },
-      { status: 503 }
+      { status: 503 },
     );
   }
 
@@ -22,7 +22,7 @@ export async function GET() {
   if (error) {
     return NextResponse.json(
       { ok: false, configured: true, checked: true, error: "Database query failed" },
-      { status: 503 }
+      { status: 503 },
     );
   }
 

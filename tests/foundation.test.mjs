@@ -11,7 +11,15 @@ test("auto-publication is explicitly disabled", () => {
 
 test("database migration contains every Week 1 core table", () => {
   const migration = read("supabase/migrations/20260715000100_initial_schema.sql");
-  for (const table of ["events", "claims", "sources", "claim_sources", "organisations", "event_organisations", "corrections"]) {
+  for (const table of [
+    "events",
+    "claims",
+    "sources",
+    "claim_sources",
+    "organisations",
+    "event_organisations",
+    "corrections",
+  ]) {
     assert.match(migration, new RegExp(`create table public\\.${table}\\b`, "i"));
   }
 });
