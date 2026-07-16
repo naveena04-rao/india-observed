@@ -46,14 +46,22 @@ const verificationLabels = [
 ] as const;
 
 const processSteps = [
-  ["01", "Discover", "Search national, regional, local-language, community and official sources."],
+  ["01", "Discover", "Identify relevant reporting, official records and credible public sources."],
   [
     "02",
     "Separate claims",
-    "Break an event into occurrence, dates, demands, responses and allegations.",
+    "Distinguish verified events, attributed statements, allegations, responses and outcomes.",
   ],
-  ["03", "Verify", "Check source independence, primary records and conflicting accounts."],
-  ["04", "Human review", "Apply publication, privacy, safety and correction gates before release."],
+  [
+    "03",
+    "Review evidence",
+    "Compare independent sources, primary documents and conflicting accounts.",
+  ],
+  [
+    "04",
+    "Approve publication",
+    "Apply accuracy, privacy, safety and correction checks before a record becomes public.",
+  ],
 ] as const;
 
 export default function HomePage() {
@@ -180,17 +188,15 @@ export default function HomePage() {
         <div className="page-shell methodology-layout">
           <div className="methodology-heading">
             <p className="section-kicker light-kicker">Methodology</p>
-            <h2>Broad discovery. Conservative publication.</h2>
+            <h2>How a civic event becomes a public record</h2>
             <p>
-              Every record is built to preserve evidence, uncertainty and correction history—not to
-              reward speed, outrage or virality.
+              Each record moves through four editorial checks before publication. Sources remain
+              linked, claims are assessed separately, uncertainty is preserved and final publication
+              requires human approval.
             </p>
-            <a className="button button-light" href="#methodology">
-              Read the methodology
-            </a>
           </div>
 
-          <ol className="process-list">
+          <ol className="process-list" aria-label="Four-stage editorial process">
             {processSteps.map(([number, title, description]) => (
               <li key={number}>
                 <span>{number}</span>

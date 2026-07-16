@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 export type FeaturedRecord = {
   id: string;
@@ -22,11 +22,6 @@ export function FeaturedRecordCarousel({ records }: FeaturedRecordCarouselProps)
   const [hasFocus, setHasFocus] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-
-  const selectRecord = useCallback(
-    (index: number) => setActiveIndex((index + records.length) % records.length),
-    [records.length],
-  );
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -108,55 +103,40 @@ export function FeaturedRecordCarousel({ records }: FeaturedRecordCarouselProps)
             <span>{activeRecord.verification}</span>
             <span>{activeRecord.note}</span>
           </div>
-          <div className="carousel-controls">
-            <button
-              type="button"
-              onClick={() => selectRecord(activeIndex - 1)}
-              aria-label="Show previous featured record"
-            >
-              Previous
-            </button>
-            <div className="carousel-indicators" aria-label="Select a featured record">
-              {records.map((record, index) => (
-                <button
-                  type="button"
-                  className={index === activeIndex ? "is-active" : undefined}
-                  key={record.id}
-                  onClick={() => selectRecord(index)}
-                  aria-label={"Show featured record " + (index + 1) + ": " + record.title}
-                  aria-current={index === activeIndex ? "true" : undefined}
-                />
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={() => selectRecord(activeIndex + 1)}
-              aria-label="Show next featured record"
-            >
-              Next
-            </button>
-          </div>
-          <p className="visually-hidden" aria-live="polite">
+          <ol className="carousel-indicators" aria-label="Featured record position">
+            {records.map((record, index) => (
+              <li
+                className={index === activeIndex ? "is-active" : undefined}
+                key={record.id}
+                aria-current={index === activeIndex ? "true" : undefined}
+              >
+                <span className="visually-hidden">Record {index + 1}</span>
+              </li>
+            ))}
+          </ol>
+          <p className="visually-hidden">
             Featured record {activeIndex + 1} of {records.length}
           </p>
         </div>
 
-        <aside className="repository-brief latest-column" aria-label="Latest records">
-          <p className="brief-label">Latest records</p>
-          {inactiveRecords.map(({ record, index }) => (
-            <button
-              className="latest-entry latest-entry-button"
-              type="button"
-              key={record.id}
-              onClick={() => selectRecord(index)}
-              aria-label={"Feature record " + record.id + ": " + record.title}
-            >
-              <span className="record-topic">{record.topic}</span>
-              <span className="latest-location">{record.place}</span>
-              <strong>{record.title}</strong>
-              <time dateTime="2026-07-15">Reviewed {record.reviewed}</time>
-            </button>
-          ))}
+        <aside className="latest-records-row" aria-label="Latest records">
+          <h2 className="brief-label">Latest records</h2>
+          <div className="latest-records-grid">
+            {inactiveRecords.map(({ record, index }) => (
+              <button
+                className="latest-entry latest-entry-button"
+                type="button"
+                key={record.id}
+                onClick={() => setActiveIndex(index)}
+                aria-label={"Feature record " + record.id + ": " + record.title}
+              >
+                <span className="record-topic">{record.topic}</span>
+                <span className="latest-location">{record.place}</span>
+                <strong>{record.title}</strong>
+                <time dateTime="2026-07-15">Reviewed {record.reviewed}</time>
+              </button>
+            ))}
+          </div>
         </aside>
       </div>
     </section>

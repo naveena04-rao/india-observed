@@ -55,6 +55,14 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.match(page, /<h2 id="accounts-title">On the record<\/h2>/);
   assert.match(page, /<p className="accounts-subheading">Compare the accounts<\/p>/);
   assert.doesNotMatch(page, /Explore the archive/i);
+  assert.match(carousel, /6000/);
+  assert.doesNotMatch(carousel, /Show previous featured record|Show next featured record/);
+  assert.match(carousel, /latest-records-row/);
   assert.match(carousel, /filter\(\(\{ index \}\) => index !== activeIndex\)/);
+  assert.match(page, /How a civic event becomes a public record/);
+  assert.doesNotMatch(page, /Broad discovery\. Conservative publication\./);
+  for (const stage of ["Discover", "Separate claims", "Review evidence", "Approve publication"]) {
+    assert.match(page, new RegExp(stage));
+  }
   assert.match(page, /attributed claims, not independently verified facts/i);
 });
