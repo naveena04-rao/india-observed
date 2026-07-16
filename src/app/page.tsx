@@ -159,39 +159,35 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="search-band latest-stream" aria-labelledby="latest-heading">
+      <section className="archive-explore" id="records" aria-labelledby="archive-heading">
         <div className="page-shell">
           <div className="stream-heading">
-            <p className="section-kicker muted-kicker">Latest records</p>
-            <h2 id="latest-heading">Recently reviewed in the archive</h2>
+            <p className="section-kicker">Explore the archive</p>
+            <h2 id="archive-heading">Find the record you need</h2>
           </div>
-          <div className="stream-grid">
-            {featuredRecords.map((record) => (
-              <article key={record.id}>
-                <p className="record-topic">{record.topic}</p>
-                <h3>{record.title}</h3>
-                <p>{record.place}</p>
-                <time dateTime="2026-07-15">Reviewed {record.reviewed}</time>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="records-section" id="records">
-        <div className="page-shell">
-          <div className="section-intro ruled-heading">
+          <div className="archive-columns">
+            <nav aria-label="Browse records by issue">
+              <h3>Browse by issue</h3>
+              <a href="#records">Land</a>
+              <a href="#records">Environment</a>
+              <a href="#records">Education</a>
+              <a href="#records">Labour</a>
+              <a href="#records">Agriculture</a>
+            </nav>
             <div>
-              <p className="section-kicker">Browse by issue</p>
-              <h2>Follow civic movements by subject</h2>
+              <h3>What the records contain</h3>
+              <ul>
+                <li>Timelines</li>
+                <li>Claims</li>
+                <li>Sources</li>
+                <li>Responses</li>
+                <li>Corrections</li>
+              </ul>
             </div>
-          </div>
-          <div className="issue-links" aria-label="Browse records by issue">
-            <a href="#records">Land and rehabilitation</a>
-            <a href="#records">Labour and employment</a>
-            <a href="#records">Education</a>
-            <a href="#records">Environment</a>
-            <a href="#records">Agriculture</a>
+            <div className="recent-updates">
+              <h3>Recently updated</h3>
+              <p>No recent record changes have been published.</p>
+            </div>
           </div>
         </div>
       </section>
@@ -335,15 +331,15 @@ export default function HomePage() {
           </div>
           <ol>
             <li>
-              <span>{featuredRecords[0].id}</span>
+              <span>Documentation gap</span>
               <p>Which disputed details can additional public documentation resolve?</p>
             </li>
             <li>
-              <span>{featuredRecords[1].id}</span>
+              <span>Documentation gap</span>
               <p>Has the official response under review been documented in a publishable source?</p>
             </li>
             <li>
-              <span>{featuredRecords[2].id}</span>
+              <span>Documentation gap</span>
               <p>Is later outcome documentation available beyond the recorded same-day response?</p>
             </li>
           </ol>
@@ -358,22 +354,9 @@ export default function HomePage() {
               <h2>Changes remain visible</h2>
             </div>
           </div>
-          <div className="clarification-grid">
-            <article>
-              <span>Response under review</span>
-              <h3>{featuredRecords[1].title}</h3>
-              <p>{featuredRecords[1].note}</p>
-            </article>
-            <article>
-              <span>Response recorded</span>
-              <h3>{featuredRecords[2].title}</h3>
-              <p>{featuredRecords[2].note}</p>
-            </article>
-            <article>
-              <span>Corrections</span>
-              <h3>No recent correction entry</h3>
-              <p>No recent public correction is included in the reviewed homepage data.</p>
-            </article>
+          <div className="correction-empty-state">
+            <strong>No recent record changes have been published.</strong>
+            <p>Corrections and clarifications will appear here after editorial review.</p>
           </div>
         </div>
       </section>

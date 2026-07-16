@@ -44,4 +44,7 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.match(page, /No approved media/i);
   assert.match(page, /On the record/i);
   assert.match(page, /attributed claims, not independently verified facts/i);
+  assert.match(page, /Explore the archive/i);
+  assert.match(page, /No recent record changes have been published/i);
+  assert.doesNotMatch(page, /Recently reviewed in the archive/i);
 });
