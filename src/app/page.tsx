@@ -72,7 +72,6 @@ export default function HomePage() {
           </Link>
 
           <nav className="desktop-nav" aria-label="Primary navigation">
-            <a href="#records">Explore records</a>
             <a href="#methodology">Methodology</a>
             <a href="#corrections">Corrections</a>
             <a className="nav-action" href="#lead">
@@ -83,7 +82,6 @@ export default function HomePage() {
           <details className="mobile-menu">
             <summary>Menu</summary>
             <nav aria-label="Mobile navigation">
-              <a href="#records">Explore records</a>
               <a href="#methodology">Methodology</a>
               <a href="#corrections">Corrections</a>
               <a href="#lead">Submit a lead</a>
@@ -137,9 +135,6 @@ export default function HomePage() {
               A source-linked timeline of the movement, official responses, disputed claims and what
               remains unresolved.
             </p>
-            <a className="text-link" href="#records">
-              View the full record <span aria-hidden="true">→</span>
-            </a>
           </div>
 
           <aside className="repository-brief latest-column" aria-label="Latest records">
@@ -152,43 +147,7 @@ export default function HomePage() {
                 <time dateTime="2026-07-15">Reviewed {record.reviewed}</time>
               </article>
             ))}
-            <a className="text-link" href="#records">
-              View all records <span aria-hidden="true">→</span>
-            </a>
           </aside>
-        </div>
-      </section>
-
-      <section className="archive-explore" id="records" aria-labelledby="archive-heading">
-        <div className="page-shell">
-          <div className="stream-heading">
-            <p className="section-kicker">Explore the archive</p>
-            <h2 id="archive-heading">Find the record you need</h2>
-          </div>
-          <div className="archive-columns">
-            <nav aria-label="Browse records by issue">
-              <h3>Browse by issue</h3>
-              <a href="#records">Land</a>
-              <a href="#records">Environment</a>
-              <a href="#records">Education</a>
-              <a href="#records">Labour</a>
-              <a href="#records">Agriculture</a>
-            </nav>
-            <div>
-              <h3>What the records contain</h3>
-              <ul>
-                <li>Timelines</li>
-                <li>Claims</li>
-                <li>Sources</li>
-                <li>Responses</li>
-                <li>Corrections</li>
-              </ul>
-            </div>
-            <div className="recent-updates">
-              <h3>Recently updated</h3>
-              <p>No recent record changes have been published.</p>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -384,7 +343,6 @@ export default function HomePage() {
             <p>A curated, source-linked public record of civic action across India.</p>
           </div>
           <nav aria-label="Footer navigation">
-            <a href="#records">Explore records</a>
             <a href="#methodology">Methodology</a>
             <a href="#corrections">Corrections</a>
             <a href="#lead">Submit a lead</a>
