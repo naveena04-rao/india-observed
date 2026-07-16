@@ -1863,21 +1863,30 @@ h3 {
   padding-block: 1.75rem 1.5rem;
 }
 
-.featured-carousel .hero-copy {
+.featured-carousel .featured-slide {
+  align-items: start;
+  display: grid;
+  gap: 0.6rem clamp(2rem, 5vw, 5rem);
+  grid-template-columns: minmax(17rem, 0.8fr) minmax(0, 1.4fr);
   width: 100%;
 }
 
 .featured-carousel .section-kicker {
-  margin-bottom: 0.6rem;
+  grid-column: 1 / -1;
+  margin-bottom: 0;
 }
 
 .featured-carousel .media-fallback {
-  grid-template-columns: minmax(145px, 0.55fr) minmax(240px, 1.45fr);
-  margin-bottom: 0.65rem;
-  max-width: 40rem;
+  grid-column: 1;
+  grid-template-columns: 1fr;
+  margin: 0;
+  max-width: 25rem;
+  width: 100%;
 }
 
 .featured-carousel .document-preview {
+  border-bottom: 1px solid var(--line);
+  border-right: 0;
   min-height: 6.75rem;
   padding: 0.7rem 0.8rem;
 }
@@ -1888,15 +1897,21 @@ h3 {
 }
 
 .featured-carousel .media-fallback figcaption {
-  padding: 0.4rem 0 0.4rem 0.7rem;
+  padding: 0.35rem 0;
 }
 
 .featured-carousel .media-fallback dl div {
   padding: 0.22rem 0.3rem;
 }
 
+.featured-record-copy {
+  align-self: center;
+  grid-column: 2;
+  min-width: 0;
+}
+
 .featured-carousel .hero-copy h1 {
-  max-width: 24ch;
+  max-width: 22ch;
 }
 
 .featured-evidence {
@@ -1949,7 +1964,7 @@ h3 {
   border-bottom: 1px solid var(--ink);
   border-top: 1px solid var(--line);
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .latest-entry-button {
@@ -1958,18 +1973,36 @@ h3 {
   cursor: pointer;
   display: grid;
   font: inherit;
-  padding: 0.8rem 0;
+  min-width: 0;
+  padding: 0.8rem 1rem;
+  position: relative;
   text-align: left;
   width: 100%;
 }
 
-.latest-entry-button + .latest-entry-button {
-  border-left: 1px solid var(--line);
-  padding-left: 1rem;
+.latest-entry-button:first-child {
+  padding-left: 0;
 }
 
-.latest-entry-button:first-child {
-  padding-right: 1rem;
+.latest-entry-button:last-child {
+  padding-right: 0;
+}
+
+.latest-entry-button + .latest-entry-button {
+  border-left: 1px solid var(--line);
+}
+
+.latest-entry-button.is-active {
+  box-shadow: inset 0 3px 0 var(--terracotta);
+}
+
+.current-record {
+  color: var(--terracotta);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  margin-bottom: 0.3rem;
+  text-transform: uppercase;
 }
 
 .latest-entry-button strong {
@@ -2024,9 +2057,9 @@ h3 {
   width: 1px;
 }
 
-/* Four-stage methodology sequence */
+/* Compact methodology checklist */
 .methodology-section {
-  padding-block: clamp(3.5rem, 7vw, 5.5rem);
+  padding-block: clamp(3rem, 6vw, 4.5rem);
 }
 
 .methodology-layout {
@@ -2034,9 +2067,9 @@ h3 {
 }
 
 .methodology-heading {
-  border-top: 3px double #8eaaa6;
-  max-width: 54rem;
-  padding-top: 1rem;
+  border-top: 1px solid #8eaaa6;
+  max-width: 50rem;
+  padding-top: 0.8rem;
 }
 
 .methodology-heading h2 {
@@ -2044,21 +2077,23 @@ h3 {
 }
 
 .methodology-heading p:not(.section-kicker) {
-  max-width: 50rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  max-width: 47rem;
 }
 
 .methodology-section .process-list {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin-top: 2.5rem;
+  margin-top: 1.75rem;
 }
 
 .methodology-section .process-list li {
-  align-content: start;
   border-bottom: 1px solid #5f8580;
+  border-top: 1px solid #5f8580;
   display: block;
-  min-height: 13rem;
-  padding: 1.1rem 1.25rem 1.35rem;
+  min-height: 0;
+  padding: 1rem;
 }
 
 .methodology-section .process-list li:not(:last-child) {
@@ -2067,17 +2102,20 @@ h3 {
 
 .methodology-section .process-list > li > span {
   display: block;
-  font-size: 2rem;
-  margin-bottom: 2rem;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  margin-bottom: 0.65rem;
 }
 
 .methodology-section .process-list h3 {
-  margin-bottom: 0.55rem;
+  font-size: 1rem;
+  margin-bottom: 0.4rem;
 }
 
 .methodology-section .process-list p {
   color: #c8d8d5;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   margin: 0;
 }
 
@@ -2088,8 +2126,16 @@ h3 {
 }
 
 @media (max-width: 1000px) {
+  .latest-records-grid,
   .methodology-section .process-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .latest-entry-button:nth-child(3) {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    grid-column: 1 / -1;
+    padding-left: 0;
   }
 
   .methodology-section .process-list li:nth-child(2) {
@@ -2106,47 +2152,49 @@ h3 {
     padding-block: 1.35rem;
   }
 
+  .featured-carousel .featured-slide {
+    display: block;
+  }
+
+  .featured-carousel .section-kicker {
+    margin-bottom: 0.6rem;
+  }
+
   .featured-carousel .media-fallback {
-    grid-template-columns: 1fr;
     max-width: none;
   }
 
-  .featured-carousel .media-fallback figcaption {
-    padding: 0.35rem 0;
+  .featured-record-copy {
+    margin-top: 0.8rem;
   }
 
-  .latest-records-grid {
+  .latest-records-grid,
+  .methodology-section .process-list {
     grid-template-columns: 1fr;
   }
 
-  .latest-entry-button + .latest-entry-button {
-    border-left: 0;
-    border-top: 1px solid var(--line);
-    padding-left: 0;
+  .latest-entry-button,
+  .latest-entry-button:first-child,
+  .latest-entry-button:last-child {
+    padding-inline: 0;
   }
 
-  .latest-entry-button:first-child {
-    padding-right: 0;
+  .latest-entry-button + .latest-entry-button,
+  .latest-entry-button:nth-child(3) {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    grid-column: auto;
   }
 
   .hero-section + .verification-section {
     padding-block: 1.75rem 2.25rem;
   }
 
-  .methodology-section .process-list {
-    grid-template-columns: 1fr;
-  }
-
   .methodology-section .process-list li {
     border-right: 0;
-    min-height: 0;
   }
 
   .methodology-section .process-list li:nth-child(-n + 2) {
     border-bottom: 1px solid #5f8580;
-  }
-
-  .methodology-section .process-list > li > span {
-    margin-bottom: 0.75rem;
   }
 }

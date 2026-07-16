@@ -46,22 +46,14 @@ const verificationLabels = [
 ] as const;
 
 const processSteps = [
-  ["01", "Discover", "Identify relevant reporting, official records and credible public sources."],
+  ["1", "Find the event", "Identify credible public reporting and official information."],
   [
-    "02",
-    "Separate claims",
-    "Distinguish verified events, attributed statements, allegations, responses and outcomes.",
+    "2",
+    "Separate the claims",
+    "Distinguish verified details, attributed statements and disputed information.",
   ],
-  [
-    "03",
-    "Review evidence",
-    "Compare independent sources, primary documents and conflicting accounts.",
-  ],
-  [
-    "04",
-    "Approve publication",
-    "Apply accuracy, privacy, safety and correction checks before a record becomes public.",
-  ],
+  ["3", "Check the evidence", "Compare independent sources and supporting documents."],
+  ["4", "Review before publication", "Apply accuracy, privacy, safety and correction checks."],
 ] as const;
 
 export default function HomePage() {
@@ -188,11 +180,10 @@ export default function HomePage() {
         <div className="page-shell methodology-layout">
           <div className="methodology-heading">
             <p className="section-kicker light-kicker">Methodology</p>
-            <h2>How a civic event becomes a public record</h2>
+            <h2>How records are reviewed</h2>
             <p>
-              Each record moves through four editorial checks before publication. Sources remain
-              linked, claims are assessed separately, uncertainty is preserved and final publication
-              requires human approval.
+              Every record is reviewed before publication. We verify the event, separate claims from
+              established facts, compare supporting sources and check for privacy or safety risks.
             </p>
           </div>
 

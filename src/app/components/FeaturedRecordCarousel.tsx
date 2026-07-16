@@ -42,7 +42,7 @@ export function FeaturedRecordCarousel({ records }: FeaturedRecordCarouselProps)
     if (records.length < 2 || isHovered || hasFocus || !isVisible || prefersReducedMotion) return;
     const timer = window.setInterval(
       () => setActiveIndex((index) => (index + 1) % records.length),
-      6000,
+      4000,
     );
     return () => window.clearInterval(timer);
   }, [hasFocus, isHovered, isVisible, prefersReducedMotion, records.length]);
@@ -50,9 +50,6 @@ export function FeaturedRecordCarousel({ records }: FeaturedRecordCarouselProps)
   if (records.length === 0) return null;
 
   const activeRecord = records[activeIndex]!;
-  const inactiveRecords = records
-    .map((record, index) => ({ record, index }))
-    .filter(({ index }) => index !== activeIndex);
 
   return (
     <section
@@ -95,41 +92,54 @@ export function FeaturedRecordCarousel({ records }: FeaturedRecordCarouselProps)
               </dl>
             </figcaption>
           </figure>
-          <p className="featured-meta">
-            {activeRecord.topic} · {activeRecord.place}
-          </p>
-          <h1>{activeRecord.title}</h1>
-          <div className="featured-evidence" aria-label="Record evidence summary">
-            <span>{activeRecord.verification}</span>
-            <span>{activeRecord.note}</span>
+          <div className="featured-record-copy">
+            <p className="featured-meta">
+              {activeRecord.topic} · {activeRecord.place}
+            </p>
+            <h1>{activeRecord.title}</h1>
+            <div className="featured-evidence" aria-label="Record evidence summary">
+              <span>{activeRecord.verification}</span>
+              <span>{activeRecord.note}</span>
+            </div>
+            <ol className="carousel-indicators" aria-label="Featured record position">
+              {records.map((record, index) => (
+                <li
+                  className={index === activeIndex ? "is-active" : undefined}
+                  key={record.id}
+                  aria-current={index === activeIndex ? "true" : undefined}
+                >
+                  <span className="visually-hidden">Record {index + 1}</span>
+                </li>
+              ))}
+            </ol>
+            <p className="visually-hidden">
+              Featured record {activeIndex + 1} of {records.length}
+            </p>
           </div>
-          <ol className="carousel-indicators" aria-label="Featured record position">
-            {records.map((record, index) => (
-              <li
-                className={index === activeIndex ? "is-active" : undefined}
-                key={record.id}
-                aria-current={index === activeIndex ? "true" : undefined}
-              >
-                <span className="visually-hidden">Record {index + 1}</span>
-              </li>
-            ))}
-          </ol>
-          <p className="visually-hidden">
-            Featured record {activeIndex + 1} of {records.length}
-          </p>
         </div>
 
         <aside className="latest-records-row" aria-label="Latest records">
           <h2 className="brief-label">Latest records</h2>
           <div className="latest-records-grid">
-            {inactiveRecords.map(({ record, index }) => (
+            {records.map((record, index) => (
               <button
-                className="latest-entry latest-entry-button"
+                className={
+                  "latest-entry latest-entry-button" + (index === activeIndex ? " is-active" : "")
+                }
                 type="button"
                 key={record.id}
                 onClick={() => setActiveIndex(index)}
-                aria-label={"Feature record " + record.id + ": " + record.title}
+                aria-label={
+                  (index === activeIndex ? "Currently featured: " : "Feature record: ") +
+                  record.id +
+                  ": " +
+                  record.title
+                }
+                aria-current={index === activeIndex ? "true" : undefined}
               >
+                {index === activeIndex && (
+                  <span className="current-record">Currently featured</span>
+                )}
                 <span className="record-topic">{record.topic}</span>
                 <span className="latest-location">{record.place}</span>
                 <strong>{record.title}</strong>
