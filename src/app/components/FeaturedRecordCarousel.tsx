@@ -14,9 +14,14 @@ export type FeaturedRecord = {
   reviewed: string;
 };
 
-type FeaturedRecordCarouselProps = { records: readonly FeaturedRecord[] };
+type LatestRecord = Pick<FeaturedRecord, "id" | "title" | "place" | "topic" | "reviewed">;
 
-export function FeaturedRecordCarousel({ records }: FeaturedRecordCarouselProps) {
+type FeaturedRecordCarouselProps = {
+  records: readonly FeaturedRecord[];
+  latestRecords: readonly LatestRecord[];
+};
+
+export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecordCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [hasFocus, setHasFocus] = useState(false);
@@ -121,30 +126,13 @@ export function FeaturedRecordCarousel({ records }: FeaturedRecordCarouselProps)
         <aside className="latest-records-row" aria-label="Latest records">
           <h2 className="brief-label">Latest records</h2>
           <div className="latest-records-grid">
-            {records.map((record, index) => (
-              <button
-                className={
-                  "latest-entry latest-entry-button" + (index === activeIndex ? " is-active" : "")
-                }
-                type="button"
-                key={record.id}
-                onClick={() => setActiveIndex(index)}
-                aria-label={
-                  (index === activeIndex ? "Currently featured: " : "Feature record: ") +
-                  record.id +
-                  ": " +
-                  record.title
-                }
-                aria-current={index === activeIndex ? "true" : undefined}
-              >
-                {index === activeIndex && (
-                  <span className="current-record">Currently featured</span>
-                )}
+            {latestRecords.map((record) => (
+              <article className="latest-entry latest-entry-preview" key={record.id}>
                 <span className="record-topic">{record.topic}</span>
                 <span className="latest-location">{record.place}</span>
                 <strong>{record.title}</strong>
                 <time dateTime="2026-07-15">Reviewed {record.reviewed}</time>
-              </button>
+              </article>
             ))}
           </div>
         </aside>

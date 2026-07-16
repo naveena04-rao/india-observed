@@ -36,6 +36,30 @@ const featuredRecords = [
     reviewed: "15 July 2026",
   },
 ] as const;
+const latestRecords = [
+  {
+    id: "IO-CM-MP-0001",
+    topic: "Land & rehabilitation",
+    place: "Chhatarpur–Panna, Madhya Pradesh",
+    title:
+      "Project-affected communities resume protest over rehabilitation and compensation in Bundelkhand",
+    reviewed: "15 July 2026",
+  },
+  {
+    id: "IO-CM-DL-0001",
+    topic: "Education",
+    place: "Jantar Mantar, New Delhi",
+    title: "Education accountability sit-in and hunger strike continues at Jantar Mantar",
+    reviewed: "15 July 2026",
+  },
+  {
+    id: "IO-CM-MH-0001",
+    topic: "Environment",
+    place: "Thane, Maharashtra",
+    title: "Citizens form human chain in Thane under the Save SGNP campaign",
+    reviewed: "15 July 2026",
+  },
+] as const;
 
 const verificationLabels = [
   ["Reported", "A credible source has reported the claim."],
@@ -97,7 +121,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <FeaturedRecordCarousel records={featuredRecords} />
+      <FeaturedRecordCarousel records={featuredRecords} latestRecords={latestRecords} />
 
       <section className="verification-section" aria-labelledby="accounts-title">
         <div className="page-shell">
@@ -178,10 +202,10 @@ export default function HomePage() {
 
       <section className="methodology-section" id="methodology">
         <div className="page-shell methodology-layout">
-          <div className="methodology-heading">
-            <p className="section-kicker light-kicker">Methodology</p>
-            <h2>How records are reviewed</h2>
-            <p>
+          <div className="methodology-intro">
+            <h2>Methodology</h2>
+            <p className="methodology-subheading">How are records reviewed</p>
+            <p className="methodology-description">
               Every record is reviewed before publication. We verify the event, separate claims from
               established facts, compare supporting sources and check for privacy or safety risks.
             </p>
