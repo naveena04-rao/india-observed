@@ -58,13 +58,6 @@ const processSteps = [
 export default function HomePage() {
   return (
     <main>
-      <div className="utility-bar">
-        <div className="page-shell utility-bar-inner">
-          <span>Curated civic records from across India</span>
-          <span>Updated through 15 July 2026</span>
-        </div>
-      </div>
-
       <header className="site-header">
         <div className="page-shell header-inner">
           <Link className="brand" href="/" aria-label="India Observed home">
@@ -74,7 +67,7 @@ export default function HomePage() {
             </span>
             <span className="brand-copy">
               <strong>India Observed</strong>
-              <small>A public record of civic action</small>
+              <small>Independent records of protests and civic movements across India.</small>
             </span>
           </Link>
 
@@ -99,81 +92,61 @@ export default function HomePage() {
         </div>
       </header>
 
+      <div className="utility-bar">
+        <div className="page-shell utility-bar-inner">
+          <span>Claims linked · Private participants unnamed · Corrections visible</span>
+        </div>
+      </div>
+
       <section className="hero-section">
         <div className="page-shell hero-grid">
           <div className="hero-copy">
-            <p className="section-kicker">Independent public-interest archive</p>
-            <h1>Civic movements are often reported briefly and remembered poorly.</h1>
+            <p className="section-kicker">Featured record</p>
+            <p className="featured-meta">
+              {featuredRecords[0].topic} · {featuredRecords[0].place}
+            </p>
+            <h1>{featuredRecords[0].title}</h1>
             <p className="hero-lede">
-              India Observed creates structured, source-linked records of selected protests and
-              civic movements across India—showing what is known, who said it and what remains
-              uncertain.
+              A source-linked timeline of the movement, official responses, disputed claims and what
+              remains unresolved.
             </p>
-            <div className="hero-actions">
-              <a className="button button-primary" href="#records">
-                Explore the records
-              </a>
-              <a className="text-link" href="#methodology">
-                How verification works <span aria-hidden="true">→</span>
-              </a>
-            </div>
-            <p className="hero-disclaimer">
-              Curated coverage. No live protest tracking. No ordinary participant identification.
-            </p>
+            <a className="text-link" href="#records">
+              View the full record <span aria-hidden="true">→</span>
+            </a>
           </div>
 
-          <aside className="repository-brief" aria-label="Repository summary">
-            <p className="brief-label">Repository brief</p>
-            <dl>
-              <div>
-                <dt>Reviewed events</dt>
-                <dd>11</dd>
-              </div>
-              <div>
-                <dt>States and UTs represented</dt>
-                <dd>10</dd>
-              </div>
-              <div>
-                <dt>Claim-level records</dt>
-                <dd>89</dd>
-              </div>
-              <div>
-                <dt>Original sources</dt>
-                <dd>46</dd>
-              </div>
-            </dl>
-            <p className="brief-note">
-              Coverage is selective and should not be read as a complete map of civic activity.
-            </p>
+          <aside className="repository-brief latest-column" aria-label="Latest records">
+            <p className="brief-label">Latest records</p>
+            {featuredRecords.slice(1).map((record) => (
+              <article className="latest-entry" key={record.id}>
+                <p className="record-topic">{record.topic}</p>
+                <p className="latest-location">{record.place}</p>
+                <h2>{record.title}</h2>
+                <time dateTime="2026-07-15">Reviewed {record.reviewed}</time>
+              </article>
+            ))}
+            <a className="text-link" href="#records">
+              View all records <span aria-hidden="true">→</span>
+            </a>
           </aside>
         </div>
       </section>
 
-      <section className="search-band" aria-labelledby="search-heading">
-        <div className="page-shell search-layout">
-          <div>
-            <p className="section-kicker muted-kicker">Search the archive</p>
-            <h2 id="search-heading">Find a record by place, project or issue.</h2>
+      <section className="search-band latest-stream" aria-labelledby="latest-heading">
+        <div className="page-shell">
+          <div className="stream-heading">
+            <p className="section-kicker muted-kicker">Latest records</p>
+            <h2 id="latest-heading">Recently reviewed in the archive</h2>
           </div>
-          <form className="archive-search" role="search" action="#records">
-            <label className="sr-only" htmlFor="archive-search-input">
-              Search India Observed records
-            </label>
-            <input
-              id="archive-search-input"
-              name="q"
-              placeholder="Event, district, organisation, project or issue"
-              type="search"
-            />
-            <button type="submit">Search</button>
-          </form>
-          <div className="topic-links" aria-label="Browse sample topics">
-            <span>Browse:</span>
-            <a href="#records">Land</a>
-            <a href="#records">Environment</a>
-            <a href="#records">Education</a>
-            <a href="#records">Labour</a>
-            <a href="#records">Agriculture</a>
+          <div className="stream-grid">
+            {featuredRecords.map((record) => (
+              <article key={record.id}>
+                <p className="record-topic">{record.topic}</p>
+                <h3>{record.title}</h3>
+                <p>{record.place}</p>
+                <time dateTime="2026-07-15">Reviewed {record.reviewed}</time>
+              </article>
+            ))}
           </div>
         </div>
       </section>
@@ -182,41 +155,16 @@ export default function HomePage() {
         <div className="page-shell">
           <div className="section-intro ruled-heading">
             <div>
-              <p className="section-kicker">Selected records</p>
-              <h2>Recent entries in the civic archive</h2>
+              <p className="section-kicker">Browse by issue</p>
+              <h2>Follow civic movements by subject</h2>
             </div>
-            <a className="text-link" href="#records">
-              View all records <span aria-hidden="true">→</span>
-            </a>
           </div>
-
-          <div className="record-list">
-            {featuredRecords.map((record) => (
-              <article className="record-entry" key={record.id}>
-                <div className="record-topline">
-                  <span className="record-id">{record.id}</span>
-                  <span className={`record-status ${record.statusTone}`}>{record.status}</span>
-                </div>
-                <div className="record-main">
-                  <div className="record-title-block">
-                    <p className="record-topic">{record.topic}</p>
-                    <h3>{record.title}</h3>
-                    <p className="record-place">{record.place}</p>
-                  </div>
-                  <div className="record-verification">
-                    <span>{record.verification}</span>
-                    <p>{record.note}</p>
-                  </div>
-                  <div className="record-review">
-                    <span>Last reviewed</span>
-                    <time dateTime="2026-07-15">{record.reviewed}</time>
-                    <a href="#records" aria-label={`View record ${record.id}`}>
-                      View record <span aria-hidden="true">→</span>
-                    </a>
-                  </div>
-                </div>
-              </article>
-            ))}
+          <div className="issue-links" aria-label="Browse records by issue">
+            <a href="#records">Land and rehabilitation</a>
+            <a href="#records">Labour and employment</a>
+            <a href="#records">Education</a>
+            <a href="#records">Environment</a>
+            <a href="#records">Agriculture</a>
           </div>
         </div>
       </section>
@@ -343,7 +291,7 @@ export default function HomePage() {
           <div className="footer-meta">
             <span>Curated coverage</span>
             <span>Human approval required</span>
-            <span>No live tracking</span>
+            <span>Human review before publication</span>
           </div>
         </div>
       </footer>

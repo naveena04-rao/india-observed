@@ -37,8 +37,8 @@ test("prototype contains core trust language", () => {
 
 test("homepage keeps the public archive safety boundaries visible", () => {
   const page = read("src/app/page.tsx");
-  assert.match(page, /A public record of civic action/i);
-  assert.match(page, /No live protest tracking/i);
-  assert.match(page, /No ordinary participant identification/i);
+  assert.match(page, /Independent records of protests and civic movements across India/i);
+  assert.match(page, /Private participants unnamed/i);
+  assert.match(page, /tactical information/i);
   assert.match(page, /Human review/i);
 });
