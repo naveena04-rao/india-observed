@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FeaturedRecordCarousel } from "./components/FeaturedRecordCarousel";
 
 const featuredRecords = [
   {
@@ -96,67 +97,14 @@ export default function HomePage() {
         </div>
       </div>
 
-      <section className="hero-section">
-        <div className="page-shell hero-grid">
-          <div className="hero-copy">
-            <p className="section-kicker">Featured record</p>
-            <figure className="media-fallback">
-              <div className="document-preview" aria-label="Document-style record preview">
-                <span>{featuredRecords[0].id}</span>
-                <strong>{featuredRecords[0].status}</strong>
-                <small>Last reviewed {featuredRecords[0].reviewed}</small>
-              </div>
-              <figcaption>
-                <dl>
-                  <div>
-                    <dt>Media type</dt>
-                    <dd>No approved media</dd>
-                  </div>
-                  <div>
-                    <dt>Source</dt>
-                    <dd>Not published</dd>
-                  </div>
-                  <div>
-                    <dt>Caption</dt>
-                    <dd>Typographic record preview</dd>
-                  </div>
-                  <div>
-                    <dt>Verification</dt>
-                    <dd>Awaiting rights and verification review</dd>
-                  </div>
-                </dl>
-              </figcaption>
-            </figure>
-            <p className="featured-meta">
-              {featuredRecords[0].topic} · {featuredRecords[0].place}
-            </p>
-            <h1>{featuredRecords[0].title}</h1>
-            <p className="hero-lede">
-              A source-linked timeline of the movement, official responses, disputed claims and what
-              remains unresolved.
-            </p>
-          </div>
-
-          <aside className="repository-brief latest-column" aria-label="Latest records">
-            <p className="brief-label">Latest records</p>
-            {featuredRecords.slice(1).map((record) => (
-              <article className="latest-entry" key={record.id}>
-                <p className="record-topic">{record.topic}</p>
-                <p className="latest-location">{record.place}</p>
-                <h2>{record.title}</h2>
-                <time dateTime="2026-07-15">Reviewed {record.reviewed}</time>
-              </article>
-            ))}
-          </aside>
-        </div>
-      </section>
+      <FeaturedRecordCarousel records={featuredRecords} />
 
       <section className="verification-section" aria-labelledby="accounts-title">
         <div className="page-shell">
           <div className="section-intro ruled-heading">
             <div>
-              <p className="section-kicker">On the record</p>
-              <h2 id="accounts-title">Compare the accounts</h2>
+              <h2 id="accounts-title">On the record</h2>
+              <p className="accounts-subheading">Compare the accounts</p>
             </div>
           </div>
           <div className="accounts-grid">
