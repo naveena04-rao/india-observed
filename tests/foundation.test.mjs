@@ -34,3 +34,11 @@ test("prototype contains core trust language", () => {
   assert.match(page, /Broad discovery\. Conservative publication\./);
   assert.match(page, /not live tracking/i);
 });
+
+test("homepage keeps the public archive safety boundaries visible", () => {
+  const page = read("src/app/page.tsx");
+  assert.match(page, /A public record of civic action/i);
+  assert.match(page, /No live protest tracking/i);
+  assert.match(page, /No ordinary participant identification/i);
+  assert.match(page, /Human review/i);
+});
