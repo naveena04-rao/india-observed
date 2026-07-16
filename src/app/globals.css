@@ -977,3 +977,460 @@ main {
     scroll-behavior: auto;
   }
 }
+
+/* Compact editorial density revision */
+:root {
+  --page-width: 1200px;
+}
+
+body {
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+h1 {
+  font-size: clamp(2.75rem, 4.4vw, 3.25rem);
+  line-height: 1.02;
+  margin-bottom: 1rem;
+  max-width: 17ch;
+}
+
+h2 {
+  font-size: clamp(1.5rem, 2.4vw, 1.875rem);
+  line-height: 1.08;
+  margin-bottom: 0.65rem;
+}
+
+h3 {
+  font-size: clamp(1.2rem, 1.8vw, 1.5rem);
+}
+
+.page-shell {
+  padding-inline: clamp(1rem, 3vw, 2rem);
+}
+
+.utility-bar-inner {
+  padding-block: 0.38rem;
+}
+
+.header-inner {
+  min-height: 4.25rem;
+}
+
+.brand-mark {
+  height: 2rem;
+  width: 2rem;
+}
+
+.brand-mark::before,
+.brand-mark i:first-child {
+  left: 0.4rem;
+}
+
+.brand-mark::after,
+.brand-mark i:last-child {
+  right: 0.4rem;
+}
+
+.brand-mark::before {
+  top: 0.55rem;
+}
+.brand-mark::after {
+  bottom: 0.55rem;
+}
+.brand-mark i:first-child,
+.brand-mark i:last-child {
+  top: 0.95rem;
+}
+
+.brand-mark::after,
+.brand-mark::before,
+.brand-mark i {
+  width: 1.15rem;
+}
+
+.brand-copy strong,
+.footer-brand {
+  font-size: 1.25rem;
+}
+
+.brand-copy small {
+  font-size: 0.62rem;
+}
+.desktop-nav {
+  font-size: 0.82rem;
+  gap: 1.4rem;
+}
+.nav-action {
+  padding: 0.45rem 0.7rem;
+}
+
+.hero-grid {
+  align-items: start;
+  gap: 3rem;
+  grid-template-columns: minmax(0, 760px) minmax(280px, 340px);
+  justify-content: space-between;
+  padding-block: 3rem 2.5rem;
+}
+
+.section-kicker {
+  font-size: 0.68rem;
+  letter-spacing: 0.11em;
+  margin-bottom: 0.55rem;
+}
+
+.hero-lede {
+  font-size: 1.08rem;
+  line-height: 1.55;
+  max-width: 42rem;
+}
+
+.hero-actions {
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+.button {
+  font-size: 0.75rem;
+  padding: 0.62rem 0.85rem;
+}
+.text-link {
+  font-size: 0.82rem;
+}
+.hero-disclaimer {
+  margin: 1.35rem 0 0;
+}
+
+.repository-brief {
+  align-self: start;
+  border-width: 1px 0;
+  padding-block: 0.75rem;
+}
+
+.repository-brief dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.repository-brief dl div {
+  display: block;
+  padding-block: 0.55rem;
+}
+.repository-brief dl div:nth-child(odd) {
+  border-right: 1px solid var(--line);
+  padding-right: 0.75rem;
+}
+.repository-brief dl div:nth-child(even) {
+  padding-left: 0.75rem;
+}
+.repository-brief dt {
+  font-size: 0.72rem;
+}
+.repository-brief dd {
+  font-size: 1.35rem;
+  margin-top: 0.15rem;
+}
+.brief-note {
+  font-size: 0.72rem;
+  padding-top: 0.65rem;
+}
+
+.search-layout {
+  align-items: end;
+  gap: 0.7rem 1.75rem;
+  grid-template-columns: minmax(240px, 0.65fr) minmax(360px, 1.35fr);
+  padding-block: 1.5rem;
+}
+.search-layout h2 {
+  font-size: 1.45rem;
+}
+.archive-search input {
+  padding: 0.65rem 0.8rem;
+}
+.archive-search button {
+  padding-inline: 0.9rem;
+}
+.topic-links {
+  font-size: 0.76rem;
+  gap: 0.4rem 0.85rem;
+}
+
+.records-section,
+.verification-section,
+.coverage-section,
+.participation-section {
+  padding-block: 3rem;
+}
+
+.section-intro {
+  margin-bottom: 1.35rem;
+}
+.ruled-heading {
+  border-top: 1px solid var(--ink);
+  padding-top: 0.9rem;
+}
+.section-intro h2 {
+  max-width: none;
+}
+.record-entry {
+  padding-block: 1rem 1.1rem;
+}
+.record-topline {
+  margin-bottom: 0.6rem;
+}
+.record-main {
+  gap: 1.25rem;
+  grid-template-columns: minmax(0, 1.7fr) minmax(180px, 0.65fr) minmax(140px, 0.45fr);
+}
+.record-title-block h3 {
+  font-size: clamp(1.25rem, 2vw, 1.55rem);
+  margin-bottom: 0.3rem;
+  max-width: 28ch;
+}
+.record-topic {
+  margin-bottom: 0.3rem;
+}
+.record-place,
+.record-verification p,
+.record-review time {
+  font-size: 0.82rem;
+}
+.record-verification {
+  padding-left: 1rem;
+}
+.record-review a {
+  margin-top: 0.55rem;
+}
+
+.compact-intro > p {
+  font-size: 0.9rem;
+}
+.verification-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.verification-item {
+  min-height: 0;
+  padding: 0.9rem;
+}
+.verification-item span {
+  margin-bottom: 0.45rem;
+}
+.verification-item p {
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.methodology-section {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line-dark);
+  color: var(--ink);
+  padding-block: 3rem;
+}
+.methodology-layout {
+  display: block;
+}
+.methodology-heading {
+  align-items: end;
+  display: grid;
+  gap: 1rem 2rem;
+  grid-template-columns: 1fr 1fr auto;
+  margin-bottom: 1.5rem;
+}
+.methodology-heading h2 {
+  margin-bottom: 0;
+}
+.methodology-heading p:not(.section-kicker) {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  margin: 0;
+}
+.methodology-heading .button {
+  color: var(--teal);
+}
+.light-kicker {
+  color: var(--teal);
+}
+.process-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+.process-list li {
+  border-bottom: 1px solid var(--line-dark);
+  border-color: var(--line-dark);
+  display: block;
+  padding: 0.9rem;
+}
+.process-list li:not(:last-child) {
+  border-right: 1px solid var(--line);
+}
+.process-list > li > span {
+  color: var(--terracotta);
+  font-size: 1rem;
+}
+.process-list h3 {
+  font-size: 1.15rem;
+  margin: 0.45rem 0 0.3rem;
+}
+.process-list p {
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.coverage-grid {
+  gap: 3rem;
+  grid-template-columns: minmax(0, 1fr) minmax(420px, 1.1fr);
+}
+.coverage-grid > div:first-child p:not(.section-kicker) {
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+.coverage-ledger {
+  border-top: 1px solid var(--ink);
+}
+.coverage-ledger div {
+  gap: 1rem;
+  grid-template-columns: 3.5rem 1fr;
+  padding-block: 0.65rem;
+}
+.coverage-ledger strong {
+  font-size: 1.65rem;
+}
+.coverage-ledger span {
+  font-size: 0.82rem;
+}
+
+.participation-section {
+  background: var(--paper-deep);
+}
+.participation-grid {
+  gap: 2rem;
+}
+.lead-panel,
+.corrections-panel {
+  background: transparent;
+  border: 0;
+  border-top: 3px solid var(--terracotta);
+  color: var(--ink);
+  min-height: 0;
+  padding: 1.25rem 0 0;
+}
+.corrections-panel {
+  border-top-color: var(--teal);
+}
+.lead-panel p:not(.section-kicker),
+.corrections-panel p:not(.section-kicker) {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+.lead-panel .button {
+  background: var(--terracotta);
+  border-color: var(--terracotta);
+  color: var(--white);
+}
+
+.site-footer {
+  padding-block: 2rem;
+}
+.footer-grid {
+  gap: 2rem;
+  grid-template-columns: 1.2fr 0.8fr 0.8fr;
+}
+.footer-grid p,
+.site-footer nav,
+.footer-meta {
+  font-size: 0.76rem;
+}
+
+@media (max-width: 960px) {
+  .hero-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+  }
+  .methodology-heading {
+    grid-template-columns: 1fr 1fr;
+  }
+  .methodology-heading .button {
+    grid-column: 1 / -1;
+    width: fit-content;
+  }
+}
+
+@media (max-width: 700px) {
+  .utility-bar-inner {
+    flex-direction: row;
+  }
+  .utility-bar-inner span:last-child {
+    display: none;
+  }
+  .header-inner {
+    min-height: 4rem;
+  }
+  .brand-mark {
+    height: 1.8rem;
+    width: 1.8rem;
+  }
+  .mobile-menu summary {
+    font-size: 0.72rem;
+    padding: 0.45rem 0.6rem;
+  }
+  .hero-grid {
+    gap: 1.5rem;
+    grid-template-columns: 1fr;
+    padding-block: 2rem;
+  }
+  h1 {
+    font-size: clamp(2.125rem, 10vw, 2.375rem);
+  }
+  h2 {
+    font-size: clamp(1.375rem, 7vw, 1.625rem);
+  }
+  .repository-brief {
+    max-width: none;
+  }
+  .search-layout {
+    grid-template-columns: 1fr;
+    padding-block: 1.25rem;
+  }
+  .records-section,
+  .verification-section,
+  .coverage-section,
+  .participation-section,
+  .methodology-section {
+    padding-block: 2rem;
+  }
+  .record-main {
+    display: block;
+  }
+  .record-verification {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    margin-top: 0.75rem;
+    padding: 0.65rem 0 0;
+  }
+  .record-review {
+    border-top: 1px solid var(--line);
+    margin-top: 0.65rem;
+    padding-top: 0.65rem;
+  }
+  .verification-grid {
+    grid-template-columns: 1fr;
+  }
+  .verification-item {
+    border-right: 0;
+  }
+  .methodology-heading,
+  .process-list,
+  .coverage-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .process-list li:not(:last-child) {
+    border-right: 0;
+  }
+  .participation-grid {
+    gap: 2.5rem;
+  }
+  .footer-grid {
+    gap: 1.5rem;
+  }
+}
