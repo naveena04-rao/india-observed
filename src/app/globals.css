@@ -1622,3 +1622,218 @@ h3 {
     border-right: 0;
   }
 }
+
+/* Media-ready evidence modules */
+.media-fallback {
+  border-bottom: 1px solid var(--line);
+  border-top: 1px solid var(--ink);
+  display: grid;
+  grid-template-columns: minmax(180px, 0.65fr) minmax(260px, 1.35fr);
+  margin: 0 0 1rem;
+}
+
+.document-preview {
+  align-content: center;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  display: grid;
+  min-height: 8rem;
+  padding: 1rem;
+}
+.document-preview span,
+.document-preview small {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.document-preview strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.4rem;
+  margin-block: 0.4rem;
+}
+.media-fallback figcaption {
+  padding: 0.65rem 0 0.65rem 1rem;
+}
+.media-fallback dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 0;
+}
+.media-fallback dl div {
+  border-bottom: 1px solid var(--line);
+  padding: 0.35rem;
+}
+.media-fallback dt {
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.media-fallback dd {
+  font-size: 0.72rem;
+  margin: 0.1rem 0 0;
+}
+
+.accounts-grid,
+.evidence-grid,
+.clarification-grid {
+  border-bottom: 1px solid var(--ink);
+  border-top: 1px solid var(--ink);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.accounts-grid article,
+.evidence-grid article,
+.clarification-grid article {
+  padding: 1rem;
+}
+.accounts-grid article:not(:last-child),
+.evidence-grid article:not(:last-child),
+.clarification-grid article:not(:last-child) {
+  border-right: 1px solid var(--line);
+}
+.accounts-grid span,
+.evidence-grid span,
+.clarification-grid span {
+  color: var(--teal);
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.accounts-grid h3,
+.clarification-grid h3 {
+  font-size: 1.15rem;
+  margin: 0.35rem 0;
+}
+.accounts-grid p,
+.evidence-grid p,
+.clarification-grid p {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin: 0;
+}
+.accounts-grid article:nth-child(-n + 2) span {
+  color: var(--terracotta);
+}
+.attribution-note {
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.72rem;
+  margin: 0;
+  padding: 0.6rem 0;
+}
+.evidence-summary {
+  margin-top: 2rem;
+}
+.evidence-grid article:nth-child(2) span {
+  color: var(--terracotta);
+}
+.evidence-grid article:nth-child(3) span {
+  color: var(--muted);
+}
+.media-policy {
+  border-left: 3px solid var(--terracotta);
+  display: grid;
+  gap: 0.5rem 1.5rem;
+  grid-template-columns: 8rem 1fr;
+  margin-top: 1.25rem;
+  padding-left: 0.8rem;
+}
+.media-policy strong {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.media-policy p {
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin: 0;
+}
+
+.verification-key {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line-dark);
+  padding-block: 1.5rem;
+}
+.verification-key .verification-grid {
+  border: 0;
+}
+.verification-key .verification-item {
+  border-top: 1px solid var(--line);
+}
+
+.open-questions {
+  margin-top: 2.5rem;
+}
+.open-questions ol {
+  border-bottom: 1px solid var(--ink);
+  border-top: 1px solid var(--ink);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.open-questions li {
+  align-items: baseline;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 9rem 1fr;
+  padding: 0.7rem 0;
+}
+.open-questions li:not(:last-child) {
+  border-bottom: 1px solid var(--line);
+}
+.open-questions span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+.open-questions p {
+  font-size: 0.84rem;
+  margin: 0;
+}
+
+.correction-stream {
+  padding-block: 3rem;
+}
+.clarification-grid article:first-child span {
+  color: var(--terracotta);
+}
+.participation-grid {
+  grid-template-columns: minmax(0, 44rem);
+}
+.lead-panel {
+  border-top-color: var(--terracotta);
+}
+
+@media (max-width: 700px) {
+  .media-fallback,
+  .accounts-grid,
+  .evidence-grid,
+  .clarification-grid {
+    grid-template-columns: 1fr;
+  }
+  .document-preview {
+    border-bottom: 1px solid var(--line);
+    border-right: 0;
+    min-height: 6.5rem;
+  }
+  .media-fallback figcaption {
+    padding-left: 0;
+  }
+  .accounts-grid article:not(:last-child),
+  .evidence-grid article:not(:last-child),
+  .clarification-grid article:not(:last-child) {
+    border-bottom: 1px solid var(--line);
+    border-right: 0;
+  }
+  .media-policy {
+    grid-template-columns: 1fr;
+  }
+  .open-questions li {
+    grid-template-columns: 1fr;
+  }
+}

@@ -94,7 +94,7 @@ export default function HomePage() {
 
       <div className="utility-bar">
         <div className="page-shell utility-bar-inner">
-          <span>Claims linked · Private participants unnamed · Corrections visible</span>
+          <span>Sources linked. Identities protected. Corrections visible.</span>
         </div>
       </div>
 
@@ -102,6 +102,33 @@ export default function HomePage() {
         <div className="page-shell hero-grid">
           <div className="hero-copy">
             <p className="section-kicker">Featured record</p>
+            <figure className="media-fallback">
+              <div className="document-preview" aria-label="Document-style record preview">
+                <span>{featuredRecords[0].id}</span>
+                <strong>{featuredRecords[0].status}</strong>
+                <small>Last reviewed {featuredRecords[0].reviewed}</small>
+              </div>
+              <figcaption>
+                <dl>
+                  <div>
+                    <dt>Media type</dt>
+                    <dd>No approved media</dd>
+                  </div>
+                  <div>
+                    <dt>Source</dt>
+                    <dd>Not published</dd>
+                  </div>
+                  <div>
+                    <dt>Caption</dt>
+                    <dd>Typographic record preview</dd>
+                  </div>
+                  <div>
+                    <dt>Verification</dt>
+                    <dd>Awaiting rights and verification review</dd>
+                  </div>
+                </dl>
+              </figcaption>
+            </figure>
             <p className="featured-meta">
               {featuredRecords[0].topic} · {featuredRecords[0].place}
             </p>
@@ -169,27 +196,80 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="verification-section" aria-labelledby="verification-title">
+      <section className="verification-section" aria-labelledby="accounts-title">
         <div className="page-shell">
-          <div className="section-intro compact-intro">
+          <div className="section-intro ruled-heading">
             <div>
-              <p className="section-kicker">Evidence language</p>
-              <h2 id="verification-title">The record shows degrees of certainty.</h2>
+              <p className="section-kicker">On the record</p>
+              <h2 id="accounts-title">Compare the accounts</h2>
             </div>
+          </div>
+          <div className="accounts-grid">
+            <article>
+              <span>On the record</span>
+              <h3>Movement representatives said</h3>
+              <p>No approved on-the-record statement is included in this homepage preview.</p>
+            </article>
+            <article>
+              <span>On the record</span>
+              <h3>Authorities said</h3>
+              <p>No approved on-the-record statement is included in this homepage preview.</p>
+            </article>
+            <article>
+              <span>Evidence review</span>
+              <h3>Sources currently establish</h3>
+              <p>
+                {featuredRecords[0].verification}. {featuredRecords[0].note}.
+              </p>
+            </article>
+          </div>
+          <p className="attribution-note">
+            Submitted statements remain attributed claims, not independently verified facts.
+          </p>
+          <div className="evidence-summary">
+            <div className="section-intro compact-intro">
+              <div>
+                <p className="section-kicker">Evidence summary</p>
+                <h2>What the reviewed record supports</h2>
+              </div>
+            </div>
+            <div className="evidence-grid">
+              <article>
+                <span>Established</span>
+                <p>{featuredRecords[0].verification}</p>
+              </article>
+              <article>
+                <span>Disputed</span>
+                <p>{featuredRecords[0].note}</p>
+              </article>
+              <article>
+                <span>Still unknown</span>
+                <p>
+                  The homepage data does not identify which disputed details have since been
+                  resolved.
+                </p>
+              </article>
+            </div>
+          </div>
+          <div className="media-policy">
+            <strong>Media standard</strong>
             <p>
-              Verification labels are applied to individual claims. They are not blanket scores for
-              an entire movement.
+              Images, video, documents and maps publish only after verification and rights review.
+              Sensitive identities, faces, number plates, minors and precise locations are protected
+              where necessary.
             </p>
           </div>
+        </div>
+      </section>
 
-          <div className="verification-grid">
-            {verificationLabels.map(([label, description]) => (
-              <div className="verification-item" key={label}>
-                <span>{label}</span>
-                <p>{description}</p>
-              </div>
-            ))}
-          </div>
+      <section className="verification-key" aria-label="Verification status definitions">
+        <div className="page-shell verification-grid">
+          {verificationLabels.map(([label, description]) => (
+            <div className="verification-item" key={label}>
+              <span>{label}</span>
+              <p>{description}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -225,7 +305,7 @@ export default function HomePage() {
         <div className="page-shell coverage-grid">
           <div>
             <p className="section-kicker">Coverage</p>
-            <h2>India-wide in scope. Selective by design.</h2>
+            <h2>Across India, event by event.</h2>
             <p>
               The repository currently includes records from Assam, Chandigarh, Delhi, Gujarat,
               Karnataka, Madhya Pradesh, Maharashtra, Manipur, Odisha and Uttar Pradesh.
@@ -246,6 +326,56 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+        <div className="page-shell open-questions">
+          <div className="section-intro ruled-heading">
+            <div>
+              <p className="section-kicker">Open questions</p>
+              <h2>Documentation still needed</h2>
+            </div>
+          </div>
+          <ol>
+            <li>
+              <span>{featuredRecords[0].id}</span>
+              <p>Which disputed details can additional public documentation resolve?</p>
+            </li>
+            <li>
+              <span>{featuredRecords[1].id}</span>
+              <p>Has the official response under review been documented in a publishable source?</p>
+            </li>
+            <li>
+              <span>{featuredRecords[2].id}</span>
+              <p>Is later outcome documentation available beyond the recorded same-day response?</p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section className="correction-stream" id="corrections">
+        <div className="page-shell">
+          <div className="section-intro ruled-heading">
+            <div>
+              <p className="section-kicker">Recent corrections and clarifications</p>
+              <h2>Changes remain visible</h2>
+            </div>
+          </div>
+          <div className="clarification-grid">
+            <article>
+              <span>Response under review</span>
+              <h3>{featuredRecords[1].title}</h3>
+              <p>{featuredRecords[1].note}</p>
+            </article>
+            <article>
+              <span>Response recorded</span>
+              <h3>{featuredRecords[2].title}</h3>
+              <p>{featuredRecords[2].note}</p>
+            </article>
+            <article>
+              <span>Corrections</span>
+              <h3>No recent correction entry</h3>
+              <p>No recent public correction is included in the reviewed homepage data.</p>
+            </article>
+          </div>
+        </div>
       </section>
 
       <section className="participation-section">
@@ -259,18 +389,6 @@ export default function HomePage() {
             </p>
             <a className="button button-light" href="#lead">
               Submit a public lead
-            </a>
-          </div>
-
-          <div className="corrections-panel" id="corrections">
-            <p className="section-kicker">Corrections</p>
-            <h2>A public record should be correctable.</h2>
-            <p>
-              Material changes are logged with the earlier wording, revised wording, evidence and
-              date. Consequential records are not silently rewritten.
-            </p>
-            <a className="text-link" href="#corrections">
-              View the correction process <span aria-hidden="true">→</span>
             </a>
           </div>
         </div>
