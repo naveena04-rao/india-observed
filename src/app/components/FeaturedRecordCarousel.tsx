@@ -238,6 +238,7 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
                       </div>
                     )}
                   </div>
+                  {carouselPosition}
                   {loadedMediaId === activeRecord.id ? (
                     <figcaption className="featured-record-caption">
                       {activeMedia.caption} Credit: {activeMedia.sourceName}.{" "}
@@ -248,7 +249,6 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
                     </figcaption>
                   ) : null}
                 </figure>
-                {carouselPosition}
               </div>
             </>
           ) : (
