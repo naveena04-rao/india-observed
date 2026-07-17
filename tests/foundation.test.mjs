@@ -64,11 +64,6 @@ test("homepage keeps the public archive safety boundaries visible", () => {
     false,
   );
 
-  assert.match(styles, /body,[\s\S]*?background: #ffffff;/);
-  assert.match(styles, /\.site-header,[\s\S]*?background: #000000;/);
-  assert.match(styles, /\.utility-bar,[\s\S]*?background: #000000;/);
-  assert.match(styles, /\.site-header[\s\S]*?color: #ffffff;/);
-  assert.match(styles, /\.site-footer,[\s\S]*?background: #ffffff;/);
   assert.match(
     styles,
     /featured-record-context[\s\S]*font-size: clamp\(1\.2rem, 1\.6vw, 1\.4rem\)/,
@@ -224,4 +219,38 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.doesNotMatch(page, /Explore the archive/i);
   assert.doesNotMatch(page, /Open questions|Documentation still needed|Documentation gap/);
   assert.doesNotMatch(styles, /\.open-questions/);
+});
+
+test("homepage preserves the approved black header and white page surfaces", () => {
+  const styles = read("src/app/globals.css");
+  const activeSurfaceStyles = styles.slice(
+    styles.lastIndexOf("/* Approved black-header and white-page treatment */"),
+  );
+
+  assert.match(
+    activeSurfaceStyles,
+    /:root\s*\{[\s\S]*?--paper: #ffffff;[\s\S]*?--paper-deep: #ffffff;[\s\S]*?--surface: #ffffff;/,
+  );
+  assert.match(activeSurfaceStyles, /body,[\s\S]*?main,[\s\S]*?background: #ffffff;/);
+  assert.match(activeSurfaceStyles, /\.site-header\s*\{[\s\S]*?background: #151616;/);
+
+  for (const selector of [
+    ".utility-bar",
+    ".featured-carousel",
+    ".on-record-section",
+    ".methodology-section",
+    ".coverage-section",
+    ".correction-stream",
+    ".participation-section",
+    ".site-footer",
+    ".mobile-menu nav",
+    ".document-preview",
+    ".media-fallback",
+  ]) {
+    assert.ok(activeSurfaceStyles.includes(selector));
+  }
+
+  assert.match(activeSurfaceStyles, /\.media-fallback,[\s\S]*?background: #ffffff;/);
+  assert.doesNotMatch(activeSurfaceStyles, /#f5f2ea|#ebe6db|#fbfaf6|#f7f2e8|#fbf8f1/);
+  assert.doesNotMatch(read("src/app/page.tsx"), /Open questions/i);
 });

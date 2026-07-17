@@ -2317,7 +2317,7 @@ h3 {
   cursor: default;
 }
 
-/* White homepage surface and scoped header/ON record refinements */
+/* Approved black-header and white-page treatment */
 :root {
   --paper: #ffffff;
   --paper-deep: #ffffff;
@@ -2326,14 +2326,18 @@ h3 {
 }
 
 body,
-.site-header,
+main,
 .utility-bar,
-main > section,
+.featured-carousel,
+.on-record-section,
 .methodology-section,
+.coverage-section,
+.correction-stream,
 .participation-section,
 .site-footer,
 .mobile-menu nav,
 .document-preview,
+.media-fallback,
 main article,
 main aside,
 main .lead-panel {
@@ -2341,7 +2345,8 @@ main .lead-panel {
 }
 
 .site-header {
-  color: var(--ink);
+  background: #151616;
+  color: #ffffff;
 }
 
 .header-inner {
@@ -2475,18 +2480,11 @@ main .lead-panel {
   gap: 1rem;
 }
 
-/* Dark header treatment */
-.site-header,
-.utility-bar,
-.mobile-menu nav {
-  background: #000000;
-  color: #ffffff;
-}
+/* Header contrast remains isolated from the white page surfaces. */
 
 .site-header .brand-copy small,
 .site-header .desktop-nav,
-.site-header .mobile-menu,
-.utility-bar {
+.site-header .mobile-menu {
   color: #ffffff;
 }
 
@@ -2508,5 +2506,5 @@ main .lead-panel {
 
 .site-header .nav-action,
 .mobile-menu nav a {
-  color: #ffffff;
+  color: var(--ink);
 }
