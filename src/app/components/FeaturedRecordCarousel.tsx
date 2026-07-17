@@ -79,7 +79,6 @@ type FeaturedRecordCarouselProps = {
 
 export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecordCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
   const [hasFocus, setHasFocus] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
@@ -101,13 +100,13 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
   }, []);
 
   useEffect(() => {
-    if (records.length < 2 || isHovered || hasFocus || !isVisible || prefersReducedMotion) return;
+    if (records.length < 2 || hasFocus || !isVisible || prefersReducedMotion) return;
     const timer = window.setInterval(
       () => setActiveIndex((index) => (index + 1) % records.length),
       4000,
     );
     return () => window.clearInterval(timer);
-  }, [hasFocus, isHovered, isVisible, prefersReducedMotion, records.length]);
+  }, [hasFocus, isVisible, prefersReducedMotion, records.length]);
 
   if (records.length === 0) return null;
 
@@ -189,8 +188,6 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
       className="hero-section featured-carousel"
       id="about"
       aria-label="Featured civic records"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
       onFocusCapture={() => setHasFocus(true)}
       onBlurCapture={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setHasFocus(false);

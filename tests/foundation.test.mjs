@@ -162,6 +162,7 @@ test("homepage keeps the public archive safety boundaries visible", () => {
     assert.match(carousel, new RegExp(`"${controlledStatus}"`));
   }
   assert.match(carousel, /4000/);
+  assert.doesNotMatch(carousel, /isHovered|onMouseEnter|onMouseLeave/);
   assert.doesNotMatch(latestMarkup, /Currently featured|aria-current|onClick|setActiveIndex/);
 
   assert.match(page, /<h2 id="on-record-title">ON record<\/h2>/);
