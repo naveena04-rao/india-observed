@@ -222,4 +222,6 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   }
 
   assert.doesNotMatch(page, /Explore the archive/i);
+  assert.doesNotMatch(page, /Open questions|Documentation still needed|Documentation gap/);
+  assert.doesNotMatch(styles, /\.open-questions/);
 });

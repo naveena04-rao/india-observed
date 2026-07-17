@@ -267,28 +267,6 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-        <div className="page-shell open-questions">
-          <div className="section-intro ruled-heading">
-            <div>
-              <p className="section-kicker">Open questions</p>
-              <h2>Documentation still needed</h2>
-            </div>
-          </div>
-          <ol>
-            <li>
-              <span>Documentation gap</span>
-              <p>Which disputed details can additional public documentation resolve?</p>
-            </li>
-            <li>
-              <span>Documentation gap</span>
-              <p>Has the official response under review been documented in a publishable source?</p>
-            </li>
-            <li>
-              <span>Documentation gap</span>
-              <p>Is later outcome documentation available beyond the recorded same-day response?</p>
-            </li>
-          </ol>
-        </div>
       </section>
 
       <section className="correction-stream" id="corrections">
