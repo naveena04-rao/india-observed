@@ -69,6 +69,10 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.match(styles, /\.utility-bar,[\s\S]*?background: #000000;/);
   assert.match(styles, /\.site-header[\s\S]*?color: #ffffff;/);
   assert.match(styles, /\.site-footer,[\s\S]*?background: #ffffff;/);
+  assert.match(
+    styles,
+    /featured-record-context[\s\S]*font-size: clamp\(1\.2rem, 1\.6vw, 1\.4rem\)/,
+  );
 
   const expectedNavigation = [
     ["#home", "Home"],

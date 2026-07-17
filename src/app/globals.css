@@ -1879,12 +1879,12 @@ h3 {
 }
 
 .featured-record-context > p:not(.brief-label) {
-  color: var(--muted);
+  color: var(--ink);
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 1rem;
-  line-height: 1.35;
+  font-size: clamp(1.2rem, 1.6vw, 1.4rem);
+  line-height: 1.42;
   margin: 0.45rem 0 0.7rem;
-  max-width: 26ch;
+  max-width: 25ch;
 }
 
 .featured-carousel .media-fallback {
