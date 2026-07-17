@@ -3,3 +3,6 @@
 The manually reviewed India Observed master workbook remains the source of truth for the first import. It is retained in the approved Week 1 project archive and must not be imported into production until field mappings, validation, transaction handling, and rollback are reviewed.
 
 The binary workbook is intentionally not required to build or run the website. When the import workflow is designed, store an approved copy in a protected project location and document its checksum and review date.
+
+The reviewed v1 import is documented in `docs/REVIEWED_DATABASE_IMPORT.md`. Its transactional SQL
+migration records the canonical workbook checksum and keeps all imported events at candidate status.
