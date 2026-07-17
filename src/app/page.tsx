@@ -12,6 +12,31 @@ const featuredRecords = [
     verification: "Occurrence verified",
     note: "Some details remain disputed",
     reviewed: "15 July 2026",
+    media: {
+      kind: "publisher_video",
+      format: "Publisher-hosted video (2:49)",
+      sourceName: "NDTV",
+      sourceUrl:
+        "https://www.ndtv.com/video/protests-in-karnataka-s-bidadi-after-government-proposes-to-cut-trees-for-ai-city-project-1120270",
+      embedUrl:
+        "https://www.ndtv.com/videos/embed-player/?id=1120270&mute=1&autostart=0&mutestart=true&pWidth=100&pHeight=100",
+      sourceProvenance: "NDTV · Original publisher page · 30 June 2026",
+      eventVerification: "Provenance and event match confirmed; human editorial review passed",
+      publicationRightsStatus: "Official source embed · Reuse permission pending",
+      caption:
+        "NDTV's report depicts a public protest in Bidadi concerning the proposed AI City project; it does not independently resolve disputed land-acquisition details.",
+      reviewStatus: "event_match_confirmed",
+      rightsStatus: "permission_requested",
+      publicationStatus: "published_source_embed",
+      gates: {
+        authenticity: true,
+        eventMatch: true,
+        integrity: true,
+        privacy: true,
+        safety: true,
+        humanEditorialApproval: true,
+      },
+    },
   },
   {
     id: "IO-CM-MN-0001",
@@ -23,6 +48,13 @@ const featuredRecords = [
     verification: "Occurrence verified",
     note: "Official response under review",
     reviewed: "15 July 2026",
+    media: {
+      kind: "text_record",
+      format: "Text record",
+      sourceProvenance: "Reviewed record sources; no visual asset selected",
+      eventVerification: "Occurrence verified",
+      publicationRightsStatus: "Text fallback · No visual media published",
+    },
   },
   {
     id: "IO-CM-OD-0001",
@@ -34,6 +66,13 @@ const featuredRecords = [
     verification: "Outcome documented",
     note: "Same-day institutional response recorded",
     reviewed: "15 July 2026",
+    media: {
+      kind: "text_record",
+      format: "Text record",
+      sourceProvenance: "Reviewed record sources; no visual asset selected",
+      eventVerification: "Outcome documented",
+      publicationRightsStatus: "Text fallback · No visual media published",
+    },
   },
 ] as const;
 const latestRecords = [

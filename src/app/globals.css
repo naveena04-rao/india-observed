@@ -1572,16 +1572,15 @@ h3 {
   font-size: 1.4rem;
   margin-block: 0.4rem;
 }
-.media-fallback figcaption {
-  padding: 0.65rem 0 0.65rem 1rem;
-}
-.media-fallback dl {
+.media-status-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   margin: 0;
+  padding: 0.65rem 0 0.65rem 1rem;
 }
-.media-fallback dl div {
+.media-status-grid div {
   border-bottom: 1px solid var(--line);
+  min-width: 0;
   padding: 0.35rem;
 }
 .media-fallback dt {
@@ -1594,6 +1593,62 @@ h3 {
 .media-fallback dd {
   font-size: 0.72rem;
   margin: 0.1rem 0 0;
+  overflow-wrap: anywhere;
+}
+.media-fallback a {
+  color: inherit;
+  text-decoration-color: var(--terracotta);
+  text-underline-offset: 0.18em;
+}
+.publisher-video,
+.publisher-video-gate {
+  background: var(--ink);
+  border-right: 1px solid var(--line);
+  color: #ffffff;
+  min-height: 8rem;
+}
+.publisher-video {
+  aspect-ratio: 16 / 9;
+}
+.publisher-video iframe {
+  border: 0;
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+.publisher-video-gate {
+  align-content: center;
+  display: grid;
+  gap: 0.3rem;
+  padding: 1rem;
+}
+.publisher-video-gate span,
+.publisher-video-gate small {
+  color: #d3d0ca;
+  font-size: 0.65rem;
+}
+.publisher-video-gate span {
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.publisher-video-gate button {
+  background: var(--terracotta);
+  border: 0;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  justify-self: start;
+  padding: 0.45rem 0.65rem;
+}
+.media-caption {
+  color: var(--muted);
+  font-size: 0.68rem;
+  grid-column: 1 / -1;
+  line-height: 1.45;
+  padding: 0.5rem 0.7rem;
 }
 
 .accounts-grid,
@@ -1728,7 +1783,7 @@ h3 {
     border-right: 0;
     min-height: 6.5rem;
   }
-  .media-fallback figcaption {
+  .media-status-grid {
     padding-left: 0;
   }
   .accounts-grid article:not(:last-child),
@@ -1803,12 +1858,19 @@ h3 {
   margin-block: 0.25rem;
 }
 
-.featured-carousel .media-fallback figcaption {
+.featured-carousel .media-status-grid {
   padding: 0.35rem 0;
 }
 
-.featured-carousel .media-fallback dl div {
+.featured-carousel .media-status-grid div {
   padding: 0.22rem 0.3rem;
+}
+
+.featured-carousel .publisher-video,
+.featured-carousel .publisher-video-gate {
+  border-bottom: 1px solid var(--line);
+  border-right: 0;
+  min-height: 6.75rem;
 }
 
 .featured-record-copy {

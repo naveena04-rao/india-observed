@@ -2,6 +2,61 @@
 
 import { useEffect, useState } from "react";
 
+export type MediaReviewStatus =
+  "candidate" | "provenance_confirmed" | "event_match_confirmed" | "corroborated" | "rejected";
+
+export type MediaRightsStatus =
+  | "original_source_display"
+  | "permission_requested"
+  | "permission_granted"
+  | "permission_denied"
+  | "reuse_restricted";
+
+export type MediaPublicationStatus =
+  | "published_source_embed"
+  | "published_source_link"
+  | "published_with_permission"
+  | "withheld_privacy"
+  | "withheld_safety"
+  | "rejected_verification"
+  | "removed_or_corrected";
+
+type MediaReviewGates = {
+  authenticity: boolean;
+  eventMatch: boolean;
+  integrity: boolean;
+  privacy: boolean;
+  safety: boolean;
+  humanEditorialApproval: boolean;
+};
+
+type PublisherVideoMedia = {
+  kind: "publisher_video";
+  format: string;
+  sourceName: string;
+  sourceUrl: string;
+  embedUrl: string;
+  sourceProvenance: string;
+  eventVerification: string;
+  publicationRightsStatus: string;
+  caption: string;
+  reviewStatus: MediaReviewStatus;
+  rightsStatus: MediaRightsStatus;
+  publicationStatus: MediaPublicationStatus;
+  gates: MediaReviewGates;
+  internalWithholdingReason?: string;
+};
+
+type TextRecordMedia = {
+  kind: "text_record";
+  format: string;
+  sourceProvenance: string;
+  eventVerification: string;
+  publicationRightsStatus: string;
+};
+
+export type FeaturedRecordMedia = PublisherVideoMedia | TextRecordMedia;
+
 export type FeaturedRecord = {
   id: string;
   status: string;
@@ -12,6 +67,7 @@ export type FeaturedRecord = {
   verification: string;
   note: string;
   reviewed: string;
+  media: FeaturedRecordMedia;
 };
 
 type LatestRecord = Pick<FeaturedRecord, "id" | "title" | "place" | "topic" | "reviewed">;
@@ -27,6 +83,7 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
   const [hasFocus, setHasFocus] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [loadedMediaId, setLoadedMediaId] = useState<string | null>(null);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -55,6 +112,15 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
   if (records.length === 0) return null;
 
   const activeRecord = records[activeIndex]!;
+  const activeMedia = activeRecord.media;
+  // Rights approval controls reuse, but can never override authenticity, event-match,
+  // integrity, privacy, safety or human-editorial gates. Auto-publication remains disabled.
+  const mayDisplaySourceEmbed =
+    activeMedia.kind === "publisher_video" &&
+    activeMedia.publicationStatus === "published_source_embed" &&
+    activeMedia.reviewStatus !== "candidate" &&
+    activeMedia.reviewStatus !== "rejected" &&
+    Object.values(activeMedia.gates).every(Boolean);
 
   return (
     <section
@@ -72,31 +138,69 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
         <div className="hero-copy featured-slide" key={activeRecord.id}>
           <p className="section-kicker">Featured record</p>
           <figure className="media-fallback">
-            <div className="document-preview" aria-label="Document-style record preview">
-              <span>{activeRecord.id}</span>
-              <strong className={activeRecord.statusTone}>{activeRecord.status}</strong>
-              <small>Last reviewed {activeRecord.reviewed}</small>
-            </div>
-            <figcaption>
-              <dl>
-                <div>
-                  <dt>Media type</dt>
-                  <dd>No approved media</dd>
+            {mayDisplaySourceEmbed ? (
+              loadedMediaId === activeRecord.id ? (
+                <div className="publisher-video">
+                  <iframe
+                    src={activeMedia.embedUrl}
+                    title={`NDTV video for ${activeRecord.title}`}
+                    allow="fullscreen; picture-in-picture"
+                    allowFullScreen
+                    referrerPolicy="strict-origin-when-cross-origin"
+                  />
                 </div>
-                <div>
-                  <dt>Source</dt>
-                  <dd>Not published</dd>
+              ) : (
+                <div className="publisher-video-gate">
+                  <span>Official publisher video</span>
+                  <strong>NDTV · 2:49</strong>
+                  <button type="button" onClick={() => setLoadedMediaId(activeRecord.id)}>
+                    Load video from NDTV
+                  </button>
+                  <small>Loading connects to the publisher&apos;s video player.</small>
                 </div>
-                <div>
-                  <dt>Caption</dt>
-                  <dd>Typographic record preview</dd>
-                </div>
-                <div>
-                  <dt>Verification</dt>
-                  <dd>Awaiting rights and verification review</dd>
-                </div>
-              </dl>
-            </figcaption>
+              )
+            ) : (
+              <div className="document-preview" aria-label="Text-record preview">
+                <span>{activeRecord.id}</span>
+                <strong className={activeRecord.statusTone}>{activeRecord.status}</strong>
+                <small>Last reviewed {activeRecord.reviewed}</small>
+              </div>
+            )}
+            {mayDisplaySourceEmbed && loadedMediaId === activeRecord.id ? (
+              <figcaption className="media-caption">
+                {activeMedia.caption} Credit: {activeMedia.sourceName}.{" "}
+                <a href={activeMedia.sourceUrl} target="_blank" rel="noreferrer">
+                  View the original publisher page
+                </a>
+                .
+              </figcaption>
+            ) : null}
+            <dl className="media-status-grid">
+              <div>
+                <dt>Media format</dt>
+                <dd>{activeMedia.format}</dd>
+              </div>
+              <div>
+                <dt>Source &amp; provenance</dt>
+                <dd>
+                  {activeMedia.kind === "publisher_video" ? (
+                    <a href={activeMedia.sourceUrl} target="_blank" rel="noreferrer">
+                      {activeMedia.sourceProvenance}
+                    </a>
+                  ) : (
+                    activeMedia.sourceProvenance
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt>Event verification</dt>
+                <dd>{activeMedia.eventVerification}</dd>
+              </div>
+              <div>
+                <dt>Publication &amp; rights status</dt>
+                <dd>{activeMedia.publicationRightsStatus}</dd>
+              </div>
+            </dl>
           </figure>
           <div className="featured-record-copy">
             <p className="featured-meta">

@@ -106,7 +106,51 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.match(page, /Sources linked\. Identities protected\. Corrections visible\./i);
   assert.match(page, /tactical information/i);
   assert.match(page, /Human review/i);
-  assert.match(carousel, /No approved media/i);
+  for (const label of [
+    "Media format",
+    "Source &amp; provenance",
+    "Event verification",
+    "Publication &amp; rights status",
+  ]) {
+    assert.match(carousel, new RegExp(label));
+  }
+  for (const removedCopy of [
+    "Media type",
+    "No approved media",
+    "Not published",
+    "Typographic record preview",
+    "Awaiting rights and verification review",
+  ]) {
+    assert.doesNotMatch(carousel, new RegExp(removedCopy, "i"));
+  }
+  assert.match(featuredBlock, /IO-CM-KA-0002[\s\S]*kind: "publisher_video"/);
+  assert.match(featuredBlock, /www\.ndtv\.com\/videos\/embed-player\/\?id=1120270/);
+  assert.match(featuredBlock, /publicationStatus: "published_source_embed"/);
+  assert.match(featuredBlock, /rightsStatus: "permission_requested"/);
+  assert.equal((featuredBlock.match(/kind: "text_record"/g) ?? []).length, 2);
+  assert.match(carousel, /loadedMediaId === activeRecord\.id[\s\S]*media-caption/);
+  assert.match(carousel, /Auto-publication remains disabled/);
+  for (const controlledStatus of [
+    "candidate",
+    "provenance_confirmed",
+    "event_match_confirmed",
+    "corroborated",
+    "rejected",
+    "original_source_display",
+    "permission_requested",
+    "permission_granted",
+    "permission_denied",
+    "reuse_restricted",
+    "published_source_embed",
+    "published_source_link",
+    "published_with_permission",
+    "withheld_privacy",
+    "withheld_safety",
+    "rejected_verification",
+    "removed_or_corrected",
+  ]) {
+    assert.match(carousel, new RegExp(`"${controlledStatus}"`));
+  }
   assert.match(carousel, /4000/);
   assert.doesNotMatch(latestMarkup, /Currently featured|aria-current|onClick|setActiveIndex/);
 
