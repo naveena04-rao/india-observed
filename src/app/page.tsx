@@ -60,23 +60,36 @@ const latestRecords = [
     reviewed: "15 July 2026",
   },
 ] as const;
-const onRecord = {
-  id: "IO-CM-GJ-0001",
-  topic: "Land & rehabilitation",
-  place: "Jetpar village, Morbi district, Gujarat",
-  title:
-    "Morbi farmers continue satyagraha over compensation for power-transmission infrastructure",
-  context:
-    "Farmers centred in Jetpar village began protesting on 7 June over compensation for agricultural land affected by power-transmission infrastructure. After an indefinite hunger strike and revised compensation guidelines announced on 4 July, they ended the fast on 7 July but continued the movement as a satyagraha, saying questions about land valuation, right-of-way compensation and implementation remained.",
-  reviewed: "15 July 2026",
-} as const;
-
-const verificationLabels = [
-  ["Reported", "A credible source has reported the claim."],
-  ["Corroborated", "Independent evidence supports the claim."],
-  ["Attributed", "The statement is clearly tied to its source."],
-  ["Disputed", "Credible accounts materially disagree."],
-  ["Corrected", "A material change has been publicly logged."],
+const onRecords = [
+  {
+    id: "IO-CM-GJ-0001",
+    topic: "Land & rehabilitation",
+    place: "Jetpar village, Morbi district, Gujarat",
+    title:
+      "Morbi farmers continue satyagraha over compensation for power-transmission infrastructure",
+    context:
+      "Farmers centred in Jetpar village began protesting on 7 June over compensation for agricultural land affected by power-transmission infrastructure. After an indefinite hunger strike and revised compensation guidelines announced on 4 July, they ended the fast on 7 July but continued the movement as a satyagraha, saying questions about land valuation, right-of-way compensation and implementation remained.",
+    reviewed: "15 July 2026",
+  },
+  {
+    id: "IO-CM-UP-0001",
+    topic: "Environment",
+    place: "Dasiya village, Rudhauli police-station area, Bhanpur tehsil, Basti, Uttar Pradesh",
+    title: "Dasiya villagers protest construction of an ethanol plant in Basti district",
+    context:
+      "Residents of Dasiya and nearby villages have opposed an ethanol plant under construction in Basti district. A memorandum submitted in June raised concerns about nearby settlements and government schools, while a larger demonstration was announced and held on 14 July under substantial police deployment. Protesters called for the factory to be stopped and raised concerns about water use, environmental and health effects, and the circumstances in which land was obtained.",
+    reviewed: "15 July 2026",
+  },
+  {
+    id: "IO-CM-AS-0001",
+    topic: "Land & rehabilitation",
+    place: "Malgaon area near the Kokrajhar district border, Assam",
+    title:
+      "Bodo residents protest proposed APDCL land allotment and resettlement plan in Kokrajhar",
+    context:
+      "Hundreds of Bodo residents gathered at Malgaon on 12 July 2026 to oppose a proposed land allotment to Assam Power Distribution Company Limited and the proposed rehabilitation of 93 families evicted from Kaimari. Protesters demanded protection of land they described as part of a Tribal Belt and Block and called for the allotment and resettlement proposal to be withdrawn. The demonstration is supported by regional video reporting and local community coverage.",
+    reviewed: "15 July 2026",
+  },
 ] as const;
 
 const processSteps = [
@@ -143,29 +156,22 @@ export default function HomePage() {
         <div className="page-shell">
           <h2 id="on-record-title">ON record</h2>
 
-          <article className="on-record-context">
-            <div className="on-record-meta">
-              <span>{onRecord.id}</span>
-              <span>{onRecord.topic}</span>
-              <span>{onRecord.place}</span>
-            </div>
-            <h3>{onRecord.title}</h3>
-            <p>{onRecord.context}</p>
-            <time dateTime="2026-07-15">Reviewed {onRecord.reviewed}</time>
-          </article>
+          <div className="on-record-list">
+            {onRecords.map((record) => (
+              <article className="on-record-context" key={record.id}>
+                <div className="on-record-meta">
+                  <span>{record.id}</span>
+                  <span>{record.topic}</span>
+                  <span>{record.place}</span>
+                </div>
+                <h3>{record.title}</h3>
+                <p>{record.context}</p>
+                <time dateTime="2026-07-15">Reviewed {record.reviewed}</time>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
-      <section className="verification-key" aria-label="Verification status definitions">
-        <div className="page-shell verification-grid">
-          {verificationLabels.map(([label, description]) => (
-            <div className="verification-item" key={label}>
-              <span>{label}</span>
-              <p>{description}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
       <section className="methodology-section" id="methodology">
         <div className="page-shell methodology-layout">
           <div className="methodology-intro">

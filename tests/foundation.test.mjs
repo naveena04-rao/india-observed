@@ -41,7 +41,7 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   const styles = read("src/app/globals.css");
   const featuredBlock = page.match(/const featuredRecords = \[([\s\S]*?)\] as const;/)?.[1];
   const latestBlock = page.match(/const latestRecords = \[([\s\S]*?)\] as const;/)?.[1];
-  const onRecordBlock = page.match(/const onRecord = \{([\s\S]*?)\} as const;/)?.[1];
+  const onRecordBlock = page.match(/const onRecords = \[([\s\S]*?)\] as const;/)?.[1];
   const latestMarkup = carousel.match(
     /\{latestRecords\.map\(\(record\) => \(([\s\S]*?)\)\)\}/,
   )?.[1];
@@ -58,11 +58,16 @@ test("homepage keeps the public archive safety boundaries visible", () => {
 
   assert.deepEqual(featuredIds, ["IO-CM-KA-0002", "IO-CM-MN-0001", "IO-CM-OD-0001"]);
   assert.deepEqual(latestIds, ["IO-CM-MP-0001", "IO-CM-DL-0001", "IO-CM-MH-0001"]);
-  assert.deepEqual(onRecordIds, ["IO-CM-GJ-0001"]);
-  assert.equal([...featuredIds, ...latestIds].includes(onRecordIds[0]), false);
+  assert.deepEqual(onRecordIds, ["IO-CM-GJ-0001", "IO-CM-UP-0001", "IO-CM-AS-0001"]);
+  assert.equal(
+    onRecordIds.some((id) => [...featuredIds, ...latestIds].includes(id)),
+    false,
+  );
 
   assert.match(styles, /body,[\s\S]*?background: #ffffff;/);
-  assert.match(styles, /\.site-header,[\s\S]*?background: #ffffff;/);
+  assert.match(styles, /\.site-header,[\s\S]*?background: #000000;/);
+  assert.match(styles, /\.utility-bar,[\s\S]*?background: #000000;/);
+  assert.match(styles, /\.site-header[\s\S]*?color: #ffffff;/);
   assert.match(styles, /\.site-footer,[\s\S]*?background: #ffffff;/);
 
   const expectedNavigation = [
@@ -121,6 +126,18 @@ test("homepage keeps the public archive safety boundaries visible", () => {
     /Farmers centred in Jetpar village began protesting on 7 June[\s\S]*implementation remained\./,
   );
   assert.match(onRecordBlock, /15 July 2026/);
+  assert.match(
+    onRecordBlock,
+    /Dasiya villagers protest construction of an ethanol plant in Basti district/,
+  );
+  assert.match(
+    onRecordBlock,
+    /Bodo residents protest proposed APDCL land allotment and resettlement plan in Kokrajhar/,
+  );
+  assert.doesNotMatch(page, /verificationLabels|verification-key/);
+  for (const label of ["REPORTED", "CORROBORATED", "ATTRIBUTED", "DISPUTED", "CORRECTED"]) {
+    assert.doesNotMatch(page, new RegExp(">" + label + "<", "i"));
+  }
 
   assert.match(page, /<div className="methodology-intro">\s*<h2>Methodology<\/h2>/);
   for (const stage of [
