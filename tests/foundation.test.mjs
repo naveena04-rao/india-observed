@@ -130,7 +130,7 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.equal((featuredBlock.match(/kind: "text_record"/g) ?? []).length, 2);
   assert.match(
     carousel,
-    /featured-record-disclosure[\s\S]*featured-record-content[\s\S]*\{featuredRecordCopy\}[\s\S]*featured-record-media[\s\S]*featured-record-caption/,
+    /featured-record-disclosure[\s\S]*featured-record-content[\s\S]*featuredRecordCopy\(false\)[\s\S]*featured-record-media[\s\S]*featured-record-caption[\s\S]*\{carouselPosition\}/,
   );
   assert.match(
     carousel,

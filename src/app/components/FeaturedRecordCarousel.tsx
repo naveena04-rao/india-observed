@@ -151,16 +151,8 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
     </dl>
   );
 
-  const featuredRecordCopy = (
-    <div className="featured-record-copy">
-      <p className="featured-meta">
-        {activeRecord.topic} · {activeRecord.place}
-      </p>
-      <h1>{activeRecord.title}</h1>
-      <div className="featured-evidence" aria-label="Record evidence summary">
-        <span>{activeRecord.verification}</span>
-        <span>{activeRecord.note}</span>
-      </div>
+  const carouselPosition = (
+    <>
       <ol className="carousel-indicators" aria-label="Featured record position">
         {records.map((record, index) => (
           <li
@@ -175,6 +167,20 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
       <p className="visually-hidden">
         Featured record {activeIndex + 1} of {records.length}
       </p>
+    </>
+  );
+
+  const featuredRecordCopy = (includeIndicators: boolean) => (
+    <div className="featured-record-copy">
+      <p className="featured-meta">
+        {activeRecord.topic} · {activeRecord.place}
+      </p>
+      <h1>{activeRecord.title}</h1>
+      <div className="featured-evidence" aria-label="Record evidence summary">
+        <span>{activeRecord.verification}</span>
+        <span>{activeRecord.note}</span>
+      </div>
+      {includeIndicators ? carouselPosition : null}
     </div>
   );
 
@@ -208,7 +214,7 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
                 {mediaStatusGrid}
               </aside>
               <div className="featured-record-content">
-                {featuredRecordCopy}
+                {featuredRecordCopy(false)}
                 <figure className="featured-record-media">
                   <div className="featured-record-video-frame">
                     {loadedMediaId === activeRecord.id ? (
@@ -242,6 +248,7 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
                     </figcaption>
                   ) : null}
                 </figure>
+                {carouselPosition}
               </div>
             </>
           ) : (
@@ -255,7 +262,7 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
                 </div>
                 {mediaStatusGrid}
               </figure>
-              {featuredRecordCopy}
+              {featuredRecordCopy(true)}
             </>
           )}
         </div>
