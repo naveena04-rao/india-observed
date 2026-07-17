@@ -64,6 +64,7 @@ export type FeaturedRecord = {
   title: string;
   place: string;
   topic: string;
+  description: string;
   verification: string;
   note: string;
   reviewed: string;
@@ -199,22 +200,8 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
             <p className="section-kicker">Featured record</p>
             {mediaStatusGrid}
             <div className="featured-record-context">
-              <p className="brief-label">On this record</p>
-              <p>{activeRecord.note}.</p>
-              <dl>
-                <div>
-                  <dt>Record</dt>
-                  <dd>{activeRecord.id}</dd>
-                </div>
-                <div>
-                  <dt>Status</dt>
-                  <dd>{activeRecord.status}</dd>
-                </div>
-                <div>
-                  <dt>Reviewed</dt>
-                  <dd>{activeRecord.reviewed}</dd>
-                </div>
-              </dl>
+              <p className="brief-label">Event context</p>
+              <p>{activeRecord.description}</p>
             </div>
           </aside>
           <div className="featured-record-content">

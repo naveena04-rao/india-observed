@@ -9,6 +9,8 @@ const featuredRecords = [
     title: "Bidadi farmers oppose township land acquisition",
     place: "Bengaluru South, Karnataka",
     topic: "Land and rehabilitation",
+    description:
+      "Farmers and villagers near Bidadi oppose land acquisition for the proposed township, citing risks to agricultural land and livelihoods.",
     verification: "Occurrence verified",
     note: "Some details remain disputed",
     reviewed: "15 July 2026",
@@ -45,6 +47,8 @@ const featuredRecords = [
     title: "Manipur government employees continue cease-work strike",
     place: "Manipur",
     topic: "Labour and employment",
+    description:
+      "The statewide cease-work strike centres on a seven-point charter covering retirement age, allowances, pensions and employment conditions.",
     verification: "Occurrence verified",
     note: "Official response under review",
     reviewed: "15 July 2026",
@@ -63,6 +67,8 @@ const featuredRecords = [
     title: "Dharmasala students protest teacher vacancies",
     place: "Jajpur, Odisha",
     topic: "Education",
+    description:
+      "Students protested after staffing fell to 11 teachers for more than 400 pupils; two teachers were deputed to the school that day.",
     verification: "Outcome documented",
     note: "Same-day institutional response recorded",
     reviewed: "15 July 2026",

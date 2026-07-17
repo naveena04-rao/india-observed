@@ -135,8 +135,11 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.match(carousel, /className="hero-copy featured-slide featured-slide--media"/);
   assert.match(
     carousel,
-    /featured-record-context[\s\S]*On this record[\s\S]*activeRecord\.note[\s\S]*activeRecord\.id[\s\S]*activeRecord\.status[\s\S]*activeRecord\.reviewed/,
+    /featured-record-context[\s\S]*Event context[\s\S]*activeRecord\.description/,
   );
+  assert.match(featuredBlock, /Farmers and villagers near Bidadi oppose land acquisition/);
+  assert.match(featuredBlock, /statewide cease-work strike centres on a seven-point charter/);
+  assert.match(featuredBlock, /Students protested after staffing fell to 11 teachers/);
   const disclosureMarkup = carousel.match(
     /<aside className="featured-record-disclosure"[\s\S]*?<\/aside>/,
   )?.[0];
