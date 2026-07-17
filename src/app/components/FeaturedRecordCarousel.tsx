@@ -198,6 +198,24 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
           <aside className="featured-record-disclosure" aria-label="Media disclosure">
             <p className="section-kicker">Featured record</p>
             {mediaStatusGrid}
+            <div className="featured-record-context">
+              <p className="brief-label">On this record</p>
+              <p>{activeRecord.note}.</p>
+              <dl>
+                <div>
+                  <dt>Record</dt>
+                  <dd>{activeRecord.id}</dd>
+                </div>
+                <div>
+                  <dt>Status</dt>
+                  <dd>{activeRecord.status}</dd>
+                </div>
+                <div>
+                  <dt>Reviewed</dt>
+                  <dd>{activeRecord.reviewed}</dd>
+                </div>
+              </dl>
+            </div>
           </aside>
           <div className="featured-record-content">
             {featuredRecordCopy(false)}
