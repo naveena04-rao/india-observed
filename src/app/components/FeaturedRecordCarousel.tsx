@@ -59,6 +59,7 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
   return (
     <section
       className="hero-section featured-carousel"
+      id="about"
       aria-label="Featured civic records"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -123,7 +124,7 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
           </div>
         </div>
 
-        <aside className="latest-records-row" aria-label="Latest records">
+        <aside className="latest-records-row" id="events" aria-label="Latest records">
           <h2 className="brief-label">Latest records</h2>
           <div className="latest-records-grid">
             {latestRecords.map((record) => (

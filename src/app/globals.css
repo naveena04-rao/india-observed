@@ -2211,3 +2211,157 @@ h3 {
 .latest-entry-preview {
   cursor: default;
 }
+
+/* White homepage surface and scoped header/ON record refinements */
+:root {
+  --paper: #ffffff;
+  --paper-deep: #ffffff;
+  --surface: #ffffff;
+  --mist: #ffffff;
+}
+
+body,
+.site-header,
+.utility-bar,
+main > section,
+.verification-key,
+.methodology-section,
+.participation-section,
+.site-footer,
+.mobile-menu nav,
+.document-preview,
+main article,
+main aside,
+main .lead-panel {
+  background: #ffffff;
+}
+
+.site-header {
+  color: var(--ink);
+}
+
+.header-inner {
+  min-height: 4.8rem;
+}
+
+.brand-copy strong {
+  font-size: 1.4rem;
+}
+
+.brand-copy small {
+  color: var(--muted);
+}
+
+.brand-mark {
+  border-color: var(--ink);
+}
+
+.brand-mark::after,
+.brand-mark::before,
+.brand-mark i {
+  background: var(--ink);
+}
+
+.desktop-nav {
+  font-size: 0.9rem;
+}
+
+.desktop-nav a:not(.nav-action):hover,
+.desktop-nav a:not(.nav-action):focus-visible {
+  border-color: var(--ink);
+}
+
+.nav-action {
+  background: var(--terracotta);
+  border-color: var(--terracotta);
+  color: var(--white);
+}
+
+.mobile-menu summary {
+  border-color: var(--ink);
+}
+
+.site-footer {
+  color: var(--ink);
+}
+
+.footer-grid > div:first-child p,
+.site-footer nav,
+.footer-meta {
+  color: var(--muted);
+}
+
+.on-record-section {
+  border-bottom: 1px solid var(--line-dark);
+  padding-block: 1.25rem 2.5rem;
+}
+
+.on-record-section h2 {
+  border-top: 3px double var(--ink);
+  margin-bottom: 1.1rem;
+  padding-top: 0.8rem;
+}
+
+.on-record-context {
+  border-bottom: 1px solid var(--ink);
+  border-top: 1px solid var(--ink);
+  padding: 1.25rem 0;
+}
+
+.on-record-meta {
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.68rem;
+  font-weight: 800;
+  gap: 0.45rem 1.25rem;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.8rem;
+  text-transform: uppercase;
+}
+
+.on-record-context h3 {
+  font-size: clamp(1.45rem, 2.5vw, 2.1rem);
+  margin-bottom: 0.65rem;
+  max-width: 38ch;
+}
+
+.on-record-context > p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.65;
+  margin-bottom: 0.8rem;
+  max-width: 72rem;
+}
+
+.on-record-context time {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+#about,
+#events,
+#methodology,
+#lead {
+  scroll-margin-top: 5.5rem;
+}
+
+@media (max-width: 700px) {
+  .header-inner {
+    min-height: 4.5rem;
+  }
+
+  .brand-copy strong {
+    font-size: 1.32rem;
+  }
+
+  .on-record-section {
+    padding-block: 1rem 2rem;
+  }
+
+  .on-record-meta {
+    display: grid;
+    gap: 0.2rem;
+  }
+}

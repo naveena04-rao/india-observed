@@ -60,6 +60,16 @@ const latestRecords = [
     reviewed: "15 July 2026",
   },
 ] as const;
+const onRecord = {
+  id: "IO-CM-GJ-0001",
+  topic: "Land & rehabilitation",
+  place: "Jetpar village, Morbi district, Gujarat",
+  title:
+    "Morbi farmers continue satyagraha over compensation for power-transmission infrastructure",
+  context:
+    "Farmers centred in Jetpar village began protesting on 7 June over compensation for agricultural land affected by power-transmission infrastructure. After an indefinite hunger strike and revised compensation guidelines announced on 4 July, they ended the fast on 7 July but continued the movement as a satyagraha, saying questions about land valuation, right-of-way compensation and implementation remained.",
+  reviewed: "15 July 2026",
+} as const;
 
 const verificationLabels = [
   ["Reported", "A credible source has reported the claim."],
@@ -82,7 +92,7 @@ const processSteps = [
 
 export default function HomePage() {
   return (
-    <main>
+    <main id="home">
       <header className="site-header">
         <div className="page-shell header-inner">
           <Link className="brand" href="/" aria-label="India Observed home">
@@ -97,8 +107,10 @@ export default function HomePage() {
           </Link>
 
           <nav className="desktop-nav" aria-label="Primary navigation">
+            <a href="#home">Home</a>
+            <a href="#about">About</a>
+            <a href="#events">Events</a>
             <a href="#methodology">Methodology</a>
-            <a href="#corrections">Corrections</a>
             <a className="nav-action" href="#lead">
               Submit a lead
             </a>
@@ -107,9 +119,13 @@ export default function HomePage() {
           <details className="mobile-menu">
             <summary>Menu</summary>
             <nav aria-label="Mobile navigation">
+              <a href="#home">Home</a>
+              <a href="#about">About</a>
+              <a href="#events">Events</a>
               <a href="#methodology">Methodology</a>
-              <a href="#corrections">Corrections</a>
-              <a href="#lead">Submit a lead</a>
+              <a className="nav-action" href="#lead">
+                Submit a lead
+              </a>
             </nav>
           </details>
         </div>
@@ -123,72 +139,22 @@ export default function HomePage() {
 
       <FeaturedRecordCarousel records={featuredRecords} latestRecords={latestRecords} />
 
-      <section className="verification-section" aria-labelledby="accounts-title">
+      <section className="on-record-section" aria-labelledby="on-record-title">
         <div className="page-shell">
-          <div className="section-intro ruled-heading">
-            <div>
-              <h2 id="accounts-title">On the record</h2>
-              <p className="accounts-subheading">Compare the accounts</p>
+          <h2 id="on-record-title">ON record</h2>
+
+          <article className="on-record-context">
+            <div className="on-record-meta">
+              <span>{onRecord.id}</span>
+              <span>{onRecord.topic}</span>
+              <span>{onRecord.place}</span>
             </div>
-          </div>
-          <div className="accounts-grid">
-            <article>
-              <span>On the record</span>
-              <h3>Movement representatives said</h3>
-              <p>No approved on-the-record statement is included in this homepage preview.</p>
-            </article>
-            <article>
-              <span>On the record</span>
-              <h3>Authorities said</h3>
-              <p>No approved on-the-record statement is included in this homepage preview.</p>
-            </article>
-            <article>
-              <span>Evidence review</span>
-              <h3>Sources currently establish</h3>
-              <p>
-                {featuredRecords[0].verification}. {featuredRecords[0].note}.
-              </p>
-            </article>
-          </div>
-          <p className="attribution-note">
-            Submitted statements remain attributed claims, not independently verified facts.
-          </p>
-          <div className="evidence-summary">
-            <div className="section-intro compact-intro">
-              <div>
-                <p className="section-kicker">Evidence summary</p>
-                <h2>What the reviewed record supports</h2>
-              </div>
-            </div>
-            <div className="evidence-grid">
-              <article>
-                <span>Established</span>
-                <p>{featuredRecords[0].verification}</p>
-              </article>
-              <article>
-                <span>Disputed</span>
-                <p>{featuredRecords[0].note}</p>
-              </article>
-              <article>
-                <span>Still unknown</span>
-                <p>
-                  The homepage data does not identify which disputed details have since been
-                  resolved.
-                </p>
-              </article>
-            </div>
-          </div>
-          <div className="media-policy">
-            <strong>Media standard</strong>
-            <p>
-              Images, video, documents and maps publish only after verification and rights review.
-              Sensitive identities, faces, number plates, minors and precise locations are protected
-              where necessary.
-            </p>
-          </div>
+            <h3>{onRecord.title}</h3>
+            <p>{onRecord.context}</p>
+            <time dateTime="2026-07-15">Reviewed {onRecord.reviewed}</time>
+          </article>
         </div>
       </section>
-
       <section className="verification-key" aria-label="Verification status definitions">
         <div className="page-shell verification-grid">
           {verificationLabels.map(([label, description]) => (

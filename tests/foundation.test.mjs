@@ -38,43 +38,91 @@ test("prototype contains core trust language", () => {
 test("homepage keeps the public archive safety boundaries visible", () => {
   const page = read("src/app/page.tsx");
   const carousel = read("src/app/components/FeaturedRecordCarousel.tsx");
+  const styles = read("src/app/globals.css");
   const featuredBlock = page.match(/const featuredRecords = \[([\s\S]*?)\] as const;/)?.[1];
   const latestBlock = page.match(/const latestRecords = \[([\s\S]*?)\] as const;/)?.[1];
+  const onRecordBlock = page.match(/const onRecord = \{([\s\S]*?)\} as const;/)?.[1];
   const latestMarkup = carousel.match(
     /\{latestRecords\.map\(\(record\) => \(([\s\S]*?)\)\)\}/,
   )?.[1];
 
   assert.ok(featuredBlock);
   assert.ok(latestBlock);
+  assert.ok(onRecordBlock);
   assert.ok(latestMarkup);
 
   const recordIds = (source) => [...source.matchAll(/id: "([^"]+)"/g)].map((match) => match[1]);
   const featuredIds = recordIds(featuredBlock);
   const latestIds = recordIds(latestBlock);
+  const onRecordIds = recordIds(onRecordBlock);
 
   assert.deepEqual(featuredIds, ["IO-CM-KA-0002", "IO-CM-MN-0001", "IO-CM-OD-0001"]);
   assert.deepEqual(latestIds, ["IO-CM-MP-0001", "IO-CM-DL-0001", "IO-CM-MH-0001"]);
-  assert.equal(featuredIds.filter((id) => latestIds.includes(id)).length, 0);
+  assert.deepEqual(onRecordIds, ["IO-CM-GJ-0001"]);
+  assert.equal([...featuredIds, ...latestIds].includes(onRecordIds[0]), false);
+
+  assert.match(styles, /body,[\s\S]*?background: #ffffff;/);
+  assert.match(styles, /\.site-header,[\s\S]*?background: #ffffff;/);
+  assert.match(styles, /\.site-footer,[\s\S]*?background: #ffffff;/);
+
+  const expectedNavigation = [
+    ["#home", "Home"],
+    ["#about", "About"],
+    ["#events", "Events"],
+    ["#methodology", "Methodology"],
+    ["#lead", "Submit a lead"],
+  ];
+  const navigationLinks = (markup) =>
+    [...markup.matchAll(/<a(?: className="[^"]*")? href="([^"]+)">([\s\S]*?)<\/a>/g)].map(
+      ([, href, label]) => [
+        href,
+        label
+          .replace(/<[^>]+>/g, "")
+          .replace(/\s+/g, " ")
+          .trim(),
+      ],
+    );
+  const desktopNav = page.match(
+    /<nav className="desktop-nav" aria-label="Primary navigation">([\s\S]*?)<\/nav>/,
+  )?.[1];
+  const mobileNav = page.match(/<nav aria-label="Mobile navigation">([\s\S]*?)<\/nav>/)?.[1];
+
+  assert.ok(desktopNav);
+  assert.ok(mobileNav);
+  assert.deepEqual(navigationLinks(desktopNav), expectedNavigation);
+  assert.deepEqual(navigationLinks(mobileNav), expectedNavigation);
+  assert.match(page, /<main id="home">/);
+  assert.match(carousel, /id="about"/);
+  assert.match(carousel, /id="events"/);
+  assert.match(page, /id="methodology"/);
+  assert.match(page, /id="lead"/);
 
   assert.match(page, /Independent records of protests and civic movements across India/i);
   assert.match(page, /Sources linked\. Identities protected\. Corrections visible\./i);
   assert.match(page, /tactical information/i);
   assert.match(page, /Human review/i);
   assert.match(carousel, /No approved media/i);
-  assert.match(
-    page,
-    /<FeaturedRecordCarousel records=\{featuredRecords\} latestRecords=\{latestRecords\} \/>/,
-  );
   assert.match(carousel, /4000/);
-  assert.doesNotMatch(carousel, /Show previous featured record|Show next featured record/);
   assert.doesNotMatch(latestMarkup, /Currently featured|aria-current|onClick|setActiveIndex/);
 
-  assert.match(page, /<div className="methodology-intro">\s*<h2>Methodology<\/h2>/);
-  assert.match(page, /<p className="methodology-subheading">How are records reviewed<\/p>/);
+  assert.match(page, /<h2 id="on-record-title">ON record<\/h2>/);
+  assert.doesNotMatch(page, />On the record</);
+  assert.doesNotMatch(page, /Compare the accounts/);
+  assert.doesNotMatch(page, /Movement representatives said|Authorities said|accounts-grid/);
+  assert.match(onRecordBlock, /IO-CM-GJ-0001/);
+  assert.match(onRecordBlock, /Land & rehabilitation/);
+  assert.match(onRecordBlock, /Jetpar village, Morbi district, Gujarat/);
   assert.match(
-    page,
-    /Every record is reviewed before publication\. We verify the event, separate claims from\s*established facts, compare supporting sources and check for privacy or safety risks\./,
+    onRecordBlock,
+    /Morbi farmers continue satyagraha over compensation for power-transmission infrastructure/,
   );
+  assert.match(
+    onRecordBlock,
+    /Farmers centred in Jetpar village began protesting on 7 June[\s\S]*implementation remained\./,
+  );
+  assert.match(onRecordBlock, /15 July 2026/);
+
+  assert.match(page, /<div className="methodology-intro">\s*<h2>Methodology<\/h2>/);
   for (const stage of [
     "Find the event",
     "Separate the claims",
@@ -84,8 +132,5 @@ test("homepage keeps the public archive safety boundaries visible", () => {
     assert.match(page, new RegExp(stage));
   }
 
-  assert.match(page, /<h2 id="accounts-title">On the record<\/h2>/);
-  assert.match(page, /<p className="accounts-subheading">Compare the accounts<\/p>/);
-  assert.match(page, /attributed claims, not independently verified facts/i);
   assert.doesNotMatch(page, /Explore the archive/i);
 });
