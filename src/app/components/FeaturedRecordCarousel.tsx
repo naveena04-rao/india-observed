@@ -197,25 +197,23 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
       }}
     >
       <div className="page-shell hero-grid">
-        <div
-          className={[
-            "hero-copy",
-            "featured-slide",
-            mayDisplaySourceEmbed ? "featured-slide--media" : "",
-          ]
-            .filter(Boolean)
-            .join(" ")}
-          key={activeRecord.id}
-        >
-          {mayDisplaySourceEmbed ? (
-            <>
-              <aside className="featured-record-disclosure" aria-label="Media disclosure">
-                <p className="section-kicker">Featured record</p>
-                {mediaStatusGrid}
-              </aside>
-              <div className="featured-record-content">
-                {featuredRecordCopy(false)}
-                <figure className="featured-record-media">
+        <div className="hero-copy featured-slide featured-slide--media" key={activeRecord.id}>
+          <aside className="featured-record-disclosure" aria-label="Media disclosure">
+            <p className="section-kicker">Featured record</p>
+            {mediaStatusGrid}
+          </aside>
+          <div className="featured-record-content">
+            {featuredRecordCopy(false)}
+            <figure
+              className={[
+                "featured-record-media",
+                mayDisplaySourceEmbed ? "" : "featured-record-media--empty",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              {mayDisplaySourceEmbed ? (
+                <>
                   <div className="featured-record-video-frame">
                     {loadedMediaId === activeRecord.id ? (
                       <div className="publisher-video">
@@ -238,7 +236,6 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
                       </div>
                     )}
                   </div>
-                  {carouselPosition}
                   {loadedMediaId === activeRecord.id ? (
                     <figcaption className="featured-record-caption">
                       {activeMedia.caption} Credit: {activeMedia.sourceName}.{" "}
@@ -248,23 +245,13 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
                       .
                     </figcaption>
                   ) : null}
-                </figure>
-              </div>
-            </>
-          ) : (
-            <>
-              <p className="section-kicker">Featured record</p>
-              <figure className="media-fallback">
-                <div className="document-preview" aria-label="Text-record preview">
-                  <span>{activeRecord.id}</span>
-                  <strong className={activeRecord.statusTone}>{activeRecord.status}</strong>
-                  <small>Last reviewed {activeRecord.reviewed}</small>
-                </div>
-                {mediaStatusGrid}
-              </figure>
-              {featuredRecordCopy(true)}
-            </>
-          )}
+                </>
+              ) : (
+                <div className="featured-record-media-empty" aria-hidden="true" />
+              )}
+              {carouselPosition}
+            </figure>
+          </div>
         </div>
 
         <aside className="latest-records-row" id="events" aria-label="Latest records">

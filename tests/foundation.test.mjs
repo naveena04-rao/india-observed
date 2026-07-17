@@ -130,12 +130,9 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.equal((featuredBlock.match(/kind: "text_record"/g) ?? []).length, 2);
   assert.match(
     carousel,
-    /featured-record-disclosure[\s\S]*featured-record-content[\s\S]*featuredRecordCopy\(false\)[\s\S]*featured-record-media[\s\S]*featured-record-video-frame[\s\S]*\{carouselPosition\}[\s\S]*featured-record-caption/,
+    /featured-record-disclosure[\s\S]*featured-record-content[\s\S]*featuredRecordCopy\(false\)[\s\S]*featured-record-media[\s\S]*featured-record-media--empty[\s\S]*featured-record-video-frame[\s\S]*featured-record-media-empty[\s\S]*\{carouselPosition\}/,
   );
-  assert.match(
-    carousel,
-    /mayDisplaySourceEmbed \? "featured-slide--media" : ""[\s\S]*\.filter\(Boolean\)[\s\S]*\.join\(" "\)/,
-  );
+  assert.match(carousel, /className="hero-copy featured-slide featured-slide--media"/);
   const disclosureMarkup = carousel.match(
     /<aside className="featured-record-disclosure"[\s\S]*?<\/aside>/,
   )?.[0];

@@ -1973,6 +1973,14 @@ h3 {
   width: min(30.5rem, var(--featured-record-content-width));
 }
 
+.featured-record-media--empty {
+  align-self: stretch;
+}
+
+.featured-record-media-empty {
+  min-height: 0;
+}
+
 .featured-record-video-frame {
   align-self: center;
   aspect-ratio: 16 / 9;
