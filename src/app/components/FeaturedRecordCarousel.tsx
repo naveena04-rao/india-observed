@@ -201,9 +201,9 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
                 <p className="section-kicker">Featured record</p>
                 {mediaStatusGrid}
               </aside>
-              <div className="featured-record-primary">
+              <div className="featured-record-right">
                 {featuredRecordCopy}
-                <figure className="featured-record-media featured-record-media--prominent">
+                <figure className="featured-record-media featured-record-media-area">
                   {loadedMediaId === activeRecord.id ? (
                     <div className="publisher-video">
                       <iframe
