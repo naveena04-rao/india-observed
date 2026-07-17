@@ -132,6 +132,10 @@ test("homepage keeps the public archive safety boundaries visible", () => {
     carousel,
     /featured-record-disclosure[\s\S]*featured-record-content[\s\S]*\{featuredRecordCopy\}[\s\S]*featured-record-media[\s\S]*featured-record-caption/,
   );
+  assert.match(
+    carousel,
+    /mayDisplaySourceEmbed \? "featured-slide--media" : ""[\s\S]*\.filter\(Boolean\)[\s\S]*\.join\(" "\)/,
+  );
   const disclosureMarkup = carousel.match(
     /<aside className="featured-record-disclosure"[\s\S]*?<\/aside>/,
   )?.[0];

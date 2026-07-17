@@ -192,7 +192,13 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
     >
       <div className="page-shell hero-grid">
         <div
-          className={`hero-copy featured-slide${mayDisplaySourceEmbed ? "featured-slide--media" : ""}`}
+          className={[
+            "hero-copy",
+            "featured-slide",
+            mayDisplaySourceEmbed ? "featured-slide--media" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
           key={activeRecord.id}
         >
           {mayDisplaySourceEmbed ? (
