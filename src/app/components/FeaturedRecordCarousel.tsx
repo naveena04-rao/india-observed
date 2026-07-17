@@ -197,33 +197,35 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
         >
           {mayDisplaySourceEmbed ? (
             <>
-              <aside className="featured-media-disclosure" aria-label="Media disclosure">
+              <aside className="featured-record-disclosure" aria-label="Media disclosure">
                 <p className="section-kicker">Featured record</p>
                 {mediaStatusGrid}
               </aside>
-              <div className="featured-record-right">
+              <div className="featured-record-content">
                 {featuredRecordCopy}
-                <figure className="featured-record-media featured-record-media-area">
-                  {loadedMediaId === activeRecord.id ? (
-                    <div className="publisher-video">
-                      <iframe
-                        src={activeMedia.embedUrl}
-                        title={`NDTV video for ${activeRecord.title}`}
-                        allow="fullscreen; picture-in-picture"
-                        allowFullScreen
-                        referrerPolicy="strict-origin-when-cross-origin"
-                      />
-                    </div>
-                  ) : (
-                    <div className="publisher-video-gate">
-                      <span>Official publisher video</span>
-                      <strong>NDTV · 2:49</strong>
-                      <button type="button" onClick={() => setLoadedMediaId(activeRecord.id)}>
-                        Load video from NDTV
-                      </button>
-                      <small>Loading connects to the publisher&apos;s video player.</small>
-                    </div>
-                  )}
+                <figure className="featured-record-media">
+                  <div className="featured-record-video-frame">
+                    {loadedMediaId === activeRecord.id ? (
+                      <div className="publisher-video">
+                        <iframe
+                          src={activeMedia.embedUrl}
+                          title={`NDTV video for ${activeRecord.title}`}
+                          allow="fullscreen; picture-in-picture"
+                          allowFullScreen
+                          referrerPolicy="strict-origin-when-cross-origin"
+                        />
+                      </div>
+                    ) : (
+                      <div className="publisher-video-gate">
+                        <span>Official publisher video</span>
+                        <strong>NDTV · 2:49</strong>
+                        <button type="button" onClick={() => setLoadedMediaId(activeRecord.id)}>
+                          Load video from NDTV
+                        </button>
+                        <small>Loading connects to the publisher&apos;s video player.</small>
+                      </div>
+                    )}
+                  </div>
                   {loadedMediaId === activeRecord.id ? (
                     <figcaption className="featured-record-caption">
                       {activeMedia.caption} Credit: {activeMedia.sourceName}.{" "}

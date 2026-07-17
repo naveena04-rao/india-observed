@@ -128,7 +128,15 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.match(featuredBlock, /publicationStatus: "published_source_embed"/);
   assert.match(featuredBlock, /rightsStatus: "permission_requested"/);
   assert.equal((featuredBlock.match(/kind: "text_record"/g) ?? []).length, 2);
-  assert.match(carousel, /featured-record-right[\s\S]*featured-record-media-area/);
+  assert.match(
+    carousel,
+    /featured-record-disclosure[\s\S]*featured-record-content[\s\S]*\{featuredRecordCopy\}[\s\S]*featured-record-media[\s\S]*featured-record-caption/,
+  );
+  const disclosureMarkup = carousel.match(
+    /<aside className="featured-record-disclosure"[\s\S]*?<\/aside>/,
+  )?.[0];
+  assert.ok(disclosureMarkup);
+  assert.doesNotMatch(disclosureMarkup, /publisher-video|featured-record-caption|<h1>/);
   assert.match(carousel, /loadedMediaId === activeRecord\.id[\s\S]*featured-record-caption/);
   assert.match(carousel, /Auto-publication remains disabled/);
   for (const controlledStatus of [
