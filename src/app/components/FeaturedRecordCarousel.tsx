@@ -122,6 +122,62 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
     activeMedia.reviewStatus !== "rejected" &&
     Object.values(activeMedia.gates).every(Boolean);
 
+  const mediaStatusGrid = (
+    <dl className="media-status-grid">
+      <div>
+        <dt>Media format</dt>
+        <dd>{activeMedia.format}</dd>
+      </div>
+      <div>
+        <dt>Source &amp; provenance</dt>
+        <dd>
+          {activeMedia.kind === "publisher_video" ? (
+            <a href={activeMedia.sourceUrl} target="_blank" rel="noreferrer">
+              {activeMedia.sourceProvenance}
+            </a>
+          ) : (
+            activeMedia.sourceProvenance
+          )}
+        </dd>
+      </div>
+      <div>
+        <dt>Event verification</dt>
+        <dd>{activeMedia.eventVerification}</dd>
+      </div>
+      <div>
+        <dt>Publication &amp; rights status</dt>
+        <dd>{activeMedia.publicationRightsStatus}</dd>
+      </div>
+    </dl>
+  );
+
+  const featuredRecordCopy = (
+    <div className="featured-record-copy">
+      <p className="featured-meta">
+        {activeRecord.topic} · {activeRecord.place}
+      </p>
+      <h1>{activeRecord.title}</h1>
+      <div className="featured-evidence" aria-label="Record evidence summary">
+        <span>{activeRecord.verification}</span>
+        <span>{activeRecord.note}</span>
+      </div>
+      <ol className="carousel-indicators" aria-label="Featured record position">
+        {records.map((record, index) => (
+          <li
+            className={index === activeIndex ? "is-active" : undefined}
+            key={record.id}
+            aria-current={index === activeIndex ? "true" : undefined}
+          >
+            <span className="visually-hidden">Record {index + 1}</span>
+          </li>
+        ))}
+      </ol>
+      <p className="visually-hidden">
+        Featured record {activeIndex + 1} of {records.length}
+      </p>
+    </div>
+  );
+
   return (
     <section
       className="hero-section featured-carousel"
@@ -135,97 +191,65 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
       }}
     >
       <div className="page-shell hero-grid">
-        <div className="hero-copy featured-slide" key={activeRecord.id}>
-          <p className="section-kicker">Featured record</p>
-          <figure className="media-fallback">
-            {mayDisplaySourceEmbed ? (
-              loadedMediaId === activeRecord.id ? (
-                <div className="publisher-video">
-                  <iframe
-                    src={activeMedia.embedUrl}
-                    title={`NDTV video for ${activeRecord.title}`}
-                    allow="fullscreen; picture-in-picture"
-                    allowFullScreen
-                    referrerPolicy="strict-origin-when-cross-origin"
-                  />
-                </div>
-              ) : (
-                <div className="publisher-video-gate">
-                  <span>Official publisher video</span>
-                  <strong>NDTV · 2:49</strong>
-                  <button type="button" onClick={() => setLoadedMediaId(activeRecord.id)}>
-                    Load video from NDTV
-                  </button>
-                  <small>Loading connects to the publisher&apos;s video player.</small>
-                </div>
-              )
-            ) : (
-              <div className="document-preview" aria-label="Text-record preview">
-                <span>{activeRecord.id}</span>
-                <strong className={activeRecord.statusTone}>{activeRecord.status}</strong>
-                <small>Last reviewed {activeRecord.reviewed}</small>
-              </div>
-            )}
-            {mayDisplaySourceEmbed && loadedMediaId === activeRecord.id ? (
-              <figcaption className="media-caption">
-                {activeMedia.caption} Credit: {activeMedia.sourceName}.{" "}
-                <a href={activeMedia.sourceUrl} target="_blank" rel="noreferrer">
-                  View the original publisher page
-                </a>
-                .
-              </figcaption>
-            ) : null}
-            <dl className="media-status-grid">
-              <div>
-                <dt>Media format</dt>
-                <dd>{activeMedia.format}</dd>
-              </div>
-              <div>
-                <dt>Source &amp; provenance</dt>
-                <dd>
-                  {activeMedia.kind === "publisher_video" ? (
-                    <a href={activeMedia.sourceUrl} target="_blank" rel="noreferrer">
-                      {activeMedia.sourceProvenance}
-                    </a>
+        <div
+          className={`hero-copy featured-slide${mayDisplaySourceEmbed ? "featured-slide--media" : ""}`}
+          key={activeRecord.id}
+        >
+          {mayDisplaySourceEmbed ? (
+            <>
+              <aside className="featured-media-disclosure" aria-label="Media disclosure">
+                <p className="section-kicker">Featured record</p>
+                {mediaStatusGrid}
+              </aside>
+              <div className="featured-record-primary">
+                {featuredRecordCopy}
+                <figure className="featured-record-media featured-record-media--prominent">
+                  {loadedMediaId === activeRecord.id ? (
+                    <div className="publisher-video">
+                      <iframe
+                        src={activeMedia.embedUrl}
+                        title={`NDTV video for ${activeRecord.title}`}
+                        allow="fullscreen; picture-in-picture"
+                        allowFullScreen
+                        referrerPolicy="strict-origin-when-cross-origin"
+                      />
+                    </div>
                   ) : (
-                    activeMedia.sourceProvenance
+                    <div className="publisher-video-gate">
+                      <span>Official publisher video</span>
+                      <strong>NDTV · 2:49</strong>
+                      <button type="button" onClick={() => setLoadedMediaId(activeRecord.id)}>
+                        Load video from NDTV
+                      </button>
+                      <small>Loading connects to the publisher&apos;s video player.</small>
+                    </div>
                   )}
-                </dd>
+                  {loadedMediaId === activeRecord.id ? (
+                    <figcaption className="featured-record-caption">
+                      {activeMedia.caption} Credit: {activeMedia.sourceName}.{" "}
+                      <a href={activeMedia.sourceUrl} target="_blank" rel="noreferrer">
+                        View the original publisher page
+                      </a>
+                      .
+                    </figcaption>
+                  ) : null}
+                </figure>
               </div>
-              <div>
-                <dt>Event verification</dt>
-                <dd>{activeMedia.eventVerification}</dd>
-              </div>
-              <div>
-                <dt>Publication &amp; rights status</dt>
-                <dd>{activeMedia.publicationRightsStatus}</dd>
-              </div>
-            </dl>
-          </figure>
-          <div className="featured-record-copy">
-            <p className="featured-meta">
-              {activeRecord.topic} · {activeRecord.place}
-            </p>
-            <h1>{activeRecord.title}</h1>
-            <div className="featured-evidence" aria-label="Record evidence summary">
-              <span>{activeRecord.verification}</span>
-              <span>{activeRecord.note}</span>
-            </div>
-            <ol className="carousel-indicators" aria-label="Featured record position">
-              {records.map((record, index) => (
-                <li
-                  className={index === activeIndex ? "is-active" : undefined}
-                  key={record.id}
-                  aria-current={index === activeIndex ? "true" : undefined}
-                >
-                  <span className="visually-hidden">Record {index + 1}</span>
-                </li>
-              ))}
-            </ol>
-            <p className="visually-hidden">
-              Featured record {activeIndex + 1} of {records.length}
-            </p>
-          </div>
+            </>
+          ) : (
+            <>
+              <p className="section-kicker">Featured record</p>
+              <figure className="media-fallback">
+                <div className="document-preview" aria-label="Text-record preview">
+                  <span>{activeRecord.id}</span>
+                  <strong className={activeRecord.statusTone}>{activeRecord.status}</strong>
+                  <small>Last reviewed {activeRecord.reviewed}</small>
+                </div>
+                {mediaStatusGrid}
+              </figure>
+              {featuredRecordCopy}
+            </>
+          )}
         </div>
 
         <aside className="latest-records-row" id="events" aria-label="Latest records">

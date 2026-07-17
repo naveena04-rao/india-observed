@@ -1583,19 +1583,23 @@ h3 {
   min-width: 0;
   padding: 0.35rem;
 }
-.media-fallback dt {
+.media-fallback dt,
+.featured-media-disclosure dt {
   color: var(--muted);
   font-size: 0.62rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
-.media-fallback dd {
+.media-fallback dd,
+.featured-media-disclosure dd {
   font-size: 0.72rem;
   margin: 0.1rem 0 0;
   overflow-wrap: anywhere;
 }
-.media-fallback a {
+.media-fallback a,
+.featured-media-disclosure a,
+.featured-record-media a {
   color: inherit;
   text-decoration-color: var(--terracotta);
   text-underline-offset: 0.18em;
@@ -1833,9 +1837,34 @@ h3 {
   width: 100%;
 }
 
+.featured-carousel .featured-slide--media {
+  gap: 0 clamp(2rem, 4vw, 4rem);
+  grid-template-columns: minmax(15rem, 0.52fr) minmax(0, 1fr);
+}
+
 .featured-carousel .section-kicker {
   grid-column: 1 / -1;
   margin-bottom: 0;
+}
+
+.featured-media-disclosure {
+  align-self: start;
+  grid-column: 1;
+  min-width: 0;
+}
+
+.featured-media-disclosure .section-kicker {
+  margin-bottom: 0.65rem;
+}
+
+.featured-media-disclosure .media-status-grid {
+  border-bottom: 1px solid var(--line);
+  border-top: 1px solid var(--ink);
+  padding: 0;
+}
+
+.featured-media-disclosure .media-status-grid div {
+  padding: 0.45rem 0.35rem;
 }
 
 .featured-carousel .media-fallback {
@@ -1877,6 +1906,38 @@ h3 {
   align-self: center;
   grid-column: 2;
   min-width: 0;
+}
+
+.featured-record-primary {
+  grid-column: 2;
+  min-width: 0;
+}
+
+.featured-slide--media .featured-record-copy {
+  align-self: start;
+  grid-column: auto;
+  margin: 0;
+}
+
+.featured-record-media--prominent {
+  margin: 1rem auto 0;
+  max-width: 58rem;
+  width: 100%;
+}
+
+.featured-record-media--prominent .publisher-video,
+.featured-record-media--prominent .publisher-video-gate {
+  aspect-ratio: 16 / 9;
+  border: 0;
+  min-height: 0;
+  width: 100%;
+}
+
+.featured-record-caption {
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.45;
+  padding-top: 0.5rem;
 }
 
 .featured-carousel .hero-copy h1 {
@@ -2105,6 +2166,14 @@ h3 {
 
   .featured-carousel .featured-slide {
     display: block;
+  }
+
+  .featured-media-disclosure {
+    margin-bottom: 0.9rem;
+  }
+
+  .featured-record-media--prominent {
+    margin-top: 0.8rem;
   }
 
   .featured-carousel .section-kicker {
