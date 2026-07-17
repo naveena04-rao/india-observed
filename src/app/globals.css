@@ -2157,7 +2157,7 @@ h3 {
 
 /* Compact methodology checklist */
 .methodology-section {
-  padding-block: clamp(3rem, 6vw, 4.5rem);
+  padding-block: 0.75rem clamp(3rem, 6vw, 4.5rem);
 }
 
 .methodology-layout {
@@ -2212,7 +2212,7 @@ h3 {
 }
 
 .methodology-section .process-list p {
-  color: #c8d8d5;
+  color: #365f5a;
   font-size: 0.78rem;
   margin: 0;
 }
@@ -2339,7 +2339,7 @@ h3 {
 }
 
 .methodology-description {
-  color: #c8d8d5;
+  color: #365f5a;
   font-size: 0.9rem;
   line-height: 1.6;
   margin: 0 auto;

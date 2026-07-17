@@ -206,6 +206,12 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   }
 
   assert.match(page, /<div className="methodology-intro">\s*<h2>Methodology<\/h2>/);
+  assert.match(
+    styles,
+    /\.methodology-section\s*\{\s*padding-block: 0\.75rem clamp\(3rem, 6vw, 4\.5rem\)/,
+  );
+  assert.match(styles, /\.methodology-section \.process-list p\s*\{\s*color: #365f5a/);
+  assert.match(styles, /\.methodology-description\s*\{\s*color: #365f5a/);
   for (const stage of [
     "Find the event",
     "Separate the claims",
