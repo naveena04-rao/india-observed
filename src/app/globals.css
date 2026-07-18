@@ -2504,7 +2504,11 @@ main .lead-panel {
   border-color: #ffffff;
 }
 
-.site-header .nav-action,
+.site-header .nav-action {
+  border-color: #ffffff;
+  color: #ffffff;
+}
+
 .mobile-menu nav a {
   color: var(--ink);
 }

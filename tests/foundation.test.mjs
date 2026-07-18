@@ -322,6 +322,21 @@ test("homepage preserves the approved black header and white page surfaces", () 
   );
   assert.match(activeSurfaceStyles, /body,[\s\S]*?main,[\s\S]*?background: #ffffff;/);
   assert.match(activeSurfaceStyles, /\.site-header\s*\{[\s\S]*?background: #151616;/);
+  assert.match(
+    activeSurfaceStyles,
+    /\.site-header \.nav-action\s*\{\s*border-color: #ffffff;\s*color: #ffffff;/,
+  );
+  assert.match(activeSurfaceStyles, /\.mobile-menu nav a\s*\{\s*color: var\(--ink\);/);
+  assert.match(
+    activeSurfaceStyles,
+    /\.site-header \.brand-copy small,[\s\S]*?\.site-header \.desktop-nav,[\s\S]*?color: #ffffff;/,
+  );
+  assert.match(
+    activeSurfaceStyles,
+    /\.site-header \.brand-mark,[\s\S]*?\.site-header \.mobile-menu summary[\s\S]*?border-color: #ffffff;/,
+  );
+  assert.match(styles, /:focus-visible\s*\{\s*outline: 3px solid var\(--focus\);/);
+  assert.doesNotMatch(activeSurfaceStyles, /\.site-header \.nav-action,\s*\.mobile-menu nav a/);
 
   for (const selector of [
     ".utility-bar",
