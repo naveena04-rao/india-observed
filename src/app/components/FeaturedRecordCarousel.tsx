@@ -67,6 +67,7 @@ export type FeaturedRecord = {
   id: string;
   eventType: EventType;
   eventStatus: EventStatus;
+  directedAt: string;
   title: string;
   place: string;
   topic: string;
@@ -138,24 +139,16 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
         <dd>{activeMedia.format}</dd>
       </div>
       <div>
-        <dt>Source &amp; provenance</dt>
-        <dd>
-          {activeMedia.kind === "publisher_video" ? (
-            <a href={activeMedia.sourceUrl} target="_blank" rel="noreferrer">
-              {activeMedia.sourceProvenance}
-            </a>
-          ) : (
-            activeMedia.sourceProvenance
-          )}
-        </dd>
+        <dt>Directed at</dt>
+        <dd>{activeRecord.directedAt}</dd>
       </div>
       <div>
         <dt>Event verification</dt>
         <dd>{activeMedia.eventVerification}</dd>
       </div>
-      <div>
-        <dt>Publication &amp; rights status</dt>
-        <dd>{activeMedia.publicationRightsStatus}</dd>
+      <div className="media-status-grid-empty" aria-hidden="true">
+        <dt />
+        <dd />
       </div>
     </dl>
   );

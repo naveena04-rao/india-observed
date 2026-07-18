@@ -107,14 +107,24 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.match(page, /Sources linked\. Identities protected\. Corrections visible\./i);
   assert.match(page, /tactical information/i);
   assert.match(page, /Human review/i);
-  for (const label of [
-    "Media format",
-    "Source &amp; provenance",
-    "Event verification",
-    "Publication &amp; rights status",
-  ]) {
-    assert.match(carousel, new RegExp(label));
-  }
+  const mediaGridMarkup = carousel.match(
+    /const mediaStatusGrid = \(\s*(<dl className="media-status-grid">[\s\S]*?<\/dl>)\s*\);/,
+  )?.[1];
+  assert.ok(mediaGridMarkup);
+  const mediaGridCells = [...mediaGridMarkup.matchAll(/<div(?: [^>]*)?>([\s\S]*?)<\/div>/g)].map(
+    (match) => match[0],
+  );
+  assert.equal(mediaGridCells.length, 4);
+  assert.match(mediaGridCells[0], /<dt>Media format<\/dt>[\s\S]*activeMedia\.format/);
+  assert.match(mediaGridCells[1], /<dt>Directed at<\/dt>[\s\S]*activeRecord\.directedAt/);
+  assert.match(
+    mediaGridCells[2],
+    /<dt>Event verification<\/dt>[\s\S]*activeMedia\.eventVerification/,
+  );
+  assert.match(mediaGridCells[3], /className="media-status-grid-empty" aria-hidden="true"/);
+  assert.match(mediaGridCells[3], /<dt \/>[\s\S]*<dd \/>/);
+  assert.equal(mediaGridCells[3].replace(/<[^>]+>/g, "").trim(), "");
+  assert.doesNotMatch(mediaGridMarkup, /Source &amp; provenance|Publication &amp; rights status/);
   for (const removedCopy of [
     "Media type",
     "No approved media",
@@ -133,7 +143,51 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.match(featuredBlock, /thumbnailAlt:\s*"People gathered outdoors during the Bidadi/);
   assert.match(featuredBlock, /publicationStatus: "published_source_embed"/);
   assert.match(featuredBlock, /rightsStatus: "permission_requested"/);
+  assert.match(featuredBlock, /sourceProvenance: "NDTV · Original publisher page/);
+  assert.equal((featuredBlock.match(/publicationRightsStatus:/g) ?? []).length, 3);
+  assert.match(carousel, /sourceProvenance: string;/);
+  assert.match(carousel, /publicationRightsStatus: string;/);
+  assert.equal((carousel.match(/eventVerification: string;/g) ?? []).length, 2);
+  assert.match(carousel, /type FeaturedRecord = \{[\s\S]*?directedAt: string;/);
+
+  const publicDisclosureMappings = Object.fromEntries(
+    [
+      ...featuredBlock.matchAll(
+        /id: "([^"]+)",[\s\S]*?directedAt: "([^"]+)",[\s\S]*?media: \{[\s\S]*?eventVerification: "([^"]+)"/g,
+      ),
+    ].map(([, id, directedAt, eventVerification]) => [id, { directedAt, eventVerification }]),
+  );
+  assert.deepEqual(publicDisclosureMappings, {
+    "IO-CM-KA-0002": {
+      directedAt: "State government — Karnataka",
+      eventVerification: "Event confirmed",
+    },
+    "IO-CM-MN-0001": {
+      directedAt: "State government — Manipur",
+      eventVerification: "Event confirmed",
+    },
+    "IO-CM-OD-0001": {
+      directedAt: "District education authorities — Jajpur",
+      eventVerification: "Event and outcome confirmed",
+    },
+  });
+  for (const { directedAt, eventVerification } of Object.values(publicDisclosureMappings)) {
+    assert.ok(directedAt.trim());
+    assert.doesNotMatch(
+      eventVerification,
+      /occurrence verified|provenance|event match|corroborated|human editorial review|verification gate|status code/i,
+    );
+  }
   assert.equal((featuredBlock.match(/kind: "text_record"/g) ?? []).length, 2);
+  assert.match(styles, /\.media-status-grid\s*\{[\s\S]*?grid-template-columns: 1fr 1fr;/);
+  assert.match(
+    styles,
+    /\.featured-carousel \.featured-slide--media\s*\{[\s\S]*?grid-template-columns: minmax\(0, 34fr\) minmax\(0, 66fr\);/,
+  );
+  assert.match(
+    styles,
+    /\.featured-record-video-frame\s*\{[\s\S]*?aspect-ratio: 16 \/ 9;[\s\S]*?width: 100%;/,
+  );
   assert.match(
     carousel,
     /featured-record-disclosure[\s\S]*featured-record-content[\s\S]*featuredRecordCopy\(false\)[\s\S]*featured-record-media[\s\S]*featured-record-media--empty[\s\S]*featured-record-video-frame[\s\S]*featured-record-media-empty[\s\S]*\{carouselPosition\}/,
