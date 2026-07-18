@@ -1,7 +1,14 @@
 /* eslint-disable @next/next/no-img-element */
+import Link from "next/link";
 import type { EventVisual as EventVisualData } from "../../../lib/events/types";
 
-export function EventVisual({ visual }: { visual: EventVisualData }) {
+export function EventVisual({
+  visual,
+  eventHref,
+}: {
+  visual: EventVisualData;
+  eventHref?: string;
+}) {
   if (visual.kind === "record_cover") {
     return (
       <div className="event-record-cover" role="img" aria-label={visual.alt}>
@@ -26,17 +33,33 @@ export function EventVisual({ visual }: { visual: EventVisualData }) {
   }
 
   const imageUrl = visual.kind === "publisher_video" ? visual.thumbnailUrl : visual.imageUrl;
+  const media = (
+    <>
+      <img
+        src={imageUrl}
+        alt={visual.alt}
+        loading="lazy"
+        referrerPolicy="no-referrer-when-downgrade"
+      />
+      {visual.kind === "publisher_video" ? (
+        <span className="event-video-indicator" aria-hidden="true">
+          Play video
+        </span>
+      ) : null}
+    </>
+  );
 
   return (
     <figure className={`event-publisher-visual event-publisher-visual--${visual.kind}`}>
-      <a href={visual.sourceUrl} rel="noreferrer">
-        <img src={imageUrl} alt={visual.alt} />
-        {visual.kind === "publisher_video" ? (
-          <span className="event-video-indicator" aria-hidden="true">
-            Play
-          </span>
-        ) : null}
-      </a>
+      {eventHref ? (
+        <Link href={eventHref} aria-label={`View event record: ${visual.alt}`}>
+          {media}
+        </Link>
+      ) : (
+        <a href={visual.sourceUrl} rel="noreferrer">
+          {media}
+        </a>
+      )}
       <figcaption>
         {visual.credit}
         {visual.kind === "publisher_video" && visual.duration ? ` · ${visual.duration}` : ""}

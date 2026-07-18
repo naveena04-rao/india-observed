@@ -18,8 +18,11 @@ export type EventVisual =
     }
   | {
       kind: "publisher_video";
+      publisher: "NDTV";
       sourceUrl: string;
+      embedUrl: string;
       thumbnailUrl: string;
+      thumbnailSource: "og:image" | "twitter:image";
       alt: string;
       credit: string;
       duration?: string;
@@ -39,6 +42,16 @@ export type EventVisual =
       alt: string;
     };
 
+export type EventDetailMedia = {
+  kind: "instagram_embed";
+  platform: "Instagram";
+  sourceUrl: string;
+  embedUrl: string;
+  alt: string;
+  credit: string;
+  previewOnly: true;
+};
+
 export type ReviewedEventPreview = {
   internalId: string;
   slug: string;
@@ -57,6 +70,7 @@ export type ReviewedEventPreview = {
   eventVerification: string;
   approvedSourceCount: number;
   visual: EventVisual;
+  detailMedia?: EventDetailMedia;
 };
 
 export type ArchiveSort = "latest" | "reviewed" | "oldest";

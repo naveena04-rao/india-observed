@@ -44,7 +44,7 @@ export function EventArchiveRow({ event }: { event: ReviewedEventPreview }) {
         </Link>
       </div>
       <div className="event-row-visual">
-        <EventVisual visual={event.visual} />
+        <EventVisual visual={event.visual} eventHref={href} />
       </div>
     </article>
   );

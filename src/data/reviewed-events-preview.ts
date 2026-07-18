@@ -5,11 +5,12 @@ import type { EventVisual, ReviewedEventPreview } from "../lib/events/types";
 /**
  * Public-safe snapshot generated from the canonical reviewed workbook at
  * C:\Users\navee\Documents\IndiaObserved\tasks\India_Observed_Master_Tracker.xlsx
- * SHA-256: 719C3C62DB86790A0F3311E45589708D6C78FA787A0049834E2CF7A0919147DF
+ * SHA-256: 1A08A5B9798CC041B118A7D8F865267E568981F42CDC1ABA6707309BA81AC7BA
  * Canonical totals: 23 events, 143 claims, 83 sources, 98 organisations, 2 corrections.
  *
- * The workbook's Media Candidates sheet classifies every listed asset as first-pass research.
- * None is publication-approved, so every event below uses a non-evidentiary record cover.
+ * Media is limited to five approved NDTV source displays and one official Instagram embed in
+ * Preview. Rights-pending photographs are not reproduced. All other events use non-evidentiary
+ * record covers until an applicable verification, safety, rights and editorial review is complete.
  */
 
 function recordCover(
@@ -23,6 +24,24 @@ function recordCover(
     location,
     dateLabel,
     alt: `Text-only record cover for ${title}. No approved visual media.`,
+  };
+}
+
+function publisherVideo(config: {
+  sourceUrl: string;
+  embedUrl: string;
+  thumbnailUrl: string;
+  alt: string;
+}): Extract<EventVisual, { kind: "publisher_video" }> {
+  return {
+    kind: "publisher_video",
+    publisher: "NDTV",
+    sourceUrl: config.sourceUrl,
+    embedUrl: config.embedUrl,
+    thumbnailUrl: config.thumbnailUrl,
+    thumbnailSource: "og:image",
+    alt: config.alt,
+    credit: "Video: NDTV",
   };
 }
 
@@ -73,7 +92,15 @@ export const reviewedEventsPreview = [
     directedAt: "Union Ministry of Education; Government of India",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 4,
-    visual: recordCover("Education accountability sit-in", "Jantar Mantar, New Delhi", "Ongoing"),
+    visual: publisherVideo({
+      sourceUrl:
+        "https://www.ndtv.com/video/from-online-movement-to-street-protest-cjp-gathers-at-jantar-mantar-1109578",
+      embedUrl:
+        "https://www.ndtv.com/videos/embed-player/?id=1109578&mute=1&autostart=0&mutestart=true&pWidth=100&pHeight=100",
+      thumbnailUrl:
+        "https://c.ndtvimg.com/2026-06/ihl87sqg_image_160x120_06_June_26.jpg?downsize=1600:900",
+      alt: "NDTV publisher thumbnail for its video report from the Jantar Mantar education protest.",
+    }),
   },
   {
     internalId: "IO-CM-KA-0001",
@@ -135,6 +162,15 @@ export const reviewedEventsPreview = [
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 4,
     visual: recordCover("Save SGNP human chain", "Thane, Maharashtra", "5 July 2026"),
+    detailMedia: {
+      kind: "instagram_embed",
+      platform: "Instagram",
+      sourceUrl: "https://www.instagram.com/reel/DacYWWktqjL/",
+      embedUrl: "https://www.instagram.com/reel/DacYWWktqjL/embed/",
+      alt: "Official Instagram embed from the Save SGNP human-chain campaign in Thane.",
+      credit: "Official post: man_of_the_forest_ and musefoundationwts on Instagram",
+      previewOnly: true,
+    },
   },
   {
     internalId: "IO-CM-KA-0002",
@@ -157,7 +193,15 @@ export const reviewedEventsPreview = [
       "Karnataka Government; Greater Bengaluru Development Authority; Bengaluru South District Administration",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 8,
-    visual: recordCover("Bidadi land-acquisition protest", "Bengaluru South, Karnataka", "Ongoing"),
+    visual: publisherVideo({
+      sourceUrl:
+        "https://www.ndtv.com/video/protests-in-karnataka-s-bidadi-after-government-proposes-to-cut-trees-for-ai-city-project-1120270",
+      embedUrl:
+        "https://www.ndtv.com/videos/embed-player/?id=1120270&mute=1&autostart=0&mutestart=true&pWidth=100&pHeight=100",
+      thumbnailUrl:
+        "https://c.ndtvimg.com/2026-06/t9gf8cms_bidadi_160x120_30_June_26.png?downsize=1600:900",
+      alt: "NDTV publisher thumbnail showing a protest scene reported in Bidadi, Karnataka.",
+    }),
   },
   {
     internalId: "IO-CM-GJ-0001",
@@ -373,7 +417,15 @@ export const reviewedEventsPreview = [
     directedAt: "Jamia Millia Islamia administration; Delhi Police; CRPF",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 2,
-    visual: recordCover("Campus protest", "New Delhi", "28 April 2026"),
+    visual: publisherVideo({
+      sourceUrl:
+        "https://www.ndtv.com/video/jamia-protests-rss-event-sparks-protests-at-jamia-university-in-delhi-1091649",
+      embedUrl:
+        "https://www.ndtv.com/videos/embed-player/?id=1091649&mute=1&autostart=0&mutestart=true&pWidth=100&pHeight=100",
+      thumbnailUrl:
+        "https://drop.ndtv.com/video/images/vod/medium/2026-04/1091649_maxresdefault.jpg?downsize=1600:900",
+      alt: "NDTV publisher thumbnail for its video report on the Jamia campus protest in New Delhi.",
+    }),
   },
   {
     internalId: "IO-CM-KL-0001",
@@ -435,7 +487,15 @@ export const reviewedEventsPreview = [
       "National Testing Agency; Union Ministry of Education; Delhi Police; investigating agencies",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 2,
-    visual: recordCover("NEET-UG accountability protests", "New Delhi", "13–15 May 2026"),
+    visual: publisherVideo({
+      sourceUrl:
+        "https://www.ndtv.com/video/neet-exam-leak-protesters-intensify-attack-on-nta-after-neet-exam-cancellation-1098156",
+      embedUrl:
+        "https://www.ndtv.com/videos/embed-player/?id=1098156&mute=1&autostart=0&mutestart=true&pWidth=100&pHeight=100",
+      thumbnailUrl:
+        "https://drop.ndtv.com/video/images/vod/medium/2026-05/1098156_maxresdefault.jpg?downsize=1600:900",
+      alt: "NDTV publisher thumbnail for its video report on NEET-UG accountability protests in Delhi.",
+    }),
   },
   {
     internalId: "IO-CM-TS-0001",
@@ -480,7 +540,15 @@ export const reviewedEventsPreview = [
     directedAt: "Rajasthan Police; Union Ministry of Education; National Testing Agency",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 2,
-    visual: recordCover("NEET-UG accountability march", "Jaipur, Rajasthan", "21 May 2026"),
+    visual: publisherVideo({
+      sourceUrl:
+        "https://www.ndtv.com/video/neet-paper-leak-row-protests-in-jaipur-water-cannons-used-to-disperse-crowds-1102287",
+      embedUrl:
+        "https://www.ndtv.com/videos/embed-player/?id=1102287&mute=1&autostart=0&mutestart=true&pWidth=100&pHeight=100",
+      thumbnailUrl:
+        "https://c.ndtvimg.com/2026-05/f1fjibmo_neet-protest_160x120_21_May_26.jpg?downsize=1600:900",
+      alt: "NDTV publisher thumbnail for its video report on the Jaipur NEET-UG accountability march.",
+    }),
   },
   {
     internalId: "IO-CM-DL-0004",

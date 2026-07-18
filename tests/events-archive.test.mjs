@@ -13,6 +13,7 @@ const archiveRow = read("src/app/events/components/EventArchiveRow.tsx");
 const filters = read("src/app/events/components/EventFilters.tsx");
 const pagination = read("src/app/events/components/EventPagination.tsx");
 const visual = read("src/app/events/components/EventVisual.tsx");
+const detailMedia = read("src/app/events/components/EventDetailMedia.tsx");
 const shell = read("src/app/events/components/ArchiveShell.tsx");
 const homepage = read("src/app/page.tsx");
 const styles = read("src/app/globals.css");
@@ -24,14 +25,15 @@ test("reviewed Events routes and the canonical public-safe snapshot exist", () =
     dataset,
     /C:\\Users\\navee\\Documents\\IndiaObserved\\tasks\\India_Observed_Master_Tracker\.xlsx/,
   );
-  assert.match(dataset, /719C3C62DB86790A0F3311E45589708D6C78FA787A0049834E2CF7A0919147DF/);
+  assert.match(dataset, /1A08A5B9798CC041B118A7D8F865267E568981F42CDC1ABA6707309BA81AC7BA/);
   assert.match(dataset, /23 events, 143 claims, 83 sources, 98 organisations, 2 corrections/);
 });
 
 test("Preview snapshot has 23 unique readable slugs and one filled visual per event", () => {
   const ids = [...dataset.matchAll(/internalId: "([^"]+)"/g)].map((match) => match[1]);
   const slugs = [...dataset.matchAll(/slug: "([^"]+)"/g)].map((match) => match[1]);
-  const visuals = [...dataset.matchAll(/visual: recordCover\(/g)];
+  const recordCovers = [...dataset.matchAll(/visual: recordCover\(/g)];
+  const publisherVideos = [...dataset.matchAll(/visual: publisherVideo\(\{/g)];
   const sourceCounts = [...dataset.matchAll(/approvedSourceCount: (\d+)/g)].map((match) =>
     Number(match[1]),
   );
@@ -42,7 +44,9 @@ test("Preview snapshot has 23 unique readable slugs and one filled visual per ev
   assert.equal(ids.length, 23);
   assert.equal(slugs.length, 23);
   assert.equal(new Set(slugs).size, 23);
-  assert.equal(visuals.length, 23);
+  assert.equal(recordCovers.length, 18);
+  assert.equal(publisherVideos.length, 5);
+  assert.equal(recordCovers.length + publisherVideos.length, 23);
   assert.equal(
     sourceCounts.reduce((total, count) => total + count, 0),
     83,
@@ -57,8 +61,7 @@ test("Preview snapshot has 23 unique readable slugs and one filled visual per ev
     true,
   );
   assert.doesNotMatch(dataset, /recordCover\(\s*""/);
-  assert.match(dataset, /None is publication-approved/);
-  assert.match(dataset, /every event below uses a non-evidentiary record cover/);
+  assert.match(dataset, /Rights-pending photographs are not reproduced/);
   assert.match(visual, /No approved visual media/);
   assert.match(visual, /role="img" aria-label=\{visual\.alt\}/);
   assert.doesNotMatch(dataset, /stock|unsplash|pexels|pixabay/i);
@@ -74,6 +77,99 @@ test("only controlled visual types are allowed and the archive never loads video
   assert.doesNotMatch(visual, /iframe/i);
   assert.match(visual, /visual\.credit/);
   assert.match(visual, /href=\{visual\.sourceUrl\}/);
+  assert.match(archiveRow, /eventHref=\{href\}/);
+});
+
+test("exactly five NDTV records use verified publisher thumbnails and click-to-load embeds", () => {
+  const approved = [
+    {
+      id: "IO-CM-KA-0002",
+      source:
+        "https://www.ndtv.com/video/protests-in-karnataka-s-bidadi-after-government-proposes-to-cut-trees-for-ai-city-project-1120270",
+      embed:
+        "https://www.ndtv.com/videos/embed-player/?id=1120270&mute=1&autostart=0&mutestart=true&pWidth=100&pHeight=100",
+      thumbnail:
+        "https://c.ndtvimg.com/2026-06/t9gf8cms_bidadi_160x120_30_June_26.png?downsize=1600:900",
+    },
+    {
+      id: "IO-CM-DL-0001",
+      source:
+        "https://www.ndtv.com/video/from-online-movement-to-street-protest-cjp-gathers-at-jantar-mantar-1109578",
+      embed:
+        "https://www.ndtv.com/videos/embed-player/?id=1109578&mute=1&autostart=0&mutestart=true&pWidth=100&pHeight=100",
+      thumbnail:
+        "https://c.ndtvimg.com/2026-06/ihl87sqg_image_160x120_06_June_26.jpg?downsize=1600:900",
+    },
+    {
+      id: "IO-CM-DL-0002",
+      source:
+        "https://www.ndtv.com/video/jamia-protests-rss-event-sparks-protests-at-jamia-university-in-delhi-1091649",
+      embed:
+        "https://www.ndtv.com/videos/embed-player/?id=1091649&mute=1&autostart=0&mutestart=true&pWidth=100&pHeight=100",
+      thumbnail:
+        "https://drop.ndtv.com/video/images/vod/medium/2026-04/1091649_maxresdefault.jpg?downsize=1600:900",
+    },
+    {
+      id: "IO-CM-DL-0003",
+      source:
+        "https://www.ndtv.com/video/neet-exam-leak-protesters-intensify-attack-on-nta-after-neet-exam-cancellation-1098156",
+      embed:
+        "https://www.ndtv.com/videos/embed-player/?id=1098156&mute=1&autostart=0&mutestart=true&pWidth=100&pHeight=100",
+      thumbnail:
+        "https://drop.ndtv.com/video/images/vod/medium/2026-05/1098156_maxresdefault.jpg?downsize=1600:900",
+    },
+    {
+      id: "IO-CM-RJ-0001",
+      source:
+        "https://www.ndtv.com/video/neet-paper-leak-row-protests-in-jaipur-water-cannons-used-to-disperse-crowds-1102287",
+      embed:
+        "https://www.ndtv.com/videos/embed-player/?id=1102287&mute=1&autostart=0&mutestart=true&pWidth=100&pHeight=100",
+      thumbnail:
+        "https://c.ndtvimg.com/2026-05/f1fjibmo_neet-protest_160x120_21_May_26.jpg?downsize=1600:900",
+    },
+  ];
+
+  assert.equal((dataset.match(/visual: publisherVideo\(\{/g) ?? []).length, 5);
+  for (const media of approved) {
+    const start = dataset.indexOf(`internalId: "${media.id}"`);
+    const end = dataset.indexOf("\n  {\n    internalId:", start + 1);
+    const block = dataset.slice(start, end === -1 ? undefined : end);
+    assert.ok(start >= 0, `${media.id} must exist`);
+    assert.ok(block.includes(media.source));
+    assert.ok(block.includes(media.embed));
+    assert.ok(block.includes(media.thumbnail));
+    assert.match(block, /alt: "[^"]+"/);
+  }
+  assert.match(dataset, /credit: "Video: NDTV"/);
+  assert.match(dataset, /thumbnailSource: "og:image"/);
+  assert.equal((dataset.match(/thumbnailUrl:\s*"https:\/\//g) ?? []).length, 5);
+  assert.doesNotMatch(dataset, /thumbnailUrl:\s*"(?:\/|\.\.\/|\.\/)/);
+});
+
+test("detail embeds require activation and the Instagram candidate remains Preview-only", () => {
+  assert.match(detailMedia, /useState\(false\)/);
+  assert.match(detailMedia, /onClick=\{\(\) => setIsActivated\(true\)\}/);
+  assert.match(detailMedia, /isActivated \? \(/);
+  assert.match(detailMedia, /<iframe/);
+  assert.match(detailMedia, /Loading connects to NDTV's publisher-hosted player\./);
+  assert.match(detailMedia, /Loading connects to Instagram's official embed\./);
+  assert.match(detailMedia, /View original on \{publisher\}/);
+  assert.match(dataset, /https:\/\/www\.instagram\.com\/reel\/DacYWWktqjL\/embed\//);
+  assert.match(dataset, /previewOnly: true/);
+  assert.match(dataset, /visual: recordCover\("Save SGNP human chain"/);
+  assert.doesNotMatch(archivePage, /iframe/i);
+  assert.doesNotMatch(archiveRow, /iframe/i);
+});
+
+test("excluded media candidates remain disabled with truthful filled fallbacks", () => {
+  for (const id of ["IO-CM-UP-0002", "IO-CM-UP-0001", "IO-CM-UK-0001"]) {
+    const start = dataset.indexOf(`internalId: "${id}"`);
+    const end = dataset.indexOf("\n  {\n    internalId:", start + 1);
+    const block = dataset.slice(start, end === -1 ? undefined : end);
+    assert.ok(start >= 0, `${id} must exist`);
+    assert.match(block, /visual: recordCover\(/);
+    assert.doesNotMatch(block, /publisherVideo|instagram_embed|embedUrl/);
+  }
 });
 
 test("Preview and Production publication gates remain server-side and candidate-safe", () => {

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { formatEventDate, formatEventDateRange } from "../../../lib/events/archive";
 import { getReviewedEvents, isReviewedPreviewEnabled } from "../../../lib/events/getReviewedEvents";
 import { ArchiveShell } from "../components/ArchiveShell";
-import { EventVisual } from "../components/EventVisual";
+import { EventDetailMedia } from "../components/EventDetailMedia";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +52,7 @@ export default async function EventRecordPage({ params }: EventPageProps) {
           </header>
 
           <div className="event-record-visual">
-            <EventVisual visual={event.visual} />
+            <EventDetailMedia visual={event.visual} detailMedia={event.detailMedia} />
           </div>
 
           <dl className="event-record-facts">
