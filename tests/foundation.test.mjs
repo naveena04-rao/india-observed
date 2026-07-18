@@ -136,13 +136,9 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   ]) {
     assert.doesNotMatch(carousel, new RegExp(removedCopy, "i"));
   }
-  assert.match(featuredBlock, /IO-CM-KA-0002[\s\S]*kind: "publisher_video"/);
-  assert.match(featuredBlock, /www\.ndtv\.com\/videos\/embed-player\/\?id=1120270/);
-  assert.match(
-    featuredBlock,
-    /thumbnailUrl:\s*"https:\/\/c\.ndtvimg\.com\/2026-06\/t9gf8cms_bidadi_160x120_30_June_26\.png\?downsize=1600:900"/,
-  );
-  assert.match(featuredBlock, /thumbnailAlt:\s*"People gathered outdoors during the Bidadi/);
+  assert.match(page, /reviewedEventsPreview\.map\(\(\{ internalId, slug, visual \}\)/);
+  assert.match(page, /getHomepageVisual\(record\.id\)/);
+  assert.doesNotMatch(page, /https?:\/\//);
   assert.match(featuredBlock, /publicationStatus: "published_source_embed"/);
   assert.match(featuredBlock, /rightsStatus: "permission_requested"/);
   assert.match(featuredBlock, /sourceProvenance: "NDTV · Original publisher page/);
@@ -180,7 +176,7 @@ test("homepage keeps the public archive safety boundaries visible", () => {
       /occurrence verified|provenance|event match|corroborated|human editorial review|verification gate|status code/i,
     );
   }
-  assert.equal((featuredBlock.match(/kind: "text_record"/g) ?? []).length, 2);
+  assert.equal((featuredBlock.match(/format: "Text record"/g) ?? []).length, 2);
   assert.match(styles, /\.media-status-grid\s*\{[\s\S]*?grid-template-columns: 1fr 1fr;/);
   assert.match(
     styles,
@@ -192,7 +188,7 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   );
   assert.match(
     carousel,
-    /featured-record-disclosure[\s\S]*featured-record-content[\s\S]*featuredRecordCopy\(false\)[\s\S]*featured-record-media[\s\S]*featured-record-media--empty[\s\S]*featured-record-video-frame[\s\S]*featured-record-media-empty[\s\S]*\{carouselPosition\}/,
+    /featured-record-disclosure[\s\S]*featured-record-content[\s\S]*featuredRecordCopy\(false\)[\s\S]*featured-record-media[\s\S]*featured-record-video-frame[\s\S]*<EventVisual[\s\S]*variant="homepage-featured"[\s\S]*\{carouselPosition\}/,
   );
   assert.match(carousel, /className="hero-copy featured-slide featured-slide--media"/);
   assert.match(
@@ -208,17 +204,14 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.ok(disclosureMarkup);
   assert.doesNotMatch(disclosureMarkup, /publisher-video|featured-record-caption|<h1>/);
   assert.match(carousel, /loadedMediaId === activeRecord\.id[\s\S]*featured-record-caption/);
+  assert.match(carousel, /visual: EventVisualData;[\s\S]*eventHref: string;/);
   assert.match(
     carousel,
-    /type PublisherVideoMedia = \{[\s\S]*thumbnailUrl: string;[\s\S]*thumbnailAlt: string;/,
-  );
-  assert.match(
-    carousel,
-    /loadedMediaId === activeRecord\.id[\s\S]*?<iframe[\s\S]*?: \([\s\S]*?publisher-video-gate[\s\S]*?<img src=\{activeMedia\.thumbnailUrl\}/,
+    /loadedMediaId === activeRecord\.id[\s\S]*?<iframe[\s\S]*?: \([\s\S]*?publisher-video-gate[\s\S]*?<img src=\{activeVisual\.thumbnailUrl\}/,
   );
   assert.match(carousel, /onClick=\{\(\) => setLoadedMediaId\(activeRecord\.id\)\}/);
   assert.doesNotMatch(carousel, /autoPlay/);
-  assert.doesNotMatch(featuredBlock, /thumbnailUrl:\s*"\//);
+  assert.doesNotMatch(featuredBlock, /thumbnailUrl|embedUrl|sourceUrl|thumbnailAlt|sourceName/);
   assert.match(carousel, /Auto-publication remains disabled/);
   for (const controlledStatus of [
     "candidate",
@@ -309,6 +302,105 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.doesNotMatch(page, /Explore the archive/i);
   assert.doesNotMatch(page, /Open questions|Documentation still needed|Documentation gap/);
   assert.doesNotMatch(styles, /\.open-questions/);
+});
+
+test("all nine homepage records use the central reviewed visual treatments", () => {
+  const page = read("src/app/page.tsx");
+  const carousel = read("src/app/components/FeaturedRecordCarousel.tsx");
+  const eventVisual = read("src/app/events/components/EventVisual.tsx");
+  const dataset = read("src/data/reviewed-events-preview.ts");
+  const styles = read("src/app/globals.css");
+
+  const datasetBlock = (id) => {
+    const start = dataset.indexOf(`internalId: "${id}"`);
+    const end = dataset.indexOf('\n  {\n    internalId: "', start + 1);
+    assert.ok(start >= 0, `${id} must exist in the reviewed Events dataset`);
+    return dataset.slice(start, end === -1 ? undefined : end);
+  };
+
+  const featuredIds = ["IO-CM-KA-0002", "IO-CM-MN-0001", "IO-CM-OD-0001"];
+  const latestIds = ["IO-CM-MP-0001", "IO-CM-DL-0001", "IO-CM-MH-0001"];
+  const onRecordIds = ["IO-CM-GJ-0001", "IO-CM-UP-0001", "IO-CM-AS-0001"];
+  const recordCoverIds = [
+    "IO-CM-MN-0001",
+    "IO-CM-OD-0001",
+    "IO-CM-MP-0001",
+    "IO-CM-MH-0001",
+    "IO-CM-GJ-0001",
+    "IO-CM-UP-0001",
+    "IO-CM-AS-0001",
+  ];
+
+  assert.equal(new Set([...featuredIds, ...latestIds, ...onRecordIds]).size, 9);
+  for (const id of [...featuredIds, ...latestIds, ...onRecordIds]) datasetBlock(id);
+  for (const id of recordCoverIds) assert.match(datasetBlock(id), /visual: recordCover\(/);
+  assert.match(datasetBlock("IO-CM-KA-0002"), /visual: publisherVideo\(\{/);
+  assert.match(datasetBlock("IO-CM-DL-0001"), /visual: publisherVideo\(\{/);
+  assert.equal(recordCoverIds.length, 7);
+
+  assert.match(
+    page,
+    /import \{ reviewedEventsPreview \} from "\.\.\/data\/reviewed-events-preview"/,
+  );
+  assert.match(page, /const homepageVisualsByInternalId = new Map</);
+  assert.equal((page.match(/getHomepageVisual\(record\.id\)/g) ?? []).length, 3);
+  assert.doesNotMatch(page, /thumbnailUrl:|embedUrl:|sourceUrl:|https?:\/\//);
+  assert.doesNotMatch(carousel, /https?:\/\//);
+
+  assert.match(carousel, /variant="homepage-featured"/);
+  assert.match(carousel, /variant="homepage-latest"/);
+  assert.match(page, /variant="homepage-on-record"/);
+  assert.match(carousel, /activeVisual\.kind === "publisher_video"/);
+  assert.match(carousel, /src=\{activeVisual\.thumbnailUrl\}/);
+  assert.match(carousel, /src=\{activeVisual\.embedUrl\}/);
+  assert.match(carousel, /useState<string \| null>\(null\)/);
+  assert.match(
+    carousel,
+    /loadedMediaId === activeRecord\.id[\s\S]*?<iframe[\s\S]*?onClick=\{\(\) => setLoadedMediaId\(activeRecord\.id\)\}/,
+  );
+
+  const latestMarkup = carousel.match(
+    /\{latestRecords\.map\(\(record\) => \(([\s\S]*?)\)\)\}/,
+  )?.[1];
+  assert.ok(latestMarkup);
+  assert.match(latestMarkup, /<EventVisual[\s\S]*?variant="homepage-latest"/);
+  assert.doesNotMatch(latestMarkup, /iframe|embedUrl|setLoadedMediaId/);
+  assert.doesNotMatch(page, /instagram\.com|facebook\.com|(?:https?:\/\/)?x\.com/);
+  assert.doesNotMatch(page, /<iframe/);
+
+  assert.match(eventVisual, /role="img"[\s\S]*aria-label=\{visual\.alt\}/);
+  assert.match(eventVisual, /No approved visual media/);
+  assert.match(eventVisual, /alt=\{visual\.alt\}/);
+  assert.match(eventVisual, /visual\.credit/);
+  assert.match(eventVisual, /aria-label=\{`View event record: \$\{visual\.alt\}`\}/);
+
+  assert.match(styles, /\.featured-carousel \.featured-slide[\s\S]*?height: 30rem;/);
+  assert.match(
+    styles,
+    /\.featured-carousel \.featured-slide--media[\s\S]*?grid-template-columns: minmax\(0, 34fr\) minmax\(0, 66fr\);/,
+  );
+  assert.match(
+    styles,
+    /\.featured-record-video-frame[\s\S]*?aspect-ratio: 16 \/ 9;[\s\S]*?width: 100%;/,
+  );
+  assert.match(
+    styles,
+    /\.latest-records-grid[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/,
+  );
+  assert.match(
+    styles,
+    /\.latest-entry-preview[\s\S]*?grid-template-columns: minmax\(0, 70fr\) minmax\(0, 30fr\);/,
+  );
+  assert.match(
+    styles,
+    /\.on-record-context[\s\S]*?border-bottom: 1px solid var\(--ink\);[\s\S]*?border-top: 1px solid var\(--ink\);[\s\S]*?grid-template-columns: minmax\(0, 70fr\) minmax\(0, 30fr\);/,
+  );
+  assert.match(
+    styles,
+    /\.on-record-context h3[\s\S]*?font-size: clamp\(1\.45rem, 2\.5vw, 2\.1rem\)/,
+  );
+  assert.match(styles, /\.on-record-copy > p[\s\S]*?font-size: 0\.9rem/);
+  assert.doesNotMatch(page, /Open questions/i);
 });
 
 test("homepage event types use one controlled vocabulary across every record area", () => {
@@ -408,7 +500,10 @@ test("homepage event types use one controlled vocabulary across every record are
   }
 
   assert.match(carousel, /eventType: EventType;/);
-  assert.match(carousel, /"id" \| "eventType" \| "eventStatus" \| "title"/);
+  assert.match(
+    carousel,
+    /type LatestRecord = Pick<[\s\S]*?"id"[\s\S]*?"eventType"[\s\S]*?"eventStatus"[\s\S]*?"title"/,
+  );
   assert.match(page, /type OnRecord = \{[\s\S]*?eventType: EventType;/);
   assert.match(
     carousel,

@@ -2,16 +2,23 @@
 import Link from "next/link";
 import type { EventVisual as EventVisualData } from "../../../lib/events/types";
 
+type EventVisualVariant =
+  "archive" | "homepage-latest" | "homepage-on-record" | "homepage-featured";
+
 export function EventVisual({
   visual,
   eventHref,
+  variant = "archive",
 }: {
   visual: EventVisualData;
   eventHref?: string;
+  variant?: EventVisualVariant;
 }) {
+  const variantClassName = `event-visual--${variant}`;
+
   if (visual.kind === "record_cover") {
     return (
-      <div className="event-record-cover" role="img" aria-label={visual.alt}>
+      <div className={`event-record-cover ${variantClassName}`} role="img" aria-label={visual.alt}>
         <span className="event-visual-kicker">Record preview</span>
         <strong>{visual.title}</strong>
         <span>{visual.location}</span>
@@ -23,7 +30,11 @@ export function EventVisual({
 
   if (visual.kind === "document_preview") {
     return (
-      <a className="event-document-preview" href={visual.sourceUrl} rel="noreferrer">
+      <a
+        className={`event-document-preview ${variantClassName}`}
+        href={visual.sourceUrl}
+        rel="noreferrer"
+      >
         <span className="event-visual-kicker">Document preview</span>
         <strong>{visual.title}</strong>
         <span>{visual.publisher}</span>
@@ -50,7 +61,9 @@ export function EventVisual({
   );
 
   return (
-    <figure className={`event-publisher-visual event-publisher-visual--${visual.kind}`}>
+    <figure
+      className={`event-publisher-visual event-publisher-visual--${visual.kind} ${variantClassName}`}
+    >
       {eventHref ? (
         <Link href={eventHref} aria-label={`View event record: ${visual.alt}`}>
           {media}

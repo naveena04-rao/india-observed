@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { EventVisual as EventVisualData } from "../../lib/events/types";
+import { EventVisual } from "../events/components/EventVisual";
 import { EventStatusTag } from "./EventStatusTag";
 import { EventTypeTag } from "./EventTypeTag";
 import type { EventStatus } from "../eventStatuses";
@@ -35,13 +37,7 @@ type MediaReviewGates = {
 };
 
 type PublisherVideoMedia = {
-  kind: "publisher_video";
   format: string;
-  sourceName: string;
-  sourceUrl: string;
-  embedUrl: string;
-  thumbnailUrl: string;
-  thumbnailAlt: string;
   sourceProvenance: string;
   eventVerification: string;
   publicationRightsStatus: string;
@@ -54,7 +50,6 @@ type PublisherVideoMedia = {
 };
 
 type TextRecordMedia = {
-  kind: "text_record";
   format: string;
   sourceProvenance: string;
   eventVerification: string;
@@ -76,11 +71,21 @@ export type FeaturedRecord = {
   note: string;
   reviewed: string;
   media: FeaturedRecordMedia;
+  visual: EventVisualData;
+  eventHref: string;
 };
 
 type LatestRecord = Pick<
   FeaturedRecord,
-  "id" | "eventType" | "eventStatus" | "title" | "place" | "topic" | "reviewed"
+  | "id"
+  | "eventType"
+  | "eventStatus"
+  | "title"
+  | "place"
+  | "topic"
+  | "reviewed"
+  | "visual"
+  | "eventHref"
 >;
 
 type FeaturedRecordCarouselProps = {
@@ -123,10 +128,12 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
 
   const activeRecord = records[activeIndex]!;
   const activeMedia = activeRecord.media;
+  const activeVisual = activeRecord.visual;
   // Rights approval controls reuse, but can never override authenticity, event-match,
   // integrity, privacy, safety or human-editorial gates. Auto-publication remains disabled.
   const mayDisplaySourceEmbed =
-    activeMedia.kind === "publisher_video" &&
+    activeVisual.kind === "publisher_video" &&
+    "publicationStatus" in activeMedia &&
     activeMedia.publicationStatus === "published_source_embed" &&
     activeMedia.reviewStatus !== "candidate" &&
     activeMedia.reviewStatus !== "rejected" &&
@@ -217,7 +224,7 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
             <figure
               className={[
                 "featured-record-media",
-                mayDisplaySourceEmbed ? "" : "featured-record-media--empty",
+                activeVisual.kind === "record_cover" ? "featured-record-media--cover" : "",
               ]
                 .filter(Boolean)
                 .join(" ")}
@@ -228,8 +235,8 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
                     {loadedMediaId === activeRecord.id ? (
                       <div className="publisher-video">
                         <iframe
-                          src={activeMedia.embedUrl}
-                          title={`NDTV video for ${activeRecord.title}`}
+                          src={activeVisual.embedUrl}
+                          title={`${activeVisual.publisher} video for ${activeRecord.title}`}
                           allow="fullscreen; picture-in-picture"
                           allowFullScreen
                           referrerPolicy="strict-origin-when-cross-origin"
@@ -239,7 +246,7 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
                       <div className="publisher-video-gate">
                         {/* Publisher metadata URL is rendered directly; the image is not reused locally. */}
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={activeMedia.thumbnailUrl} alt={activeMedia.thumbnailAlt} />
+                        <img src={activeVisual.thumbnailUrl} alt={activeVisual.alt} />
                         <div className="publisher-video-gate-content">
                           <span>Official publisher video</span>
                           <strong>NDTV · 2:49</strong>
@@ -253,8 +260,8 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
                   </div>
                   {loadedMediaId === activeRecord.id ? (
                     <figcaption className="featured-record-caption">
-                      {activeMedia.caption} Credit: {activeMedia.sourceName}.{" "}
-                      <a href={activeMedia.sourceUrl} target="_blank" rel="noreferrer">
+                      {activeMedia.caption} Credit: {activeVisual.publisher}.{" "}
+                      <a href={activeVisual.sourceUrl} target="_blank" rel="noreferrer">
                         View the original publisher page
                       </a>
                       .
@@ -262,7 +269,13 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
                   ) : null}
                 </>
               ) : (
-                <div className="featured-record-media-empty" aria-hidden="true" />
+                <div className="featured-record-video-frame">
+                  <EventVisual
+                    visual={activeVisual}
+                    eventHref={activeRecord.eventHref}
+                    variant="homepage-featured"
+                  />
+                </div>
               )}
               {carouselPosition}
             </figure>
@@ -274,14 +287,21 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
           <div className="latest-records-grid">
             {latestRecords.map((record) => (
               <article className="latest-entry latest-entry-preview" key={record.id}>
-                <div className="event-tags">
-                  <EventTypeTag eventType={record.eventType} />
-                  <EventStatusTag eventStatus={record.eventStatus} />
+                <div className="latest-entry-copy">
+                  <div className="event-tags">
+                    <EventTypeTag eventType={record.eventType} />
+                    <EventStatusTag eventStatus={record.eventStatus} />
+                  </div>
+                  <span className="record-topic">{record.topic}</span>
+                  <span className="latest-location">{record.place}</span>
+                  <strong>{record.title}</strong>
+                  <time dateTime="2026-07-15">Reviewed {record.reviewed}</time>
                 </div>
-                <span className="record-topic">{record.topic}</span>
-                <span className="latest-location">{record.place}</span>
-                <strong>{record.title}</strong>
-                <time dateTime="2026-07-15">Reviewed {record.reviewed}</time>
+                <EventVisual
+                  visual={record.visual}
+                  eventHref={record.eventHref}
+                  variant="homepage-latest"
+                />
               </article>
             ))}
           </div>

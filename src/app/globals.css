@@ -2555,6 +2555,12 @@ h3 {
   width: 100%;
 }
 
+.featured-record-video-frame > .event-visual--homepage-featured {
+  aspect-ratio: auto;
+  height: 100%;
+  min-height: 0;
+}
+
 .featured-record-caption {
   color: var(--muted);
   font-size: 0.68rem;
@@ -2624,12 +2630,80 @@ h3 {
   border: 0;
   cursor: pointer;
   display: grid;
+  gap: 0.7rem;
+  grid-template-columns: minmax(0, 70fr) minmax(0, 30fr);
   font: inherit;
   min-width: 0;
   padding: 0.8rem 1rem;
   position: relative;
   text-align: left;
   width: 100%;
+}
+
+.latest-entry-copy {
+  display: grid;
+  min-width: 0;
+}
+
+.event-visual--homepage-latest {
+  align-self: center;
+  height: 6.75rem;
+  min-height: 0;
+  width: 100%;
+}
+
+.event-publisher-visual.event-visual--homepage-latest {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.event-publisher-visual.event-visual--homepage-latest > a {
+  aspect-ratio: auto;
+  min-height: 0;
+}
+
+.event-publisher-visual.event-visual--homepage-latest figcaption {
+  font-size: 0.56rem;
+  line-height: 1.2;
+  margin-top: 0.2rem;
+}
+
+.event-record-cover.event-visual--homepage-latest {
+  aspect-ratio: auto;
+  padding: 0.55rem;
+}
+
+.event-record-cover.event-visual--homepage-latest::before {
+  border-bottom-width: 3px;
+  left: 0.55rem;
+  right: 0.55rem;
+  top: 0.55rem;
+}
+
+.event-record-cover.event-visual--homepage-latest .event-visual-kicker {
+  font-size: 0.45rem;
+  padding-top: 0.55rem;
+}
+
+.event-record-cover.event-visual--homepage-latest strong {
+  display: -webkit-box;
+  font-size: 0.72rem;
+  line-height: 1.05;
+  margin-bottom: 0.3rem;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.event-record-cover.event-visual--homepage-latest > span:not(.event-visual-kicker) {
+  display: none;
+}
+
+.event-record-cover.event-visual--homepage-latest small {
+  font-size: 0.46rem;
+  line-height: 1.15;
+  margin-top: 0;
+  padding-top: 0.3rem;
 }
 
 .latest-entry-preview:first-child {
@@ -2978,7 +3052,14 @@ main .lead-panel {
 .on-record-context {
   border-bottom: 1px solid var(--ink);
   border-top: 1px solid var(--ink);
+  display: grid;
+  gap: clamp(1rem, 3vw, 2.5rem);
+  grid-template-columns: minmax(0, 70fr) minmax(0, 30fr);
   padding: 1.25rem 0;
+}
+
+.on-record-copy {
+  min-width: 0;
 }
 
 .on-record-meta {
@@ -2999,12 +3080,30 @@ main .lead-panel {
   max-width: 38ch;
 }
 
-.on-record-context > p {
+.on-record-context > p,
+.on-record-copy > p {
   color: var(--muted);
   font-size: 0.9rem;
   line-height: 1.65;
   margin-bottom: 0.8rem;
   max-width: 72rem;
+}
+
+.event-record-cover.event-visual--homepage-on-record {
+  align-self: center;
+  aspect-ratio: 16 / 9;
+  min-height: 0;
+  padding: clamp(0.8rem, 1.5vw, 1.2rem);
+}
+
+.event-record-cover.event-visual--homepage-on-record::before {
+  left: clamp(0.8rem, 1.5vw, 1.2rem);
+  right: clamp(0.8rem, 1.5vw, 1.2rem);
+  top: clamp(0.8rem, 1.5vw, 1.2rem);
+}
+
+.event-record-cover.event-visual--homepage-on-record strong {
+  font-size: clamp(1rem, 1.5vw, 1.35rem);
 }
 
 .on-record-context time {
@@ -3037,6 +3136,15 @@ main .lead-panel {
   .on-record-meta {
     display: grid;
     gap: 0.2rem;
+  }
+
+  .on-record-context {
+    grid-template-columns: 1fr;
+  }
+
+  .event-record-cover.event-visual--homepage-on-record {
+    justify-self: stretch;
+    width: 100%;
   }
 }
 
