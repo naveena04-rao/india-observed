@@ -201,7 +201,7 @@ export default function HomePage() {
           <nav className="desktop-nav" aria-label="Primary navigation">
             <a href="#home">Home</a>
             <a href="#about">About</a>
-            <a href="#events">Events</a>
+            <Link href="/events">Events</Link>
             <a href="#methodology">Methodology</a>
             <a className="nav-action" href="#lead">
               Submit a lead
@@ -213,7 +213,7 @@ export default function HomePage() {
             <nav aria-label="Mobile navigation">
               <a href="#home">Home</a>
               <a href="#about">About</a>
-              <a href="#events">Events</a>
+              <Link href="/events">Events</Link>
               <a href="#methodology">Methodology</a>
               <a className="nav-action" href="#lead">
                 Submit a lead
@@ -308,11 +308,11 @@ export default function HomePage() {
               <span>states and Union Territories represented</span>
             </div>
             <div>
-              <strong>22</strong>
+              <strong>23</strong>
               <span>reviewed event records</span>
             </div>
             <div>
-              <strong>77</strong>
+              <strong>83</strong>
               <span>source records linked to reviewed events</span>
             </div>
           </div>
@@ -348,7 +348,7 @@ export default function HomePage() {
               <h2>Explore</h2>
               <nav aria-label="Footer navigation">
                 <a href="#home">Home</a>
-                <a href="#events">Events</a>
+                <Link href="/events">Events</Link>
                 <a href="#methodology">Methodology</a>
                 <a href="#coverage">Coverage</a>
                 <a href="#lead">Submit a lead</a>

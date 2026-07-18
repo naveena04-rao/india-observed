@@ -74,20 +74,22 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   const expectedNavigation = [
     ["#home", "Home"],
     ["#about", "About"],
-    ["#events", "Events"],
+    ["/events", "Events"],
     ["#methodology", "Methodology"],
     ["#lead", "Submit a lead"],
   ];
   const navigationLinks = (markup) =>
-    [...markup.matchAll(/<a(?: className="[^"]*")? href="([^"]+)">([\s\S]*?)<\/a>/g)].map(
-      ([, href, label]) => [
-        href,
-        label
-          .replace(/<[^>]+>/g, "")
-          .replace(/\s+/g, " ")
-          .trim(),
-      ],
-    );
+    [
+      ...markup.matchAll(
+        /<(?:a|Link)(?: className="[^"]*")? href="([^"]+)">([\s\S]*?)<\/(?:a|Link)>/g,
+      ),
+    ].map(([, href, label]) => [
+      href,
+      label
+        .replace(/<[^>]+>/g, "")
+        .replace(/\s+/g, " ")
+        .trim(),
+    ]);
   const desktopNav = page.match(
     /<nav className="desktop-nav" aria-label="Primary navigation">([\s\S]*?)<\/nav>/,
   )?.[1];
@@ -292,8 +294,8 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.match(page, /<p className="coverage-subheading">Across India, event by event\.<\/p>/);
   for (const [count, label] of [
     ["16", "states and Union Territories represented"],
-    ["22", "reviewed event records"],
-    ["77", "source records linked to reviewed events"],
+    ["23", "reviewed event records"],
+    ["83", "source records linked to reviewed events"],
   ]) {
     assert.match(page, new RegExp(`<strong>${count}<\\/strong>[\\s\\S]*?${label}`));
   }
@@ -547,8 +549,8 @@ test("homepage uses the refined section hierarchy and editorial footer", () => {
 
   for (const [count, label] of [
     ["16", "states and Union Territories represented"],
-    ["22", "reviewed event records"],
-    ["77", "source records linked to reviewed events"],
+    ["23", "reviewed event records"],
+    ["83", "source records linked to reviewed events"],
   ]) {
     assert.match(page, new RegExp(`<strong>${count}<\\/strong>[\\s\\S]*?${label}`));
   }
@@ -585,13 +587,12 @@ test("homepage uses the refined section hierarchy and editorial footer", () => {
   const footerNav = footer.match(/<nav aria-label="Footer navigation">([\s\S]*?)<\/nav>/)?.[1];
   assert.ok(footerNav);
   assert.deepEqual(
-    [...footerNav.matchAll(/<a href="([^"]+)">([^<]+)<\/a>/g)].map(([, href, label]) => [
-      href,
-      label,
-    ]),
+    [...footerNav.matchAll(/<(?:a|Link) href="([^"]+)">([^<]+)<\/(?:a|Link)>/g)].map(
+      ([, href, label]) => [href, label],
+    ),
     [
       ["#home", "Home"],
-      ["#events", "Events"],
+      ["/events", "Events"],
       ["#methodology", "Methodology"],
       ["#coverage", "Coverage"],
       ["#lead", "Submit a lead"],
