@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { EventStatusTag } from "./components/EventStatusTag";
 import { EventTypeTag } from "./components/EventTypeTag";
+import { FooterSocialPlaceholders } from "./components/FooterSocialPlaceholders";
 import { FeaturedRecordCarousel } from "./components/FeaturedRecordCarousel";
 import type { EventStatus } from "./eventStatuses";
 import { eventTypes, type EventType } from "./eventTypes";
@@ -229,7 +230,7 @@ export default function HomePage() {
 
       <section className="on-record-section" aria-labelledby="on-record-title">
         <div className="page-shell">
-          <h2 id="on-record-title">ON record</h2>
+          <h2 id="on-record-title">ON RECORD</h2>
 
           <div className="on-record-list">
             {onRecords.map((record) => (
@@ -288,10 +289,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="coverage-section">
+      <section className="coverage-section" id="coverage">
         <div className="page-shell coverage-grid">
           <div>
-            <h2 className="coverage-heading">Coverage</h2>
+            <h2 className="coverage-heading">COVERAGE</h2>
             <p className="coverage-subheading">Across India, event by event.</p>
             <p className="coverage-description">
               The reviewed repository currently contains event records from 16 states and Union
@@ -315,27 +316,14 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="correction-stream" id="corrections">
-        <div className="page-shell">
-          <div className="section-intro ruled-heading">
-            <div>
-              <p className="section-kicker">Recent corrections and clarifications</p>
-              <h2>Changes remain visible</h2>
-            </div>
-          </div>
-          <div className="correction-empty-state">
-            <strong>No recent record changes have been published.</strong>
-            <p>Corrections and clarifications will appear here after editorial review.</p>
-          </div>
-        </div>
-      </section>
-
-      <section className="participation-section">
+      <section className="participation-section" aria-labelledby="contribute-title">
         <div className="page-shell participation-grid">
           <div className="lead-panel" id="lead">
-            <p className="section-kicker light-kicker">Contribute</p>
-            <h2>Know of an undercovered civic event?</h2>
-            <p>
+            <h2 id="contribute-title" className="contribute-heading">
+              CONTRIBUTE
+            </h2>
+            <p className="contribute-subheading">Want to report a public event?</p>
+            <p className="contribute-description">
               Share a public source link, approximate date and broad location. Do not submit private
               documents, participant lists or tactical information.
             </p>
@@ -347,20 +335,32 @@ export default function HomePage() {
       </section>
 
       <footer className="site-footer">
-        <div className="page-shell footer-grid">
-          <div>
-            <span className="footer-brand">India Observed</span>
-            <p>A curated, source-linked public record of civic action across India.</p>
+        <div className="page-shell">
+          <div className="footer-grid">
+            <div className="footer-identity">
+              <span className="footer-brand">India Observed</span>
+              <p>Independent, source-linked records of civic action across India.</p>
+            </div>
+            <div className="footer-explore">
+              <h2>Explore</h2>
+              <nav aria-label="Footer navigation">
+                <a href="#home">Home</a>
+                <a href="#events">Events</a>
+                <a href="#methodology">Methodology</a>
+                <a href="#coverage">Coverage</a>
+                <a href="#lead">Submit a lead</a>
+              </nav>
+            </div>
+            <div className="footer-follow">
+              <h2>Follow</h2>
+              <FooterSocialPlaceholders />
+            </div>
           </div>
-          <nav aria-label="Footer navigation">
-            <a href="#methodology">Methodology</a>
-            <a href="#corrections">Corrections</a>
-            <a href="#lead">Submit a lead</a>
-          </nav>
-          <div className="footer-meta">
-            <span>Curated coverage</span>
-            <span>Human approval required</span>
+          <div className="footer-trust-strip">
+            <span>Sources linked</span>
             <span>Human review before publication</span>
+            <span>Identities protected</span>
+            <span>© 2026 India Observed</span>
           </div>
         </div>
       </footer>
