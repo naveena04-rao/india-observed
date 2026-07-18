@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { EventStatusTag } from "./EventStatusTag";
 import { EventTypeTag } from "./EventTypeTag";
+import type { EventStatus } from "../eventStatuses";
 import type { EventType } from "../eventTypes";
 
 export type MediaReviewStatus =
@@ -38,6 +40,8 @@ type PublisherVideoMedia = {
   sourceName: string;
   sourceUrl: string;
   embedUrl: string;
+  thumbnailUrl: string;
+  thumbnailAlt: string;
   sourceProvenance: string;
   eventVerification: string;
   publicationRightsStatus: string;
@@ -62,8 +66,7 @@ export type FeaturedRecordMedia = PublisherVideoMedia | TextRecordMedia;
 export type FeaturedRecord = {
   id: string;
   eventType: EventType;
-  status: string;
-  statusTone: string;
+  eventStatus: EventStatus;
   title: string;
   place: string;
   topic: string;
@@ -76,7 +79,7 @@ export type FeaturedRecord = {
 
 type LatestRecord = Pick<
   FeaturedRecord,
-  "id" | "eventType" | "title" | "place" | "topic" | "reviewed"
+  "id" | "eventType" | "eventStatus" | "title" | "place" | "topic" | "reviewed"
 >;
 
 type FeaturedRecordCarouselProps = {
@@ -179,7 +182,10 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
   const featuredRecordCopy = (includeIndicators: boolean) => (
     <div className="featured-record-copy">
       <p className="featured-meta">
-        <EventTypeTag eventType={activeRecord.eventType} />
+        <span className="event-tags">
+          <EventTypeTag eventType={activeRecord.eventType} />
+          <EventStatusTag eventStatus={activeRecord.eventStatus} />
+        </span>
         <span>
           {activeRecord.topic} · {activeRecord.place}
         </span>
@@ -238,12 +244,17 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
                       </div>
                     ) : (
                       <div className="publisher-video-gate">
-                        <span>Official publisher video</span>
-                        <strong>NDTV · 2:49</strong>
-                        <button type="button" onClick={() => setLoadedMediaId(activeRecord.id)}>
-                          Load video from NDTV
-                        </button>
-                        <small>Loading connects to the publisher&apos;s video player.</small>
+                        {/* Publisher metadata URL is rendered directly; the image is not reused locally. */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={activeMedia.thumbnailUrl} alt={activeMedia.thumbnailAlt} />
+                        <div className="publisher-video-gate-content">
+                          <span>Official publisher video</span>
+                          <strong>NDTV · 2:49</strong>
+                          <button type="button" onClick={() => setLoadedMediaId(activeRecord.id)}>
+                            Load video from NDTV
+                          </button>
+                          <small>Loading connects to the publisher&apos;s video player.</small>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -270,7 +281,10 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
           <div className="latest-records-grid">
             {latestRecords.map((record) => (
               <article className="latest-entry latest-entry-preview" key={record.id}>
-                <EventTypeTag eventType={record.eventType} />
+                <div className="event-tags">
+                  <EventTypeTag eventType={record.eventType} />
+                  <EventStatusTag eventStatus={record.eventStatus} />
+                </div>
                 <span className="record-topic">{record.topic}</span>
                 <span className="latest-location">{record.place}</span>
                 <strong>{record.title}</strong>

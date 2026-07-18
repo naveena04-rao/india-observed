@@ -1,14 +1,15 @@
 import Link from "next/link";
+import { EventStatusTag } from "./components/EventStatusTag";
 import { EventTypeTag } from "./components/EventTypeTag";
 import { FeaturedRecordCarousel } from "./components/FeaturedRecordCarousel";
+import type { EventStatus } from "./eventStatuses";
 import { eventTypes, type EventType } from "./eventTypes";
 
 const featuredRecords = [
   {
     id: "IO-CM-KA-0002",
     eventType: "protest",
-    status: "Ongoing",
-    statusTone: "status-ongoing",
+    eventStatus: "ongoing",
     title: "Bidadi farmers oppose township land acquisition",
     place: "Bengaluru South, Karnataka",
     topic: "Land and rehabilitation",
@@ -25,6 +26,9 @@ const featuredRecords = [
         "https://www.ndtv.com/video/protests-in-karnataka-s-bidadi-after-government-proposes-to-cut-trees-for-ai-city-project-1120270",
       embedUrl:
         "https://www.ndtv.com/videos/embed-player/?id=1120270&mute=1&autostart=0&mutestart=true&pWidth=100&pHeight=100",
+      thumbnailUrl:
+        "https://c.ndtvimg.com/2026-06/t9gf8cms_bidadi_160x120_30_June_26.png?downsize=1600:900",
+      thumbnailAlt: "People gathered outdoors during the Bidadi protest reported by NDTV",
       sourceProvenance: "NDTV · Original publisher page · 30 June 2026",
       eventVerification: "Provenance and event match confirmed; human editorial review passed",
       publicationRightsStatus: "Official source embed · Reuse permission pending",
@@ -46,8 +50,7 @@ const featuredRecords = [
   {
     id: "IO-CM-MN-0001",
     eventType: "strike",
-    status: "Ongoing",
-    statusTone: "status-ongoing",
+    eventStatus: "ongoing",
     title: "Manipur government employees continue cease-work strike",
     place: "Manipur",
     topic: "Labour and employment",
@@ -67,8 +70,7 @@ const featuredRecords = [
   {
     id: "IO-CM-OD-0001",
     eventType: "protest",
-    status: "Concluded",
-    statusTone: "status-concluded",
+    eventStatus: "concluded",
     title: "Dharmasala students protest teacher vacancies",
     place: "Jajpur, Odisha",
     topic: "Education",
@@ -90,6 +92,7 @@ const latestRecords = [
   {
     id: "IO-CM-MP-0001",
     eventType: "protest",
+    eventStatus: "ongoing",
     topic: "Land & rehabilitation",
     place: "Chhatarpur–Panna, Madhya Pradesh",
     title:
@@ -99,6 +102,7 @@ const latestRecords = [
   {
     id: "IO-CM-DL-0001",
     eventType: "sit_in",
+    eventStatus: "ongoing",
     topic: "Education",
     place: "Jantar Mantar, New Delhi",
     title: "Education accountability sit-in and hunger strike continues at Jantar Mantar",
@@ -107,6 +111,7 @@ const latestRecords = [
   {
     id: "IO-CM-MH-0001",
     eventType: "human_chain",
+    eventStatus: "concluded",
     topic: "Environment",
     place: "Thane, Maharashtra",
     title: "Citizens form human chain in Thane under the Save SGNP campaign",
@@ -116,6 +121,7 @@ const latestRecords = [
 type OnRecord = {
   id: string;
   eventType: EventType;
+  eventStatus: EventStatus;
   topic: string;
   place: string;
   title: string;
@@ -127,6 +133,7 @@ const onRecords = [
   {
     id: "IO-CM-GJ-0001",
     eventType: "satyagraha",
+    eventStatus: "ongoing",
     topic: "Land & rehabilitation",
     place: "Jetpar village, Morbi district, Gujarat",
     title:
@@ -138,6 +145,7 @@ const onRecords = [
   {
     id: "IO-CM-UP-0001",
     eventType: "demonstration",
+    eventStatus: "ongoing",
     topic: "Environment",
     place: "Dasiya village, Rudhauli police-station area, Bhanpur tehsil, Basti, Uttar Pradesh",
     title: "Dasiya villagers protest construction of an ethanol plant in Basti district",
@@ -148,6 +156,7 @@ const onRecords = [
   {
     id: "IO-CM-AS-0001",
     eventType: "demonstration",
+    eventStatus: "concluded",
     topic: "Land & rehabilitation",
     place: "Malgaon area near the Kokrajhar district border, Assam",
     title:
@@ -226,7 +235,10 @@ export default function HomePage() {
             {onRecords.map((record) => (
               <article className="on-record-context" key={record.id}>
                 <div className="on-record-meta">
-                  <EventTypeTag eventType={record.eventType} />
+                  <div className="event-tags">
+                    <EventTypeTag eventType={record.eventType} />
+                    <EventStatusTag eventStatus={record.eventStatus} />
+                  </div>
                   <span>{record.id}</span>
                   <span>{record.topic}</span>
                   <span>{record.place}</span>
@@ -279,25 +291,25 @@ export default function HomePage() {
       <section className="coverage-section">
         <div className="page-shell coverage-grid">
           <div>
-            <p className="section-kicker">Coverage</p>
-            <h2>Across India, event by event.</h2>
-            <p>
-              The repository currently includes records from Assam, Chandigarh, Delhi, Gujarat,
-              Karnataka, Madhya Pradesh, Maharashtra, Manipur, Odisha and Uttar Pradesh.
+            <h2 className="coverage-heading">Coverage</h2>
+            <p className="coverage-subheading">Across India, event by event.</p>
+            <p className="coverage-description">
+              The reviewed repository currently contains event records from 16 states and Union
+              Territories, supported by source-linked documentation.
             </p>
           </div>
           <div className="coverage-ledger" aria-label="Coverage notes">
             <div>
-              <strong>10</strong>
+              <strong>16</strong>
               <span>states and Union Territories represented</span>
             </div>
             <div>
-              <strong>6</strong>
-              <span>primary issue areas currently documented</span>
+              <strong>22</strong>
+              <span>reviewed event records</span>
             </div>
             <div>
-              <strong>0</strong>
-              <span>live locations or participant directories published</span>
+              <strong>77</strong>
+              <span>source records linked to reviewed events</span>
             </div>
           </div>
         </div>

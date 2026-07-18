@@ -126,6 +126,11 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   }
   assert.match(featuredBlock, /IO-CM-KA-0002[\s\S]*kind: "publisher_video"/);
   assert.match(featuredBlock, /www\.ndtv\.com\/videos\/embed-player\/\?id=1120270/);
+  assert.match(
+    featuredBlock,
+    /thumbnailUrl:\s*"https:\/\/c\.ndtvimg\.com\/2026-06\/t9gf8cms_bidadi_160x120_30_June_26\.png\?downsize=1600:900"/,
+  );
+  assert.match(featuredBlock, /thumbnailAlt:\s*"People gathered outdoors during the Bidadi/);
   assert.match(featuredBlock, /publicationStatus: "published_source_embed"/);
   assert.match(featuredBlock, /rightsStatus: "permission_requested"/);
   assert.equal((featuredBlock.match(/kind: "text_record"/g) ?? []).length, 2);
@@ -147,6 +152,17 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.ok(disclosureMarkup);
   assert.doesNotMatch(disclosureMarkup, /publisher-video|featured-record-caption|<h1>/);
   assert.match(carousel, /loadedMediaId === activeRecord\.id[\s\S]*featured-record-caption/);
+  assert.match(
+    carousel,
+    /type PublisherVideoMedia = \{[\s\S]*thumbnailUrl: string;[\s\S]*thumbnailAlt: string;/,
+  );
+  assert.match(
+    carousel,
+    /loadedMediaId === activeRecord\.id[\s\S]*?<iframe[\s\S]*?: \([\s\S]*?publisher-video-gate[\s\S]*?<img src=\{activeMedia\.thumbnailUrl\}/,
+  );
+  assert.match(carousel, /onClick=\{\(\) => setLoadedMediaId\(activeRecord\.id\)\}/);
+  assert.doesNotMatch(carousel, /autoPlay/);
+  assert.doesNotMatch(featuredBlock, /thumbnailUrl:\s*"\//);
   assert.match(carousel, /Auto-publication remains disabled/);
   for (const controlledStatus of [
     "candidate",
@@ -218,6 +234,22 @@ test("homepage keeps the public archive safety boundaries visible", () => {
     assert.match(page, new RegExp(stage));
   }
 
+  assert.match(page, /<h2 className="coverage-heading">Coverage<\/h2>/);
+  assert.match(page, /<p className="coverage-subheading">Across India, event by event\.<\/p>/);
+  for (const [count, label] of [
+    ["16", "states and Union Territories represented"],
+    ["22", "reviewed event records"],
+    ["77", "source records linked to reviewed events"],
+  ]) {
+    assert.match(page, new RegExp(`<strong>${count}<\\/strong>[\\s\\S]*?${label}`));
+  }
+  assert.doesNotMatch(page, /live locations or participant directories published/i);
+  assert.match(styles, /\.coverage-heading\s*\{[\s\S]*?font-size: clamp\(2\.6rem/);
+  assert.match(
+    styles,
+    /\.coverage-grid > div:first-child \.coverage-subheading\s*\{[\s\S]*?font-size: clamp\(1\.4rem/,
+  );
+
   assert.doesNotMatch(page, /Explore the archive/i);
   assert.doesNotMatch(page, /Open questions|Documentation still needed|Documentation gap/);
   assert.doesNotMatch(styles, /\.open-questions/);
@@ -256,6 +288,9 @@ test("homepage event types use one controlled vocabulary across every record are
     ),
   ];
   const vocabularyKeys = vocabularyEntries.map(([, key]) => key);
+  const definitions = Object.fromEntries(
+    vocabularyEntries.map(([, key, label, definition]) => [key, { label, definition }]),
+  );
 
   assert.deepEqual(recordEventTypes(featuredBlock), {
     "IO-CM-KA-0002": "protest",
@@ -285,9 +320,39 @@ test("homepage event types use one controlled vocabulary across every record are
     assert.ok(label.trim());
     assert.ok(definition.trim());
   }
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(definitions).map(([key, value]) => [key, value.definition])),
+    {
+      dharna:
+        "A sustained protest at a fixed place where participants remain present while pressing stated demands.",
+      strike:
+        "A coordinated refusal to work or provide normal services as a form of collective protest.",
+      sit_in:
+        "A protest in which participants sit or remain at a particular place for a period of time.",
+      hunger_strike:
+        "A protest in which one or more participants abstain from food to press stated demands.",
+      rally:
+        "An organised public gathering where people assemble to express support, opposition or demands.",
+      march: "An organised protest in which participants move together from one place to another.",
+      demonstration:
+        "An organised public action or gathering expressing opposition, support or a demand.",
+      human_chain:
+        "A symbolic public action in which participants stand together in a connected line or formation.",
+      satyagraha: "A form of nonviolent resistance used to press a demand or oppose an action.",
+      shutdown:
+        "A coordinated closure or suspension of businesses, transport or services as a form of protest.",
+      protest: "A public expression of opposition, support or demands by an individual or group.",
+    },
+  );
+  for (const { definition } of Object.values(definitions)) {
+    assert.doesNotMatch(
+      definition,
+      /Use this|Do not|fallback|classification|organisers|reliable sources|more specific event form/i,
+    );
+  }
 
   assert.match(carousel, /eventType: EventType;/);
-  assert.match(carousel, /"id" \| "eventType" \| "title"/);
+  assert.match(carousel, /"id" \| "eventType" \| "eventStatus" \| "title"/);
   assert.match(page, /type OnRecord = \{[\s\S]*?eventType: EventType;/);
   assert.match(
     carousel,
@@ -308,6 +373,78 @@ test("homepage event types use one controlled vocabulary across every record are
     assert.match(block, /topic:/);
   }
   assert.doesNotMatch(page, /Open questions/i);
+});
+
+test("homepage event statuses use one controlled public vocabulary", () => {
+  const page = read("src/app/page.tsx");
+  const carousel = read("src/app/components/FeaturedRecordCarousel.tsx");
+  const statuses = read("src/app/eventStatuses.ts");
+  const statusTag = read("src/app/components/EventStatusTag.tsx");
+  const styles = read("src/app/globals.css");
+
+  const featuredBlock = page.match(/const featuredRecords = \[([\s\S]*?)\] as const;/)?.[1];
+  const latestBlock = page.match(/const latestRecords = \[([\s\S]*?)\] as const;/)?.[1];
+  const onRecordBlock = page.match(
+    /const onRecords = \[([\s\S]*?)\] as const satisfies readonly OnRecord\[\];/,
+  )?.[1];
+  assert.ok(featuredBlock);
+  assert.ok(latestBlock);
+  assert.ok(onRecordBlock);
+
+  const recordStatuses = (source) =>
+    Object.fromEntries(
+      [...source.matchAll(/id: "([^"]+)",[\s\S]*?eventStatus: "([^"]+)"/g)].map(
+        ([, id, eventStatus]) => [id, eventStatus],
+      ),
+    );
+  assert.deepEqual(recordStatuses(featuredBlock), {
+    "IO-CM-KA-0002": "ongoing",
+    "IO-CM-MN-0001": "ongoing",
+    "IO-CM-OD-0001": "concluded",
+  });
+  assert.deepEqual(recordStatuses(latestBlock), {
+    "IO-CM-MP-0001": "ongoing",
+    "IO-CM-DL-0001": "ongoing",
+    "IO-CM-MH-0001": "concluded",
+  });
+  assert.deepEqual(recordStatuses(onRecordBlock), {
+    "IO-CM-GJ-0001": "ongoing",
+    "IO-CM-UP-0001": "ongoing",
+    "IO-CM-AS-0001": "concluded",
+  });
+
+  for (const [key, label] of [
+    ["announced", "Upcoming"],
+    ["ongoing", "Ongoing"],
+    ["paused", "Paused"],
+    ["concluded", "Completed"],
+    ["unresolved", "Unresolved"],
+    ["outcome_pending", "Outcome pending"],
+    ["unknown", "Status unclear"],
+  ]) {
+    assert.match(statuses, new RegExp(`${key}: \\{ label: "${label}"`));
+  }
+  assert.match(carousel, /eventStatus: EventStatus;/);
+  assert.match(page, /eventStatus: EventStatus;/);
+  assert.match(statusTag, /eventStatus: EventStatus;/);
+  assert.match(statusTag, /aria-label=\{`Event status: \$\{label\}`\}/);
+  assert.doesNotMatch(statusTag, /<button/);
+  assert.match(
+    carousel,
+    /featured-meta[\s\S]*?event-tags[\s\S]*?<EventTypeTag[\s\S]*?<EventStatusTag/,
+  );
+  assert.match(
+    carousel,
+    /latestRecords\.map[\s\S]*?event-tags[\s\S]*?<EventTypeTag[\s\S]*?<EventStatusTag/,
+  );
+  assert.match(
+    page,
+    /on-record-meta[\s\S]*?event-tags[\s\S]*?<EventTypeTag[\s\S]*?<EventStatusTag/,
+  );
+  assert.match(
+    styles,
+    /\.event-type-tag,[\s\S]*?\.event-status-tag\s*\{[\s\S]*?border-width: 2px;/,
+  );
 });
 
 test("homepage preserves the approved black header and white page surfaces", () => {

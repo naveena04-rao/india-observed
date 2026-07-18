@@ -1621,10 +1621,26 @@ h3 {
   width: 100%;
 }
 .publisher-video-gate {
+  overflow: hidden;
+  position: relative;
+}
+.publisher-video-gate img {
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  position: absolute;
+  width: 100%;
+}
+.publisher-video-gate-content {
   align-content: center;
+  background: rgba(21, 22, 22, 0.55);
   display: grid;
   gap: 0.3rem;
+  height: 100%;
   padding: 1rem;
+  position: relative;
+  width: 100%;
+  z-index: 1;
 }
 .publisher-video-gate span,
 .publisher-video-gate small {
@@ -2513,10 +2529,12 @@ main .lead-panel {
   color: var(--ink);
 }
 
-.event-type-tag {
+.event-type-tag,
+.event-status-tag {
   align-self: start;
   background: #ffffff;
-  border: 1px solid var(--terracotta);
+  border-style: solid;
+  border-width: 2px;
   color: var(--ink);
   display: inline-flex;
   font-size: 0.6rem;
@@ -2525,9 +2543,52 @@ main .lead-panel {
   line-height: 1.2;
   max-width: 100%;
   overflow-wrap: anywhere;
-  padding: 0.18rem 0.35rem;
+  padding: 0.12rem 0.3rem;
   text-transform: uppercase;
   width: fit-content;
+}
+
+.event-type-tag {
+  border-color: var(--terracotta);
+}
+
+.event-status-tag--ongoing {
+  background: #f4faf7;
+  border-color: #2f6b5e;
+  color: #234f46;
+}
+
+.event-status-tag--upcoming {
+  background: #f4f9fa;
+  border-color: #276a75;
+  color: #1e515a;
+}
+
+.event-status-tag--paused,
+.event-status-tag--outcome-pending {
+  background: #fffaf0;
+  border-color: #8a6316;
+  color: #684b11;
+}
+
+.event-status-tag--completed,
+.event-status-tag--unknown {
+  background: #f7f7f5;
+  border-color: #686661;
+  color: #4f4d49;
+}
+
+.event-status-tag--unresolved {
+  background: #fff7f4;
+  border-color: #a43f2a;
+  color: #7d3020;
+}
+
+.event-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  max-width: 100%;
 }
 
 .featured-meta {
@@ -2537,8 +2598,28 @@ main .lead-panel {
   gap: 0.4rem 0.55rem;
 }
 
-.latest-entry-preview > .event-type-tag {
+.latest-entry-preview > .event-tags {
   margin-bottom: 0.35rem;
+}
+
+.coverage-heading {
+  font-size: clamp(2.6rem, 4.5vw, 4.35rem);
+  margin-bottom: 0.3rem;
+}
+
+.coverage-grid > div:first-child .coverage-subheading {
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.4rem, 2.4vw, 2rem);
+  font-weight: 700;
+  line-height: 1.15;
+  margin-bottom: 0.75rem;
+}
+
+.coverage-grid > div:first-child .coverage-description {
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.55;
 }
 
 .event-type-guide {
