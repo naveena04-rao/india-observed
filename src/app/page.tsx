@@ -1,11 +1,17 @@
 import Link from "next/link";
+import { EventStatusTag } from "./components/EventStatusTag";
+import { EventTypeTag } from "./components/EventTypeTag";
+import { FooterSocialPlaceholders } from "./components/FooterSocialPlaceholders";
 import { FeaturedRecordCarousel } from "./components/FeaturedRecordCarousel";
+import type { EventStatus } from "./eventStatuses";
+import { eventTypes, type EventType } from "./eventTypes";
 
 const featuredRecords = [
   {
     id: "IO-CM-KA-0002",
-    status: "Ongoing",
-    statusTone: "status-ongoing",
+    eventType: "protest",
+    eventStatus: "ongoing",
+    directedAt: "State government — Karnataka",
     title: "Bidadi farmers oppose township land acquisition",
     place: "Bengaluru South, Karnataka",
     topic: "Land and rehabilitation",
@@ -22,8 +28,11 @@ const featuredRecords = [
         "https://www.ndtv.com/video/protests-in-karnataka-s-bidadi-after-government-proposes-to-cut-trees-for-ai-city-project-1120270",
       embedUrl:
         "https://www.ndtv.com/videos/embed-player/?id=1120270&mute=1&autostart=0&mutestart=true&pWidth=100&pHeight=100",
+      thumbnailUrl:
+        "https://c.ndtvimg.com/2026-06/t9gf8cms_bidadi_160x120_30_June_26.png?downsize=1600:900",
+      thumbnailAlt: "People gathered outdoors during the Bidadi protest reported by NDTV",
       sourceProvenance: "NDTV · Original publisher page · 30 June 2026",
-      eventVerification: "Provenance and event match confirmed; human editorial review passed",
+      eventVerification: "Event confirmed",
       publicationRightsStatus: "Official source embed · Reuse permission pending",
       caption:
         "NDTV's report depicts a public protest in Bidadi concerning the proposed AI City project; it does not independently resolve disputed land-acquisition details.",
@@ -42,8 +51,9 @@ const featuredRecords = [
   },
   {
     id: "IO-CM-MN-0001",
-    status: "Ongoing",
-    statusTone: "status-ongoing",
+    eventType: "strike",
+    eventStatus: "ongoing",
+    directedAt: "State government — Manipur",
     title: "Manipur government employees continue cease-work strike",
     place: "Manipur",
     topic: "Labour and employment",
@@ -56,14 +66,15 @@ const featuredRecords = [
       kind: "text_record",
       format: "Text record",
       sourceProvenance: "Reviewed record sources; no visual asset selected",
-      eventVerification: "Occurrence verified",
+      eventVerification: "Event confirmed",
       publicationRightsStatus: "Text fallback · No visual media published",
     },
   },
   {
     id: "IO-CM-OD-0001",
-    status: "Concluded",
-    statusTone: "status-concluded",
+    eventType: "protest",
+    eventStatus: "concluded",
+    directedAt: "District education authorities — Jajpur",
     title: "Dharmasala students protest teacher vacancies",
     place: "Jajpur, Odisha",
     topic: "Education",
@@ -76,7 +87,7 @@ const featuredRecords = [
       kind: "text_record",
       format: "Text record",
       sourceProvenance: "Reviewed record sources; no visual asset selected",
-      eventVerification: "Outcome documented",
+      eventVerification: "Event and outcome confirmed",
       publicationRightsStatus: "Text fallback · No visual media published",
     },
   },
@@ -84,6 +95,8 @@ const featuredRecords = [
 const latestRecords = [
   {
     id: "IO-CM-MP-0001",
+    eventType: "protest",
+    eventStatus: "ongoing",
     topic: "Land & rehabilitation",
     place: "Chhatarpur–Panna, Madhya Pradesh",
     title:
@@ -92,6 +105,8 @@ const latestRecords = [
   },
   {
     id: "IO-CM-DL-0001",
+    eventType: "sit_in",
+    eventStatus: "ongoing",
     topic: "Education",
     place: "Jantar Mantar, New Delhi",
     title: "Education accountability sit-in and hunger strike continues at Jantar Mantar",
@@ -99,15 +114,30 @@ const latestRecords = [
   },
   {
     id: "IO-CM-MH-0001",
+    eventType: "human_chain",
+    eventStatus: "concluded",
     topic: "Environment",
     place: "Thane, Maharashtra",
     title: "Citizens form human chain in Thane under the Save SGNP campaign",
     reviewed: "15 July 2026",
   },
 ] as const;
+type OnRecord = {
+  id: string;
+  eventType: EventType;
+  eventStatus: EventStatus;
+  topic: string;
+  place: string;
+  title: string;
+  context: string;
+  reviewed: string;
+};
+
 const onRecords = [
   {
     id: "IO-CM-GJ-0001",
+    eventType: "satyagraha",
+    eventStatus: "ongoing",
     topic: "Land & rehabilitation",
     place: "Jetpar village, Morbi district, Gujarat",
     title:
@@ -118,6 +148,8 @@ const onRecords = [
   },
   {
     id: "IO-CM-UP-0001",
+    eventType: "demonstration",
+    eventStatus: "ongoing",
     topic: "Environment",
     place: "Dasiya village, Rudhauli police-station area, Bhanpur tehsil, Basti, Uttar Pradesh",
     title: "Dasiya villagers protest construction of an ethanol plant in Basti district",
@@ -127,6 +159,8 @@ const onRecords = [
   },
   {
     id: "IO-CM-AS-0001",
+    eventType: "demonstration",
+    eventStatus: "concluded",
     topic: "Land & rehabilitation",
     place: "Malgaon area near the Kokrajhar district border, Assam",
     title:
@@ -135,7 +169,7 @@ const onRecords = [
       "Hundreds of Bodo residents gathered at Malgaon on 12 July 2026 to oppose a proposed land allotment to Assam Power Distribution Company Limited and the proposed rehabilitation of 93 families evicted from Kaimari. Protesters demanded protection of land they described as part of a Tribal Belt and Block and called for the allotment and resettlement proposal to be withdrawn. The demonstration is supported by regional video reporting and local community coverage.",
     reviewed: "15 July 2026",
   },
-] as const;
+] as const satisfies readonly OnRecord[];
 
 const processSteps = [
   ["1", "Find the event", "Identify credible public reporting and official information."],
@@ -199,12 +233,16 @@ export default function HomePage() {
 
       <section className="on-record-section" aria-labelledby="on-record-title">
         <div className="page-shell">
-          <h2 id="on-record-title">ON record</h2>
+          <h2 id="on-record-title">ON RECORD</h2>
 
           <div className="on-record-list">
             {onRecords.map((record) => (
               <article className="on-record-context" key={record.id}>
                 <div className="on-record-meta">
+                  <div className="event-tags">
+                    <EventTypeTag eventType={record.eventType} />
+                    <EventStatusTag eventStatus={record.eventStatus} />
+                  </div>
                   <span>{record.id}</span>
                   <span>{record.topic}</span>
                   <span>{record.place}</span>
@@ -239,57 +277,56 @@ export default function HomePage() {
               </li>
             ))}
           </ol>
+
+          <details className="event-type-guide">
+            <summary>Event type definitions</summary>
+            <dl>
+              {Object.entries(eventTypes).map(([key, { label, definition }]) => (
+                <div key={key}>
+                  <dt>{label}</dt>
+                  <dd>{definition}</dd>
+                </div>
+              ))}
+            </dl>
+          </details>
         </div>
       </section>
 
-      <section className="coverage-section">
+      <section className="coverage-section" id="coverage">
         <div className="page-shell coverage-grid">
           <div>
-            <p className="section-kicker">Coverage</p>
-            <h2>Across India, event by event.</h2>
-            <p>
-              The repository currently includes records from Assam, Chandigarh, Delhi, Gujarat,
-              Karnataka, Madhya Pradesh, Maharashtra, Manipur, Odisha and Uttar Pradesh.
+            <h2 className="coverage-heading">COVERAGE</h2>
+            <p className="coverage-subheading">Across India, event by event.</p>
+            <p className="coverage-description">
+              The reviewed repository currently contains event records from 16 states and Union
+              Territories, supported by source-linked documentation.
             </p>
           </div>
           <div className="coverage-ledger" aria-label="Coverage notes">
             <div>
-              <strong>10</strong>
+              <strong>16</strong>
               <span>states and Union Territories represented</span>
             </div>
             <div>
-              <strong>6</strong>
-              <span>primary issue areas currently documented</span>
+              <strong>22</strong>
+              <span>reviewed event records</span>
             </div>
             <div>
-              <strong>0</strong>
-              <span>live locations or participant directories published</span>
+              <strong>77</strong>
+              <span>source records linked to reviewed events</span>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="correction-stream" id="corrections">
-        <div className="page-shell">
-          <div className="section-intro ruled-heading">
-            <div>
-              <p className="section-kicker">Recent corrections and clarifications</p>
-              <h2>Changes remain visible</h2>
-            </div>
-          </div>
-          <div className="correction-empty-state">
-            <strong>No recent record changes have been published.</strong>
-            <p>Corrections and clarifications will appear here after editorial review.</p>
-          </div>
-        </div>
-      </section>
-
-      <section className="participation-section">
+      <section className="participation-section" aria-labelledby="contribute-title">
         <div className="page-shell participation-grid">
           <div className="lead-panel" id="lead">
-            <p className="section-kicker light-kicker">Contribute</p>
-            <h2>Know of an undercovered civic event?</h2>
-            <p>
+            <h2 id="contribute-title" className="contribute-heading">
+              CONTRIBUTE
+            </h2>
+            <p className="contribute-subheading">Want to report a public event?</p>
+            <p className="contribute-description">
               Share a public source link, approximate date and broad location. Do not submit private
               documents, participant lists or tactical information.
             </p>
@@ -301,20 +338,32 @@ export default function HomePage() {
       </section>
 
       <footer className="site-footer">
-        <div className="page-shell footer-grid">
-          <div>
-            <span className="footer-brand">India Observed</span>
-            <p>A curated, source-linked public record of civic action across India.</p>
+        <div className="page-shell">
+          <div className="footer-grid">
+            <div className="footer-identity">
+              <span className="footer-brand">India Observed</span>
+              <p>Independent, source-linked records of civic action across India.</p>
+            </div>
+            <div className="footer-explore">
+              <h2>Explore</h2>
+              <nav aria-label="Footer navigation">
+                <a href="#home">Home</a>
+                <a href="#events">Events</a>
+                <a href="#methodology">Methodology</a>
+                <a href="#coverage">Coverage</a>
+                <a href="#lead">Submit a lead</a>
+              </nav>
+            </div>
+            <div className="footer-follow">
+              <h2>Follow</h2>
+              <FooterSocialPlaceholders />
+            </div>
           </div>
-          <nav aria-label="Footer navigation">
-            <a href="#methodology">Methodology</a>
-            <a href="#corrections">Corrections</a>
-            <a href="#lead">Submit a lead</a>
-          </nav>
-          <div className="footer-meta">
-            <span>Curated coverage</span>
-            <span>Human approval required</span>
+          <div className="footer-trust-strip">
+            <span>Sources linked</span>
             <span>Human review before publication</span>
+            <span>Identities protected</span>
+            <span>© 2026 India Observed</span>
           </div>
         </div>
       </footer>
