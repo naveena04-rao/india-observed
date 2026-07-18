@@ -2508,3 +2508,80 @@ main .lead-panel {
 .mobile-menu nav a {
   color: var(--ink);
 }
+
+.event-type-tag {
+  align-self: start;
+  background: #ffffff;
+  border: 1px solid var(--terracotta);
+  color: var(--ink);
+  display: inline-flex;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  padding: 0.18rem 0.35rem;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.featured-meta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+}
+
+.latest-entry-preview > .event-type-tag {
+  margin-bottom: 0.35rem;
+}
+
+.event-type-guide {
+  background: #ffffff;
+  border-top: 1px solid var(--line-dark);
+  margin: 1.25rem auto 0;
+  max-width: 50rem;
+  padding-top: 0.75rem;
+}
+
+.event-type-guide summary {
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  width: fit-content;
+}
+
+.event-type-guide dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0.75rem 0 0;
+}
+
+.event-type-guide dl div {
+  border-top: 1px solid var(--line);
+  min-width: 0;
+  padding: 0.65rem 0.75rem 0.65rem 0;
+}
+
+.event-type-guide dt {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.event-type-guide dd {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  margin: 0.2rem 0 0;
+}
+
+@media (max-width: 700px) {
+  .event-type-guide dl {
+    grid-template-columns: 1fr;
+  }
+}

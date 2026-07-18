@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { EventTypeTag } from "./components/EventTypeTag";
 import { FeaturedRecordCarousel } from "./components/FeaturedRecordCarousel";
+import { eventTypes, type EventType } from "./eventTypes";
 
 const featuredRecords = [
   {
     id: "IO-CM-KA-0002",
+    eventType: "protest",
     status: "Ongoing",
     statusTone: "status-ongoing",
     title: "Bidadi farmers oppose township land acquisition",
@@ -42,6 +45,7 @@ const featuredRecords = [
   },
   {
     id: "IO-CM-MN-0001",
+    eventType: "strike",
     status: "Ongoing",
     statusTone: "status-ongoing",
     title: "Manipur government employees continue cease-work strike",
@@ -62,6 +66,7 @@ const featuredRecords = [
   },
   {
     id: "IO-CM-OD-0001",
+    eventType: "protest",
     status: "Concluded",
     statusTone: "status-concluded",
     title: "Dharmasala students protest teacher vacancies",
@@ -84,6 +89,7 @@ const featuredRecords = [
 const latestRecords = [
   {
     id: "IO-CM-MP-0001",
+    eventType: "protest",
     topic: "Land & rehabilitation",
     place: "Chhatarpur–Panna, Madhya Pradesh",
     title:
@@ -92,6 +98,7 @@ const latestRecords = [
   },
   {
     id: "IO-CM-DL-0001",
+    eventType: "sit_in",
     topic: "Education",
     place: "Jantar Mantar, New Delhi",
     title: "Education accountability sit-in and hunger strike continues at Jantar Mantar",
@@ -99,15 +106,27 @@ const latestRecords = [
   },
   {
     id: "IO-CM-MH-0001",
+    eventType: "human_chain",
     topic: "Environment",
     place: "Thane, Maharashtra",
     title: "Citizens form human chain in Thane under the Save SGNP campaign",
     reviewed: "15 July 2026",
   },
 ] as const;
+type OnRecord = {
+  id: string;
+  eventType: EventType;
+  topic: string;
+  place: string;
+  title: string;
+  context: string;
+  reviewed: string;
+};
+
 const onRecords = [
   {
     id: "IO-CM-GJ-0001",
+    eventType: "satyagraha",
     topic: "Land & rehabilitation",
     place: "Jetpar village, Morbi district, Gujarat",
     title:
@@ -118,6 +137,7 @@ const onRecords = [
   },
   {
     id: "IO-CM-UP-0001",
+    eventType: "demonstration",
     topic: "Environment",
     place: "Dasiya village, Rudhauli police-station area, Bhanpur tehsil, Basti, Uttar Pradesh",
     title: "Dasiya villagers protest construction of an ethanol plant in Basti district",
@@ -127,6 +147,7 @@ const onRecords = [
   },
   {
     id: "IO-CM-AS-0001",
+    eventType: "demonstration",
     topic: "Land & rehabilitation",
     place: "Malgaon area near the Kokrajhar district border, Assam",
     title:
@@ -135,7 +156,7 @@ const onRecords = [
       "Hundreds of Bodo residents gathered at Malgaon on 12 July 2026 to oppose a proposed land allotment to Assam Power Distribution Company Limited and the proposed rehabilitation of 93 families evicted from Kaimari. Protesters demanded protection of land they described as part of a Tribal Belt and Block and called for the allotment and resettlement proposal to be withdrawn. The demonstration is supported by regional video reporting and local community coverage.",
     reviewed: "15 July 2026",
   },
-] as const;
+] as const satisfies readonly OnRecord[];
 
 const processSteps = [
   ["1", "Find the event", "Identify credible public reporting and official information."],
@@ -205,6 +226,7 @@ export default function HomePage() {
             {onRecords.map((record) => (
               <article className="on-record-context" key={record.id}>
                 <div className="on-record-meta">
+                  <EventTypeTag eventType={record.eventType} />
                   <span>{record.id}</span>
                   <span>{record.topic}</span>
                   <span>{record.place}</span>
@@ -239,6 +261,18 @@ export default function HomePage() {
               </li>
             ))}
           </ol>
+
+          <details className="event-type-guide">
+            <summary>Event type definitions</summary>
+            <dl>
+              {Object.entries(eventTypes).map(([key, { label, definition }]) => (
+                <div key={key}>
+                  <dt>{label}</dt>
+                  <dd>{definition}</dd>
+                </div>
+              ))}
+            </dl>
+          </details>
         </div>
       </section>
 

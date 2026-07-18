@@ -41,7 +41,9 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   const styles = read("src/app/globals.css");
   const featuredBlock = page.match(/const featuredRecords = \[([\s\S]*?)\] as const;/)?.[1];
   const latestBlock = page.match(/const latestRecords = \[([\s\S]*?)\] as const;/)?.[1];
-  const onRecordBlock = page.match(/const onRecords = \[([\s\S]*?)\] as const;/)?.[1];
+  const onRecordBlock = page.match(
+    /const onRecords = \[([\s\S]*?)\] as const satisfies readonly OnRecord\[\];/,
+  )?.[1];
   const latestMarkup = carousel.match(
     /\{latestRecords\.map\(\(record\) => \(([\s\S]*?)\)\)\}/,
   )?.[1];
@@ -219,6 +221,93 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.doesNotMatch(page, /Explore the archive/i);
   assert.doesNotMatch(page, /Open questions|Documentation still needed|Documentation gap/);
   assert.doesNotMatch(styles, /\.open-questions/);
+});
+
+test("homepage event types use one controlled vocabulary across every record area", () => {
+  const page = read("src/app/page.tsx");
+  const carousel = read("src/app/components/FeaturedRecordCarousel.tsx");
+  const tag = read("src/app/components/EventTypeTag.tsx");
+  const vocabulary = read("src/app/eventTypes.ts");
+
+  const featuredBlock = page.match(/const featuredRecords = \[([\s\S]*?)\] as const;/)?.[1];
+  const latestBlock = page.match(/const latestRecords = \[([\s\S]*?)\] as const;/)?.[1];
+  const onRecordBlock = page.match(
+    /const onRecords = \[([\s\S]*?)\] as const satisfies readonly OnRecord\[\];/,
+  )?.[1];
+  const vocabularyBlock = vocabulary.match(
+    /export const eventTypes = \{([\s\S]*?)\} as const;/,
+  )?.[1];
+
+  assert.ok(featuredBlock);
+  assert.ok(latestBlock);
+  assert.ok(onRecordBlock);
+  assert.ok(vocabularyBlock);
+
+  const recordEventTypes = (source) =>
+    Object.fromEntries(
+      [...source.matchAll(/id: "([^"]+)",\s+eventType: "([^"]+)"/g)].map(([, id, eventType]) => [
+        id,
+        eventType,
+      ]),
+    );
+  const vocabularyEntries = [
+    ...vocabularyBlock.matchAll(
+      /^\s{2}([a-z_]+): \{\s+label: "([^"]+)",\s+definition:\s+"([^"]+)"/gm,
+    ),
+  ];
+  const vocabularyKeys = vocabularyEntries.map(([, key]) => key);
+
+  assert.deepEqual(recordEventTypes(featuredBlock), {
+    "IO-CM-KA-0002": "protest",
+    "IO-CM-MN-0001": "strike",
+    "IO-CM-OD-0001": "protest",
+  });
+  assert.deepEqual(recordEventTypes(latestBlock), {
+    "IO-CM-MP-0001": "protest",
+    "IO-CM-DL-0001": "sit_in",
+    "IO-CM-MH-0001": "human_chain",
+  });
+  assert.deepEqual(recordEventTypes(onRecordBlock), {
+    "IO-CM-GJ-0001": "satyagraha",
+    "IO-CM-UP-0001": "demonstration",
+    "IO-CM-AS-0001": "demonstration",
+  });
+
+  for (const eventType of [
+    ...Object.values(recordEventTypes(featuredBlock)),
+    ...Object.values(recordEventTypes(latestBlock)),
+    ...Object.values(recordEventTypes(onRecordBlock)),
+  ]) {
+    assert.ok(vocabularyKeys.includes(eventType));
+  }
+  assert.equal(vocabularyEntries.length, 11);
+  for (const [, , label, definition] of vocabularyEntries) {
+    assert.ok(label.trim());
+    assert.ok(definition.trim());
+  }
+
+  assert.match(carousel, /eventType: EventType;/);
+  assert.match(carousel, /"id" \| "eventType" \| "title"/);
+  assert.match(page, /type OnRecord = \{[\s\S]*?eventType: EventType;/);
+  assert.match(
+    carousel,
+    /featured-meta[\s\S]*?<EventTypeTag eventType=\{activeRecord\.eventType\}/,
+  );
+  assert.match(carousel, /latestRecords\.map[\s\S]*?<EventTypeTag eventType=\{record\.eventType\}/);
+  assert.match(page, /on-record-meta[\s\S]*?<EventTypeTag eventType=\{record\.eventType\}/);
+  assert.match(page, /<details className="event-type-guide">/);
+  assert.match(page, /<summary>Event type definitions<\/summary>/);
+  assert.match(page, /Object\.entries\(eventTypes\)\.map/);
+  assert.match(tag, /eventType: EventType;/);
+  assert.match(tag, /aria-label=\{`Event type: \$\{label\}\. \$\{definition\}`\}/);
+  assert.match(tag, /title=\{definition\}/);
+  assert.doesNotMatch(tag, /<button/);
+
+  for (const block of [featuredBlock, latestBlock, onRecordBlock]) {
+    assert.match(block, /eventType:/);
+    assert.match(block, /topic:/);
+  }
+  assert.doesNotMatch(page, /Open questions/i);
 });
 
 test("homepage preserves the approved black header and white page surfaces", () => {

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { EventTypeTag } from "./EventTypeTag";
+import type { EventType } from "../eventTypes";
 
 export type MediaReviewStatus =
   "candidate" | "provenance_confirmed" | "event_match_confirmed" | "corroborated" | "rejected";
@@ -59,6 +61,7 @@ export type FeaturedRecordMedia = PublisherVideoMedia | TextRecordMedia;
 
 export type FeaturedRecord = {
   id: string;
+  eventType: EventType;
   status: string;
   statusTone: string;
   title: string;
@@ -71,7 +74,10 @@ export type FeaturedRecord = {
   media: FeaturedRecordMedia;
 };
 
-type LatestRecord = Pick<FeaturedRecord, "id" | "title" | "place" | "topic" | "reviewed">;
+type LatestRecord = Pick<
+  FeaturedRecord,
+  "id" | "eventType" | "title" | "place" | "topic" | "reviewed"
+>;
 
 type FeaturedRecordCarouselProps = {
   records: readonly FeaturedRecord[];
@@ -173,7 +179,10 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
   const featuredRecordCopy = (includeIndicators: boolean) => (
     <div className="featured-record-copy">
       <p className="featured-meta">
-        {activeRecord.topic} · {activeRecord.place}
+        <EventTypeTag eventType={activeRecord.eventType} />
+        <span>
+          {activeRecord.topic} · {activeRecord.place}
+        </span>
       </p>
       <h1>{activeRecord.title}</h1>
       <div className="featured-evidence" aria-label="Record evidence summary">
@@ -261,6 +270,7 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
           <div className="latest-records-grid">
             {latestRecords.map((record) => (
               <article className="latest-entry latest-entry-preview" key={record.id}>
+                <EventTypeTag eventType={record.eventType} />
                 <span className="record-topic">{record.topic}</span>
                 <span className="latest-location">{record.place}</span>
                 <strong>{record.title}</strong>
