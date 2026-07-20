@@ -264,6 +264,39 @@ test("archive rows follow the ON RECORD structure and link to readable detail ro
   assert.match(styles, /@media \(max-width: 700px\)[\s\S]*?\.event-row-visual[\s\S]*?grid-row: 1/);
 });
 
+test("archive controls use compact spacing without changing title, grid, rows, or homepage", () => {
+  assert.match(
+    styles,
+    /\.events-archive \{[\s\S]*?padding-bottom: clamp\(3\.5rem, 7vw, 6rem\);[\s\S]*?padding-top: clamp\(0\.75rem, 1\.5vw, 1\.25rem\);/,
+  );
+  assert.match(styles, /\.events-intro \{[\s\S]*?padding-bottom: 0\.6rem/);
+  assert.match(styles, /\.events-intro h1 \{[\s\S]*?font-size: clamp\(2\.6rem, 6vw, 5rem\)/);
+  assert.match(
+    styles,
+    /\.preview-notice \{[\s\S]*?margin-block: 0\.45rem;[\s\S]*?padding: 0\.35rem 0\.65rem/,
+  );
+  assert.match(
+    styles,
+    /\.event-filters \{[\s\S]*?gap: 0\.35rem 1rem;[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);[\s\S]*?padding-block: 0\.45rem 0\.6rem/,
+  );
+  assert.match(
+    styles,
+    /\.event-filters input,[\s\S]*?\.event-filters select \{[\s\S]*?font-size: 0\.82rem;[\s\S]*?min-height: 2\.3rem;[\s\S]*?padding: 0\.35rem 0\.6rem/,
+  );
+  assert.match(styles, /\.events-result-count \{[\s\S]*?margin-block: 0\.45rem 0\.3rem/);
+  assert.match(
+    styles,
+    /\.event-archive-row \{[\s\S]*?grid-template-columns: minmax\(0, 68fr\) minmax\(15rem, 32fr\);[\s\S]*?padding-block: clamp\(1\.25rem, 2\.5vw, 2rem\)/,
+  );
+  assert.match(styles, /\.featured-carousel \.featured-slide \{[\s\S]*?height: 30rem/);
+  assert.match(
+    styles,
+    /@media \(max-width: 700px\)[\s\S]*?\.events-archive \{[\s\S]*?padding-top: 0\.75rem[\s\S]*?\.event-filters input,[\s\S]*?min-height: 2\.75rem/,
+  );
+  assert.equal((dataset.match(/visual: publisherVideo\(\{/g) ?? []).length, 5);
+  assert.equal((dataset.match(/visual: recordCover\(/g) ?? []).length, 18);
+});
+
 test("detail pages show full public-safe records and disabled launch actions", () => {
   for (const field of [
     "event.eventType",
