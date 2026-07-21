@@ -3,8 +3,24 @@ import { EventStatusTag } from "./components/EventStatusTag";
 import { EventTypeTag } from "./components/EventTypeTag";
 import { FooterSocialPlaceholders } from "./components/FooterSocialPlaceholders";
 import { FeaturedRecordCarousel } from "./components/FeaturedRecordCarousel";
+import { EventVisual } from "./events/components/EventVisual";
 import type { EventStatus } from "./eventStatuses";
 import { eventTypes, type EventType } from "./eventTypes";
+import { reviewedEventsPreview } from "../data/reviewed-events-preview";
+import type { EventVisual as EventVisualData } from "../lib/events/types";
+
+const homepageVisualsByInternalId = new Map<string, { eventHref: string; visual: EventVisualData }>(
+  reviewedEventsPreview.map(({ internalId, slug, visual }) => [
+    internalId,
+    { eventHref: `/events/${slug}`, visual },
+  ]),
+);
+
+function getHomepageVisual(internalId: string) {
+  const homepageVisual = homepageVisualsByInternalId.get(internalId);
+  if (!homepageVisual) throw new Error(`Missing reviewed visual for homepage record ${internalId}`);
+  return homepageVisual;
+}
 
 const featuredRecords = [
   {
@@ -21,16 +37,7 @@ const featuredRecords = [
     note: "Some details remain disputed",
     reviewed: "15 July 2026",
     media: {
-      kind: "publisher_video",
       format: "Publisher-hosted video (2:49)",
-      sourceName: "NDTV",
-      sourceUrl:
-        "https://www.ndtv.com/video/protests-in-karnataka-s-bidadi-after-government-proposes-to-cut-trees-for-ai-city-project-1120270",
-      embedUrl:
-        "https://www.ndtv.com/videos/embed-player/?id=1120270&mute=1&autostart=0&mutestart=true&pWidth=100&pHeight=100",
-      thumbnailUrl:
-        "https://c.ndtvimg.com/2026-06/t9gf8cms_bidadi_160x120_30_June_26.png?downsize=1600:900",
-      thumbnailAlt: "People gathered outdoors during the Bidadi protest reported by NDTV",
       sourceProvenance: "NDTV · Original publisher page · 30 June 2026",
       eventVerification: "Event confirmed",
       publicationRightsStatus: "Official source embed · Reuse permission pending",
@@ -63,7 +70,6 @@ const featuredRecords = [
     note: "Official response under review",
     reviewed: "15 July 2026",
     media: {
-      kind: "text_record",
       format: "Text record",
       sourceProvenance: "Reviewed record sources; no visual asset selected",
       eventVerification: "Event confirmed",
@@ -84,7 +90,6 @@ const featuredRecords = [
     note: "Same-day institutional response recorded",
     reviewed: "15 July 2026",
     media: {
-      kind: "text_record",
       format: "Text record",
       sourceProvenance: "Reviewed record sources; no visual asset selected",
       eventVerification: "Event and outcome confirmed",
@@ -92,6 +97,12 @@ const featuredRecords = [
     },
   },
 ] as const;
+
+const featuredRecordsWithVisuals = featuredRecords.map((record) => ({
+  ...record,
+  ...getHomepageVisual(record.id),
+}));
+
 const latestRecords = [
   {
     id: "IO-CM-MP-0001",
@@ -122,6 +133,11 @@ const latestRecords = [
     reviewed: "15 July 2026",
   },
 ] as const;
+
+const latestRecordsWithVisuals = latestRecords.map((record) => ({
+  ...record,
+  ...getHomepageVisual(record.id),
+}));
 type OnRecord = {
   id: string;
   eventType: EventType;
@@ -201,7 +217,7 @@ export default function HomePage() {
           <nav className="desktop-nav" aria-label="Primary navigation">
             <a href="#home">Home</a>
             <a href="#about">About</a>
-            <a href="#events">Events</a>
+            <Link href="/events">Events</Link>
             <a href="#methodology">Methodology</a>
             <a className="nav-action" href="#lead">
               Submit a lead
@@ -213,7 +229,7 @@ export default function HomePage() {
             <nav aria-label="Mobile navigation">
               <a href="#home">Home</a>
               <a href="#about">About</a>
-              <a href="#events">Events</a>
+              <Link href="/events">Events</Link>
               <a href="#methodology">Methodology</a>
               <a className="nav-action" href="#lead">
                 Submit a lead
@@ -229,29 +245,39 @@ export default function HomePage() {
         </div>
       </div>
 
-      <FeaturedRecordCarousel records={featuredRecords} latestRecords={latestRecords} />
+      <FeaturedRecordCarousel
+        records={featuredRecordsWithVisuals}
+        latestRecords={latestRecordsWithVisuals}
+      />
 
       <section className="on-record-section" aria-labelledby="on-record-title">
         <div className="page-shell">
           <h2 id="on-record-title">ON RECORD</h2>
 
           <div className="on-record-list">
-            {onRecords.map((record) => (
-              <article className="on-record-context" key={record.id}>
-                <div className="on-record-meta">
-                  <div className="event-tags">
-                    <EventTypeTag eventType={record.eventType} />
-                    <EventStatusTag eventStatus={record.eventStatus} />
+            {onRecords.map((record) => {
+              const { eventHref, visual } = getHomepageVisual(record.id);
+
+              return (
+                <article className="on-record-context" key={record.id}>
+                  <div className="on-record-copy">
+                    <div className="on-record-meta">
+                      <div className="event-tags">
+                        <EventTypeTag eventType={record.eventType} />
+                        <EventStatusTag eventStatus={record.eventStatus} />
+                      </div>
+                      <span>{record.id}</span>
+                      <span>{record.topic}</span>
+                      <span>{record.place}</span>
+                    </div>
+                    <h3>{record.title}</h3>
+                    <p>{record.context}</p>
+                    <time dateTime="2026-07-15">Reviewed {record.reviewed}</time>
                   </div>
-                  <span>{record.id}</span>
-                  <span>{record.topic}</span>
-                  <span>{record.place}</span>
-                </div>
-                <h3>{record.title}</h3>
-                <p>{record.context}</p>
-                <time dateTime="2026-07-15">Reviewed {record.reviewed}</time>
-              </article>
-            ))}
+                  <EventVisual visual={visual} eventHref={eventHref} variant="homepage-on-record" />
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -298,21 +324,21 @@ export default function HomePage() {
             <h2 className="coverage-heading">COVERAGE</h2>
             <p className="coverage-subheading">Across India, event by event.</p>
             <p className="coverage-description">
-              The reviewed repository currently contains event records from 16 states and Union
+              The reviewed repository currently contains event records from 20 states and Union
               Territories, supported by source-linked documentation.
             </p>
           </div>
           <div className="coverage-ledger" aria-label="Coverage notes">
             <div>
-              <strong>16</strong>
+              <strong>20</strong>
               <span>states and Union Territories represented</span>
             </div>
             <div>
-              <strong>22</strong>
+              <strong>50</strong>
               <span>reviewed event records</span>
             </div>
             <div>
-              <strong>77</strong>
+              <strong>165</strong>
               <span>source records linked to reviewed events</span>
             </div>
           </div>
@@ -348,7 +374,7 @@ export default function HomePage() {
               <h2>Explore</h2>
               <nav aria-label="Footer navigation">
                 <a href="#home">Home</a>
-                <a href="#events">Events</a>
+                <Link href="/events">Events</Link>
                 <a href="#methodology">Methodology</a>
                 <a href="#coverage">Coverage</a>
                 <a href="#lead">Submit a lead</a>
