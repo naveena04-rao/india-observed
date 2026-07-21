@@ -286,9 +286,9 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.match(page, /<h2 className="coverage-heading">COVERAGE<\/h2>/);
   assert.match(page, /<p className="coverage-subheading">Across India, event by event\.<\/p>/);
   for (const [count, label] of [
-    ["16", "states and Union Territories represented"],
-    ["23", "reviewed event records"],
-    ["83", "source records linked to reviewed events"],
+    ["20", "states and Union Territories represented"],
+    ["50", "reviewed event records"],
+    ["159", "source records linked to reviewed events"],
   ]) {
     assert.match(page, new RegExp(`<strong>${count}<\\/strong>[\\s\\S]*?${label}`));
   }
@@ -643,9 +643,9 @@ test("homepage uses the refined section hierarchy and editorial footer", () => {
   );
 
   for (const [count, label] of [
-    ["16", "states and Union Territories represented"],
-    ["23", "reviewed event records"],
-    ["83", "source records linked to reviewed events"],
+    ["20", "states and Union Territories represented"],
+    ["50", "reviewed event records"],
+    ["159", "source records linked to reviewed events"],
   ]) {
     assert.match(page, new RegExp(`<strong>${count}<\\/strong>[\\s\\S]*?${label}`));
   }

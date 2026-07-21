@@ -324,21 +324,21 @@ export default function HomePage() {
             <h2 className="coverage-heading">COVERAGE</h2>
             <p className="coverage-subheading">Across India, event by event.</p>
             <p className="coverage-description">
-              The reviewed repository currently contains event records from 16 states and Union
+              The reviewed repository currently contains event records from 20 states and Union
               Territories, supported by source-linked documentation.
             </p>
           </div>
           <div className="coverage-ledger" aria-label="Coverage notes">
             <div>
-              <strong>16</strong>
+              <strong>20</strong>
               <span>states and Union Territories represented</span>
             </div>
             <div>
-              <strong>23</strong>
+              <strong>50</strong>
               <span>reviewed event records</span>
             </div>
             <div>
-              <strong>83</strong>
+              <strong>159</strong>
               <span>source records linked to reviewed events</span>
             </div>
           </div>

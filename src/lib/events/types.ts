@@ -4,9 +4,24 @@ export type EventType =
   | "March"
   | "Civic campaign"
   | "Strike"
-  | "Sit-in / Dharna";
+  | "Sit-in / Dharna"
+  | "Sit-in"
+  | "Shutdown"
+  | "Rally"
+  | "Hunger strike";
 
 export type EventStatus = "Ongoing" | "Concluded" | "Outcome pending";
+
+export type PrimaryTopic =
+  | "Land & rehabilitation"
+  | "Education"
+  | "Agriculture & water"
+  | "Trade & economic policy"
+  | "Environment"
+  | "Labour & employment"
+  | "Civil rights & justice"
+  | "Governance & transparency"
+  | "Infrastructure & public services";
 
 export type EventVisual =
   | {
@@ -58,6 +73,7 @@ export type ReviewedEventPreview = {
   title: string;
   eventType: EventType;
   eventStatus: EventStatus;
+  primaryTopic: PrimaryTopic;
   topic: string;
   stateOrUnionTerritory: string;
   publicLocation: string;

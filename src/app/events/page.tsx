@@ -75,7 +75,7 @@ export default async function EventsPage({
             <p className="section-kicker">Reviewed civic record archive</p>
             <h1 id="events-heading">EVENTS</h1>
             <p>Browse reviewed records of protests and civic movements across India.</p>
-            {previewEnabled ? <strong>23 reviewed records</strong> : null}
+            {previewEnabled ? <strong>50 reviewed records</strong> : null}
           </div>
 
           {previewEnabled ? (
@@ -87,7 +87,7 @@ export default async function EventsPage({
                 filters={filters}
                 options={{
                   states: unique(events.map((event) => event.stateOrUnionTerritory)),
-                  topics: unique(events.map((event) => event.topic)),
+                  topics: unique(events.map((event) => event.primaryTopic)),
                   eventTypes: unique(events.map((event) => event.eventType)),
                   statuses: unique(events.map((event) => event.eventStatus)),
                 }}

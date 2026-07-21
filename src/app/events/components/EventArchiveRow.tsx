@@ -19,7 +19,7 @@ export function EventArchiveRow({ event }: { event: ReviewedEventPreview }) {
         <p className="event-row-place">
           {event.publicLocation} · {event.stateOrUnionTerritory}
         </p>
-        <p className="event-row-topic">{event.topic}</p>
+        <p className="event-row-topic">{event.primaryTopic}</p>
         <p className="event-row-summary">{event.summary}</p>
         <dl className="event-row-disclosure">
           <div>

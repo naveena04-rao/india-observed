@@ -17,6 +17,7 @@ export function filterReviewedEvents(
       event.title,
       event.publicLocation,
       event.stateOrUnionTerritory,
+      event.primaryTopic,
       event.topic,
       event.directedAt,
     ]
@@ -26,7 +27,7 @@ export function filterReviewedEvents(
     return (
       (!query || searchablePublicFields.includes(query)) &&
       (!filters.state || event.stateOrUnionTerritory === filters.state) &&
-      (!filters.topic || event.topic === filters.topic) &&
+      (!filters.topic || event.primaryTopic === filters.topic) &&
       (!filters.eventType || event.eventType === filters.eventType) &&
       (!filters.status || event.eventStatus === filters.status)
     );

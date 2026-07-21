@@ -5,8 +5,15 @@ import type { EventVisual, ReviewedEventPreview } from "../lib/events/types";
 /**
  * Public-safe snapshot generated from the canonical reviewed workbook at
  * C:\Users\navee\Documents\IndiaObserved\tasks\India_Observed_Master_Tracker.xlsx
- * SHA-256: 1A08A5B9798CC041B118A7D8F865267E568981F42CDC1ABA6707309BA81AC7BA
- * Canonical totals: 23 events, 143 claims, 83 sources, 98 organisations, 2 corrections.
+ * Workbook SHA-256:
+ * DBC584D2F81E0A45EF83DDF1A03590BFC9B18D7D19E962847F329338225E9E51
+ *
+ * Canonical totals:
+ * 50 events
+ * 251 claims
+ * 159 sources
+ * 197 organisations
+ * 2 corrections
  *
  * Media is limited to five approved NDTV source displays and one official Instagram embed in
  * Preview. Rights-pending photographs are not reproduced. All other events use non-evidentiary
@@ -45,7 +52,7 @@ function publisherVideo(config: {
   };
 }
 
-export const reviewedEventsPreview = [
+const reviewedEventRecords = [
   {
     internalId: "IO-CM-MP-0001",
     slug: "bundelkhand-rehabilitation-compensation-protest",
@@ -593,4 +600,720 @@ export const reviewedEventsPreview = [
     approvedSourceCount: 6,
     visual: recordCover("Justice-rights assembly", "Jantar Mantar, New Delhi", "17 July 2026"),
   },
-] as const satisfies readonly ReviewedEventPreview[];
+  {
+    internalId: "IO-CM-PB-0002",
+    slug: "punjab-farmers-lok-bhavan-msp-water",
+    title: "Punjab farmers march towards Lok Bhavan over MSP, river-water and federal demands",
+    eventType: "March",
+    eventStatus: "Concluded",
+    topic: "Legal guarantee for MSP, Punjab river-water rights and state-federal policy demands",
+    stateOrUnionTerritory: "Punjab",
+    publicLocation: "SAS Nagar–Chandigarh area, Punjab",
+    startDate: "2026-05-15",
+    endDate: "2026-05-15",
+    lastConfirmedActive: "2026-05-15",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Farmer organisations marched from Mohali towards Punjab Lok Bhavan on 15 May 2026 to press a multi-part charter that included a legal guarantee for minimum support prices, protection of Punjab's river-water interests and objections to provisions affecting the state under the Punjab Reorganisation framework. Police used barricades, water cannon and tear gas near Chandigarh. The occurrence and principal demands are corroborated; participation figures and responsibility for any confrontation remain attributed.",
+    directedAt: "Punjab Government; Chandigarh Administration; Chandigarh Police",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 2,
+    visual: recordCover(
+      "Punjab farmers’ Lok Bhavan march",
+      "SAS Nagar–Chandigarh area, Punjab",
+      "15 May 2026",
+    ),
+  },
+  {
+    internalId: "IO-CM-RJ-0002",
+    slug: "hanumangarh-wheat-procurement-pilibanga",
+    title: "Hanumangarh farmers protest wheat procurement and block rail traffic at Pilibanga",
+    eventType: "Multi-form civic protest",
+    eventStatus: "Concluded",
+    topic: "Wheat procurement, purchase limits and access to government procurement centres",
+    stateOrUnionTerritory: "Rajasthan",
+    publicLocation: "Pilibanga, Hanumangarh district, Rajasthan",
+    startDate: "2026-05-29",
+    endDate: "2026-05-30",
+    lastConfirmedActive: "2026-05-30",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Farmers in Hanumangarh district held a sit-in and later blocked a railway track near Pilibanga on 29–30 May 2026 over wheat procurement. Participants said purchase limits and procurement practices were preventing eligible produce from being bought at government centres. Authorities engaged with representatives and rail movement was restored. The occurrence and demands are independently corroborated; quantities of unsold grain and the number of participants remain attributed.",
+    directedAt:
+      "Rajasthan Food and Civil Supplies authorities; Food Corporation of India; Hanumangarh District Administration; Railway authorities",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 2,
+    visual: recordCover(
+      "Hanumangarh wheat-procurement protest",
+      "Pilibanga, Hanumangarh district, Rajasthan",
+      "29 May 2026–30 May 2026",
+    ),
+  },
+  {
+    internalId: "IO-CM-MH-0002",
+    slug: "maharashtra-scheme-workers-azad-maidan",
+    title:
+      "Maharashtra scheme workers hold three-day Azad Maidan protest over pay and regularisation",
+    eventType: "Sit-in",
+    eventStatus: "Outcome pending",
+    topic:
+      "Delayed remuneration, regularisation and social-security demands of Anganwadi, ASHA, NHM and other scheme workers",
+    stateOrUnionTerritory: "Maharashtra",
+    publicLocation: "Mumbai, Maharashtra",
+    startDate: "2026-06-01",
+    endDate: "2026-06-03",
+    lastConfirmedActive: "2026-06-03",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Anganwadi, ASHA, National Health Mission and other government-scheme workers held a three-day protest at Azad Maidan from 1 to 3 June 2026. Their demands included release of delayed remuneration, regularisation, improved honoraria and social-security protections. The protest ended after representatives received an assurance of a meeting with the state government. The occurrence and broad demands are corroborated; worker totals and arrears estimates remain organiser or media figures.",
+    directedAt:
+      "Maharashtra Government; Women and Child Development Department; Public Health Department",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 3,
+    visual: recordCover(
+      "Maharashtra scheme-workers protest",
+      "Mumbai, Maharashtra",
+      "Outcome pending",
+    ),
+  },
+  {
+    internalId: "IO-CM-MH-0003",
+    slug: "gadchiroli-land-acquisition-airport-industrial",
+    title:
+      "Gadchiroli farmers protest land acquisition for proposed airport and industrial projects",
+    eventType: "Multi-form civic protest",
+    eventStatus: "Outcome pending",
+    topic:
+      "Land acquisition, consent and compensation for proposed airport and industrial projects",
+    stateOrUnionTerritory: "Maharashtra",
+    publicLocation: "Gadchiroli district, Maharashtra",
+    startDate: "2026-06-04",
+    endDate: "2026-06-06",
+    lastConfirmedActive: "2026-06-06",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Farmers and village residents marched and held a sit-in in Gadchiroli in early June 2026 against land acquisition for a proposed airport and industrial projects. Participants raised concerns about consent, compensation, agricultural livelihoods and protections under the Panchayats (Extension to Scheduled Areas) Act. The Maharashtra government subsequently halted the acquisition process pending further consultation. The protest and halt are corroborated; the permanent status of the projects and affected acreage require continued review.",
+    directedAt:
+      "Maharashtra Government; Gadchiroli District Administration; Maharashtra Airport Development authorities",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 4,
+    visual: recordCover(
+      "Gadchiroli land-acquisition protest",
+      "Gadchiroli district, Maharashtra",
+      "Outcome pending",
+    ),
+  },
+  {
+    internalId: "IO-CM-AS-0002",
+    slug: "moran-motok-shutdown-representation-st-status",
+    title:
+      "Moran and Motok organisations enforce 48-hour shutdown over representation and ST-status demands",
+    eventType: "Shutdown",
+    eventStatus: "Concluded",
+    topic:
+      "Cabinet representation, Scheduled Tribe status and political recognition for Moran and Motok communities",
+    stateOrUnionTerritory: "Assam",
+    publicLocation: "Tinsukia and Dibrugarh districts, Assam",
+    startDate: "2026-06-05",
+    endDate: "2026-06-06",
+    lastConfirmedActive: "2026-06-06",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Moran and Motok community organisations enforced a 48-hour shutdown across parts of Tinsukia and Dibrugarh districts on 5–6 June 2026. The action followed dissatisfaction over representation in the Assam cabinet and reiterated longstanding demands for Scheduled Tribe status. Reports documented transport and commercial disruption in affected areas. The occurrence is independently corroborated; the scale of compliance and the constitutional merits of the demands are not independently determined.",
+    directedAt: "Assam Government; Union Ministry of Tribal Affairs",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 3,
+    visual: recordCover(
+      "Moran and Motok shutdown",
+      "Tinsukia and Dibrugarh districts, Assam",
+      "5 June 2026–6 June 2026",
+    ),
+  },
+  {
+    internalId: "IO-CM-AS-0003",
+    slug: "guwahati-tribal-township-hydropower-protest",
+    title:
+      "Tribal organisations protest proposed satellite-township and hydropower plans in Guwahati",
+    eventType: "Demonstration",
+    eventStatus: "Concluded",
+    topic:
+      "Land, displacement and consultation concerns linked to proposed satellite townships and the Ukiam hydropower project",
+    stateOrUnionTerritory: "Assam",
+    publicLocation: "Guwahati, Assam",
+    startDate: "2026-06-10",
+    endDate: "2026-06-10",
+    lastConfirmedActive: "2026-06-10",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Tribal organisations held a protest at Chachal in Guwahati on 10 June 2026 over concerns that proposed satellite-township and hydropower plans could displace tribal communities or affect protected land. Participants demanded consultation and withdrawal of proposals they considered harmful. The gathering and stated concerns are documented; the status, boundaries and final approval of the cited projects remain under verification and must not be presented as settled.",
+    directedAt: "Assam Government; Guwahati development authorities; power-project authorities",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 2,
+    visual: recordCover(
+      "Guwahati township and hydropower protest",
+      "Guwahati, Assam",
+      "10 June 2026",
+    ),
+  },
+  {
+    internalId: "IO-CM-NL-0001",
+    slug: "kohima-women-justice-sexual-violence",
+    title:
+      "Nagaland tribal women's organisations rally in Kohima for speedy justice in sexual-violence cases",
+    eventType: "Rally",
+    eventStatus: "Concluded",
+    topic:
+      "Speedy investigation, prosecution and institutional accountability in sexual-harassment and rape cases",
+    stateOrUnionTerritory: "Nagaland",
+    publicLocation: "Kohima, Nagaland",
+    startDate: "2026-06-19",
+    endDate: "2026-06-19",
+    lastConfirmedActive: "2026-06-19",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Thousands of women from tribal organisations rallied in Kohima on 19 June 2026 demanding speedy justice and institutional accountability in sexual-harassment and rape cases, including a case involving a suspended civil servant. The rally proceeded under a district traffic advisory and submitted public demands. The occurrence and principal demand are independently corroborated; allegations in individual cases remain allegations unless established through judicial proceedings.",
+    directedAt:
+      "Nagaland Government; Nagaland Police; relevant investigating and judicial authorities",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 4,
+    visual: recordCover("Kohima women’s justice rally", "Kohima, Nagaland", "19 June 2026"),
+  },
+  {
+    internalId: "IO-CM-MH-0004",
+    slug: "best-workers-pension-pay-strike",
+    title: "BEST workers begin strike over pension, pay-revision and retirement dues",
+    eventType: "Strike",
+    eventStatus: "Outcome pending",
+    topic: "Pension, seventh-pay-commission implementation and settlement of retirement dues",
+    stateOrUnionTerritory: "Maharashtra",
+    publicLocation: "Mumbai, Maharashtra",
+    startDate: "2026-06-18",
+    endDate: null,
+    lastConfirmedActive: "2026-06-20",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Employees of Mumbai's Brihanmumbai Electric Supply and Transport undertaking began a strike in mid-June 2026 over pension, pay-revision and retirement dues. Bus operations were disrupted and court proceedings addressed the legality of the proposed action. Reporting confirmed that the strike continued into a second day. The occurrence and demands are corroborated; the exact share of services affected and the final settlement remain under review.",
+    directedAt:
+      "Brihanmumbai Electric Supply and Transport undertaking; Brihanmumbai Municipal Corporation; Maharashtra Government; Bombay High Court",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 4,
+    visual: recordCover("BEST workers’ strike", "Mumbai, Maharashtra", "Outcome pending"),
+  },
+  {
+    internalId: "IO-CM-MH-0005",
+    slug: "maharashtra-rto-clerical-pen-down-strike",
+    title: "Maharashtra RTO clerical employees hold statewide pen-down strike",
+    eventType: "Strike",
+    eventStatus: "Outcome pending",
+    topic:
+      "Cadre restructuring, promotions, staffing and service-condition demands of RTO clerical employees",
+    stateOrUnionTerritory: "Maharashtra",
+    publicLocation: "Maharashtra",
+    startDate: "2026-06-16",
+    endDate: null,
+    lastConfirmedActive: "2026-06-22",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Clerical employees at Regional Transport Offices across Maharashtra began an indefinite pen-down strike on 16 June 2026 over cadre restructuring, promotions, staffing and related service conditions. By 22 June, workers held coordinated sit-ins while public-facing RTO services were affected. The occurrence and demands are corroborated; the extent of service disruption and the final employment settlement remain under review.",
+    directedAt: "Maharashtra Transport Department; Maharashtra Government",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 3,
+    visual: recordCover("Maharashtra RTO pen-down strike", "Maharashtra", "Outcome pending"),
+  },
+  {
+    internalId: "IO-CM-PB-0003",
+    slug: "punjab-farmers-tubewell-power-protest",
+    title: "Punjab farmers protest erratic tubewell power supply during paddy season",
+    eventType: "Demonstration",
+    eventStatus: "Outcome pending",
+    topic: "Reliable agricultural electricity supply during paddy transplantation and peak demand",
+    stateOrUnionTerritory: "Punjab",
+    publicLocation: "Multiple districts, Punjab",
+    startDate: "2026-06-29",
+    endDate: "2026-06-30",
+    lastConfirmedActive: "2026-06-30",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Farmers in several Punjab districts protested on 29–30 June 2026 over erratic or inadequate electricity supply to agricultural tubewells during paddy transplantation. Demonstrations were reported outside power offices and at road locations while the state experienced record electricity demand and industrial restrictions. The occurrence and demand for reliable supply are corroborated; outage duration, crop impact and responsibility for shortages remain source-dependent.",
+    directedAt: "Punjab State Power Corporation Limited; Punjab Government",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 3,
+    visual: recordCover(
+      "Punjab tubewell-power protest",
+      "Multiple districts, Punjab",
+      "Outcome pending",
+    ),
+  },
+  {
+    internalId: "IO-CM-MH-0006",
+    slug: "maharashtra-teachers-school-shutdown",
+    title:
+      "Maharashtra teachers hold statewide school shutdown over election duties and service demands",
+    eventType: "Strike",
+    eventStatus: "Concluded",
+    topic:
+      "Booth-level election duties, TET requirements, staffing, promotions and teacher service conditions",
+    stateOrUnionTerritory: "Maharashtra",
+    publicLocation: "Maharashtra",
+    startDate: "2026-07-09",
+    endDate: "2026-07-09",
+    lastConfirmedActive: "2026-07-09",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Teacher organisations across Maharashtra held a statewide school shutdown and protests on 9 July 2026. The demands included withdrawal or revision of booth-level officer duties linked to electoral-roll work, changes concerning teacher eligibility tests, staffing and promotions. Reports documented closures and a gathering at Azad Maidan. The occurrence and broad demands are corroborated; the proportion of schools affected and uniformity of participation varied by district.",
+    directedAt:
+      "Maharashtra School Education Department; Election Commission authorities; Maharashtra Government",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 3,
+    visual: recordCover("Maharashtra teachers’ school shutdown", "Maharashtra", "9 July 2026"),
+  },
+  {
+    internalId: "IO-CM-PB-0004",
+    slug: "khanna-mgnrega-workers-regularisation-salaries",
+    title:
+      "MGNREGA employees and workers protest in Khanna over regularisation and unpaid salaries",
+    eventType: "Demonstration",
+    eventStatus: "Concluded",
+    topic:
+      "Regularisation, pending salaries and employment conditions of MGNREGA staff and workers",
+    stateOrUnionTerritory: "Punjab",
+    publicLocation: "Khanna, Ludhiana district, Punjab",
+    startDate: "2026-07-15",
+    endDate: "2026-07-15",
+    lastConfirmedActive: "2026-07-15",
+    lastReviewed: "2026-07-21",
+    summary:
+      "MGNREGA employees and workers protested in Khanna on 15 July 2026, demanding regularisation and payment of salaries reported to have been pending for several months. Police used water cannon, tear gas and a baton charge when protesters attempted to advance. The occurrence and principal demands are independently corroborated; injury figures, responsibility for escalation and the exact duration of unpaid salaries remain attributed.",
+    directedAt:
+      "Punjab Rural Development and Panchayats Department; Punjab Government; Khanna Police",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 2,
+    visual: recordCover(
+      "Khanna MGNREGA workers’ protest",
+      "Khanna, Ludhiana district, Punjab",
+      "15 July 2026",
+    ),
+  },
+  {
+    internalId: "IO-CM-KA-0003",
+    slug: "hidkal-displaced-farmers-belagavi-compensation",
+    title:
+      "Hidkal reservoir-displaced farmers begin round-the-clock compensation protest in Belagavi",
+    eventType: "Sit-in",
+    eventStatus: "Ongoing",
+    topic: "Compensation and land claims of families displaced by the Hidkal reservoir",
+    stateOrUnionTerritory: "Karnataka",
+    publicLocation: "Belagavi, Karnataka",
+    startDate: "2026-07-14",
+    endDate: null,
+    lastConfirmedActive: "2026-07-16",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Farmers and families displaced by the Hidkal reservoir began a round-the-clock protest outside the Karnataka Neeravari Nigam office in Belagavi on 14 July 2026. They demanded compensation for land they said remained unsettled decades after displacement. Reporting documented an overnight sit-in continuing into a third day. The occurrence and core demand are corroborated; affected acreage, claimant eligibility and historical payment status require official land and compensation records.",
+    directedAt:
+      "Karnataka Neeravari Nigam Limited; Karnataka Water Resources Department; Belagavi District Administration",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 2,
+    visual: recordCover("Hidkal-displaced farmers’ protest", "Belagavi, Karnataka", "Ongoing"),
+  },
+  {
+    internalId: "IO-CM-MH-0007",
+    slug: "mumbai-police-action-education-protest",
+    title:
+      "Mumbai groups protest police action against education-accountability demonstrators in Delhi",
+    eventType: "Demonstration",
+    eventStatus: "Concluded",
+    topic:
+      "Solidarity with education-accountability protesters and opposition to police action in Delhi",
+    stateOrUnionTerritory: "Maharashtra",
+    publicLocation: "Mumbai, Maharashtra",
+    startDate: "2026-07-18",
+    endDate: "2026-07-19",
+    lastConfirmedActive: "2026-07-19",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Students and civil-society participants held separate weekend protests in Mumbai on 18 and 19 July 2026 in solidarity with the education-accountability movement in Delhi and against police action involving Sonam Wangchuk and other protesters. Police detained or booked some organisers during the Saturday action, while a Sunday gathering took place at Shivaji Park. The two actions are grouped as a bounded solidarity phase; claims about policing and injuries remain attributed.",
+    directedAt: "Mumbai Police; Maharashtra Government; Union Ministry of Education",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 3,
+    visual: recordCover(
+      "Mumbai education-accountability solidarity protest",
+      "Mumbai, Maharashtra",
+      "18 July 2026–19 July 2026",
+    ),
+  },
+  {
+    internalId: "IO-CM-DL-0006",
+    slug: "jammu-kashmir-statehood-jantar-mantar",
+    title:
+      "National Conference leaders protest in Delhi for restoration of Jammu and Kashmir statehood",
+    eventType: "Demonstration",
+    eventStatus: "Concluded",
+    topic: "Restoration of statehood to Jammu and Kashmir",
+    stateOrUnionTerritory: "Delhi",
+    publicLocation: "Jantar Mantar, New Delhi",
+    startDate: "2026-07-20",
+    endDate: "2026-07-20",
+    lastConfirmedActive: "2026-07-20",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Jammu and Kashmir National Conference leaders and supporters protested at Jantar Mantar in New Delhi on 20 July 2026 demanding restoration of statehood to Jammu and Kashmir. Senior party leaders participated and called on the Union government to fulfil its public commitment. The occurrence and demand are independently reported; political claims about delays, constitutional responsibility and public support remain attributed.",
+    directedAt: "Union Ministry of Home Affairs; Government of India",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 3,
+    visual: recordCover(
+      "Jammu and Kashmir statehood protest",
+      "Jantar Mantar, New Delhi",
+      "20 July 2026",
+    ),
+  },
+  {
+    internalId: "IO-CM-DL-0007",
+    slug: "kisan-ghat-india-us-trade-deal",
+    title: "Farmers mobilise at Kisan Ghat and border points against proposed India–US trade deal",
+    eventType: "Rally",
+    eventStatus: "Ongoing",
+    topic:
+      "Opposition to a proposed India–US trade agreement and its potential effects on agriculture, dairy and small businesses",
+    stateOrUnionTerritory: "Delhi",
+    publicLocation: "New Delhi and interstate approach routes",
+    startDate: "2026-07-21",
+    endDate: null,
+    lastConfirmedActive: "2026-07-21",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Farmer organisations mobilised towards Delhi and gathered for a Kisan Mahapanchayat at Kisan Ghat on 21 July 2026 to oppose a proposed India–US trade agreement. Reporting documented convoys from Punjab, a gathering at the Shambhu border, police barricading and a Delhi traffic advisory. Organisers said the agreement could harm agriculture, dairy and small businesses. The mobilisation and gathering are corroborated; attendance claims and predictions about the trade agreement remain attributed.",
+    directedAt:
+      "Government of India; Union Ministry of Commerce and Industry; Delhi Police; Haryana Police",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 4,
+    visual: recordCover(
+      "Kisan Ghat trade-deal mobilisation",
+      "New Delhi and interstate approach routes",
+      "Ongoing",
+    ),
+  },
+  {
+    internalId: "IO-CM-MP-0002",
+    slug: "indore-dewas-ring-road-compensation",
+    title:
+      "Indore–Dewas farmers begin sit-in after police stop tractor rally over ring-road compensation",
+    eventType: "Multi-form civic protest",
+    eventStatus: "Ongoing",
+    topic:
+      "Land-acquisition compensation for the Indore–Dewas Western Ring Road and related agricultural demands",
+    stateOrUnionTerritory: "Madhya Pradesh",
+    publicLocation: "Indore–Dewas corridor, Madhya Pradesh",
+    startDate: "2026-07-20",
+    endDate: null,
+    lastConfirmedActive: "2026-07-20",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Farmers from villages in Indore and Dewas districts attempted a tractor rally towards Bhopal on 20 July 2026 to demand higher compensation for land acquired for the Western Ring Road. Police stopped the convoy at Barlai using barricades, water cannon and tear gas, after which protesters began an indefinite sit-in. The occurrence and broad demand are documented; participation, land valuations and responsibility for confrontation remain attributed.",
+    directedAt:
+      "Madhya Pradesh Government; Indore and Dewas district administrations; Madhya Pradesh Police; ring-road project authorities",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 2,
+    visual: recordCover(
+      "Indore–Dewas ring-road compensation protest",
+      "Indore–Dewas corridor, Madhya Pradesh",
+      "Ongoing",
+    ),
+  },
+  {
+    internalId: "IO-CM-TN-0001",
+    slug: "thanjavur-mekedatu-dam-protest",
+    title: "Left parties and farmers protest Mekedatu dam proposal in Thanjavur",
+    eventType: "Demonstration",
+    eventStatus: "Concluded",
+    topic:
+      "Opposition to Karnataka's proposed Mekedatu dam and protection of Cauvery-water interests",
+    stateOrUnionTerritory: "Tamil Nadu",
+    publicLocation: "Thanjavur, Tamil Nadu",
+    startDate: "2026-05-29",
+    endDate: "2026-05-29",
+    lastConfirmedActive: "2026-05-29",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Members of the CPI, CPI(M), allied organisations and farmers protested in Thanjavur on 29 May 2026 against Karnataka's proposed Mekedatu dam and demanded an all-party meeting by the Tamil Nadu government. The occurrence and stated demands are documented through on-location reporting. Legal and hydrological claims about the project remain policy positions requiring official and judicial records.",
+    directedAt:
+      "Tamil Nadu Government; Karnataka Government; Cauvery Water Management Authority; Union Government",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 2,
+    visual: recordCover("Thanjavur Mekedatu dam protest", "Thanjavur, Tamil Nadu", "29 May 2026"),
+  },
+  {
+    internalId: "IO-CM-MH-0008",
+    slug: "pune-neet-paper-leak-protest",
+    title: "NSUI and Yuva Sena protest in Pune over alleged NEET paper leak",
+    eventType: "Demonstration",
+    eventStatus: "Concluded",
+    topic: "Investigation and accountability concerning alleged NEET-UG examination irregularities",
+    stateOrUnionTerritory: "Maharashtra",
+    publicLocation: "Pune, Maharashtra",
+    startDate: "2026-05-18",
+    endDate: "2026-05-18",
+    lastConfirmedActive: "2026-05-18",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Members of the National Students' Union of India and Yuva Sena protested in Pune on 18 May 2026 over the alleged NEET-UG paper leak and examination cancellation. Participants demanded accountability and safeguards for students. The occurrence and demands are documented; the origin, beneficiaries and criminal responsibility for any leak remain matters for official investigation and court proceedings.",
+    directedAt: "National Testing Agency; Union Ministry of Education; investigating authorities",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 2,
+    visual: recordCover("Pune NEET paper-leak protest", "Pune, Maharashtra", "18 May 2026"),
+  },
+  {
+    internalId: "IO-CM-PB-0005",
+    slug: "mohali-aerotropolis-land-acquisition-hunger-strike",
+    title: "Aerotropolis project-affected farmers hold hunger strike over Mohali land acquisition",
+    eventType: "Hunger strike",
+    eventStatus: "Outcome pending",
+    topic:
+      "Compensation, consent and rehabilitation linked to the Aerotropolis land-acquisition project",
+    stateOrUnionTerritory: "Punjab",
+    publicLocation: "Mohali, Punjab",
+    startDate: "2026-03-25",
+    endDate: "2026-04-15",
+    lastConfirmedActive: "2026-04-15",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Farmers affected by the Aerotropolis project held a hunger strike and protest in Mohali from late March until 15 April 2026 over land acquisition, compensation and rehabilitation. The principal group ended the hunger strike after government assurances, while reporting indicated that another faction considered continuing separate action. The occurrence and interim assurance are corroborated; final compensation and factional representation remain unresolved.",
+    directedAt:
+      "Greater Mohali Area Development Authority; Punjab Housing and Urban Development Department; Punjab Government",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 3,
+    visual: recordCover("Mohali Aerotropolis hunger strike", "Mohali, Punjab", "Outcome pending"),
+  },
+  {
+    internalId: "IO-CM-MH-0009",
+    slug: "akola-fuel-price-protest",
+    title: "Vanchit Bahujan Aghadi holds symbolic fuel-price protest in Akola",
+    eventType: "Demonstration",
+    eventStatus: "Concluded",
+    topic: "Fuel-price increases and household transport costs",
+    stateOrUnionTerritory: "Maharashtra",
+    publicLocation: "Akola, Maharashtra",
+    startDate: "2026-05-25",
+    endDate: "2026-05-25",
+    lastConfirmedActive: "2026-05-25",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Vanchit Bahujan Aghadi workers held a symbolic protest in Akola on 25 May 2026 using bullock carts, donkeys and bicycles to oppose higher fuel prices. The action sought to draw attention to transport and household costs. The occurrence is documented through local reporting; claims about causes, price impacts and political responsibility remain attributed to organisers.",
+    directedAt: "Union Ministry of Petroleum and Natural Gas; Maharashtra Government",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 2,
+    visual: recordCover("Akola fuel-price protest", "Akola, Maharashtra", "25 May 2026"),
+  },
+  {
+    internalId: "IO-CM-GA-0001",
+    slug: "karapur-sarvan-luxury-township-protest",
+    title: "Karapur-Sarvan residents continue protest against proposed luxury township project",
+    eventType: "Multi-form civic protest",
+    eventStatus: "Ongoing",
+    topic:
+      "Land use, environmental impacts, infrastructure pressure and local consent for a proposed housing and hotel project",
+    stateOrUnionTerritory: "Goa",
+    publicLocation: "Karapur-Sarvan, North Goa",
+    startDate: null,
+    endDate: null,
+    lastConfirmedActive: "2026-07-13",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Residents of Karapur-Sarvan in North Goa sustained a multi-month campaign against a proposed luxury housing and hotel development, including village protests, marches towards Panaji and an announced or continuing sit-in. By mid-July, reporting described the movement as having crossed 100 days. Participants raised concerns about land use, water, roads, environment and local consent. The occurrence is corroborated; the exact start date, project impacts and legal status remain under review.",
+    directedAt:
+      "Goa Government; Town and Country Planning Department; North Goa District Administration; project developer",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 4,
+    visual: recordCover("Karapur-Sarvan township protest", "Karapur-Sarvan, North Goa", "Ongoing"),
+  },
+  {
+    internalId: "IO-CM-TS-0002",
+    slug: "shamshabad-high-speed-rail-land-protest",
+    title: "Shamshabad farmers protest fencing of land for proposed high-speed rail hub",
+    eventType: "Demonstration",
+    eventStatus: "Concluded",
+    topic: "Land acquisition, fencing and compensation for a proposed high-speed rail hub",
+    stateOrUnionTerritory: "Telangana",
+    publicLocation: "Shamshabad, Telangana",
+    startDate: "2026-07-18",
+    endDate: "2026-07-18",
+    lastConfirmedActive: "2026-07-18",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Farmers and local residents protested in the Shamshabad area on 18 July 2026 as authorities attempted to fence land identified for a proposed high-speed rail hub. Reports described a confrontation in which chilli powder was thrown at police. Protesters raised objections concerning land, process and compensation. The occurrence is independently corroborated; individual responsibility for confrontation and the legal status of each parcel remain matters for official records.",
+    directedAt:
+      "Telangana Government; Ranga Reddy District Administration; Railway and high-speed rail project authorities; Telangana Police",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 3,
+    visual: recordCover(
+      "Shamshabad high-speed-rail land protest",
+      "Shamshabad, Telangana",
+      "18 July 2026",
+    ),
+  },
+  {
+    internalId: "IO-CM-TN-0002",
+    slug: "kolli-hills-land-patta-protest",
+    title:
+      "Kolli Hills residents intensify protest seeking land pattas and revocation of government order",
+    eventType: "Demonstration",
+    eventStatus: "Outcome pending",
+    topic:
+      "Land pattas, forest and revenue classification, and revocation of Government Order 1168",
+    stateOrUnionTerritory: "Tamil Nadu",
+    publicLocation: "Kolli Hills, Namakkal district, Tamil Nadu",
+    startDate: "2026-04-08",
+    endDate: "2026-04-08",
+    lastConfirmedActive: "2026-04-08",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Residents of Kolli Hills intensified a protest on 8 April 2026 seeking land pattas and revocation of Government Order 1168, which they said affected long-settled cultivation and residential rights. Participants also threatened an election boycott. The occurrence and demands are documented through regional reporting; population shares, historical occupancy and the legal effect of the order require official land, forest and revenue records.",
+    directedAt:
+      "Tamil Nadu Revenue and Disaster Management Department; Tamil Nadu Forest Department; Namakkal District Administration",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 2,
+    visual: recordCover(
+      "Kolli Hills land-patta protest",
+      "Kolli Hills, Namakkal district, Tamil Nadu",
+      "Outcome pending",
+    ),
+  },
+  {
+    internalId: "IO-CM-MH-0010",
+    slug: "pandharpur-farm-loan-waiver-hunger-strike",
+    title: "Rohit Pawar holds hunger strike in Pandharpur over farm-loan waiver conditions",
+    eventType: "Hunger strike",
+    eventStatus: "Outcome pending",
+    topic: "Eligibility conditions and implementation of Maharashtra's farm-loan waiver",
+    stateOrUnionTerritory: "Maharashtra",
+    publicLocation: "Pandharpur, Solapur district, Maharashtra",
+    startDate: "2026-06-12",
+    endDate: "2026-06-14",
+    lastConfirmedActive: "2026-06-14",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Legislator Rohit Pawar and supporters held a hunger strike in Pandharpur from 12 to 14 June 2026 seeking removal or revision of conditions attached to Maharashtra's farm-loan-waiver programme. The fast was suspended after the government assured talks. The occurrence and interim assurance are corroborated; claims about beneficiary exclusion, fiscal impact and final policy changes remain attributed or unresolved.",
+    directedAt: "Maharashtra Government; Cooperation Department; Finance Department",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 3,
+    visual: recordCover(
+      "Pandharpur farm-loan-waiver hunger strike",
+      "Pandharpur, Solapur district, Maharashtra",
+      "Outcome pending",
+    ),
+  },
+  {
+    internalId: "IO-CM-JH-0001",
+    slug: "jharkhand-statehood-activists-pension-jobs",
+    title:
+      "Jharkhand statehood activists protest for higher pensions, recognition and jobs for families",
+    eventType: "Demonstration",
+    eventStatus: "Outcome pending",
+    topic:
+      "Pensions, recognition and employment support for Jharkhand statehood movement activists and their families",
+    stateOrUnionTerritory: "Jharkhand",
+    publicLocation: "Ranchi, Jharkhand",
+    startDate: "2026-06-10",
+    endDate: "2026-06-10",
+    lastConfirmedActive: "2026-06-10",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Jharkhand statehood movement activists gathered in Ranchi on 10 June 2026 seeking higher pensions, formal recognition and government employment support for eligible family members. Police restricted movement near the chief minister's residence. The planned further agitation was deferred after a government assurance of talks. The occurrence and broad demands are corroborated; eligibility, activist counts and fiscal implications require official records.",
+    directedAt: "Jharkhand Government; Ranchi District Administration; Jharkhand Police",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 2,
+    visual: recordCover(
+      "Jharkhand statehood activists’ protest",
+      "Ranchi, Jharkhand",
+      "Outcome pending",
+    ),
+  },
+  {
+    internalId: "IO-CM-HR-0003",
+    slug: "channot-drinking-water-pipeline-protest",
+    title: "Channot villagers sustain drinking-water protest until new pipeline link is approved",
+    eventType: "Multi-form civic protest",
+    eventStatus: "Concluded",
+    topic: "Reliable canal-based drinking-water supply and approval of a new pipeline connection",
+    stateOrUnionTerritory: "Haryana",
+    publicLocation: "Channot, Hisar district, Haryana",
+    startDate: "2026-05-16",
+    endDate: "2026-07-15",
+    lastConfirmedActive: "2026-07-15",
+    lastReviewed: "2026-07-21",
+    summary:
+      "Residents of Channot village in Hisar district sustained a multi-phase protest from mid-May to 15 July 2026 seeking a reliable canal-water connection for drinking water. The movement included a sit-in and hunger strike, with temporary agreements followed by renewed protest. The action ended after approval of a new pipeline link. The occurrence and final administrative approval are corroborated; technical delivery and completion of the pipeline require follow-up.",
+    directedAt:
+      "Haryana Public Health Engineering Department; Hisar District Administration; Haryana Government",
+    eventVerification: "Occurrence verified — disputed details remain",
+    approvedSourceCount: 4,
+    visual: recordCover(
+      "Channot drinking-water protest",
+      "Channot, Hisar district, Haryana",
+      "16 May 2026–15 July 2026",
+    ),
+  },
+] as const satisfies readonly Omit<ReviewedEventPreview, "primaryTopic">[];
+
+const primaryTopicByInternalId = {
+  "IO-CM-MP-0001": "Land & rehabilitation",
+  "IO-CM-DL-0001": "Education",
+  "IO-CM-KA-0001": "Agriculture & water",
+  "IO-CM-CH-0001": "Trade & economic policy",
+  "IO-CM-MH-0001": "Environment",
+  "IO-CM-KA-0002": "Land & rehabilitation",
+  "IO-CM-GJ-0001": "Land & rehabilitation",
+  "IO-CM-UP-0001": "Environment",
+  "IO-CM-AS-0001": "Land & rehabilitation",
+  "IO-CM-MN-0001": "Labour & employment",
+  "IO-CM-OD-0001": "Education",
+  "IO-CM-UK-0001": "Environment",
+  "IO-CM-HR-0001": "Agriculture & water",
+  "IO-CM-HR-0002": "Labour & employment",
+  "IO-CM-UP-0002": "Labour & employment",
+  "IO-CM-DL-0002": "Education",
+  "IO-CM-KL-0001": "Trade & economic policy",
+  "IO-CM-PB-0001": "Labour & employment",
+  "IO-CM-DL-0003": "Education",
+  "IO-CM-TS-0001": "Education",
+  "IO-CM-RJ-0001": "Education",
+  "IO-CM-DL-0004": "Labour & employment",
+  "IO-CM-DL-0005": "Civil rights & justice",
+  "IO-CM-PB-0002": "Agriculture & water",
+  "IO-CM-RJ-0002": "Agriculture & water",
+  "IO-CM-MH-0002": "Labour & employment",
+  "IO-CM-MH-0003": "Land & rehabilitation",
+  "IO-CM-AS-0002": "Governance & transparency",
+  "IO-CM-AS-0003": "Land & rehabilitation",
+  "IO-CM-NL-0001": "Civil rights & justice",
+  "IO-CM-MH-0004": "Labour & employment",
+  "IO-CM-MH-0005": "Labour & employment",
+  "IO-CM-PB-0003": "Agriculture & water",
+  "IO-CM-MH-0006": "Education",
+  "IO-CM-PB-0004": "Labour & employment",
+  "IO-CM-KA-0003": "Land & rehabilitation",
+  "IO-CM-MH-0007": "Civil rights & justice",
+  "IO-CM-DL-0006": "Governance & transparency",
+  "IO-CM-DL-0007": "Trade & economic policy",
+  "IO-CM-MP-0002": "Land & rehabilitation",
+  "IO-CM-TN-0001": "Agriculture & water",
+  "IO-CM-MH-0008": "Education",
+  "IO-CM-PB-0005": "Land & rehabilitation",
+  "IO-CM-MH-0009": "Trade & economic policy",
+  "IO-CM-GA-0001": "Environment",
+  "IO-CM-TS-0002": "Land & rehabilitation",
+  "IO-CM-TN-0002": "Land & rehabilitation",
+  "IO-CM-MH-0010": "Agriculture & water",
+  "IO-CM-JH-0001": "Governance & transparency",
+  "IO-CM-HR-0003": "Infrastructure & public services",
+} as const satisfies Record<
+  (typeof reviewedEventRecords)[number]["internalId"],
+  ReviewedEventPreview["primaryTopic"]
+>;
+
+export const reviewedEventsPreview: readonly ReviewedEventPreview[] = reviewedEventRecords.map(
+  (event) => ({
+    ...event,
+    primaryTopic: primaryTopicByInternalId[event.internalId],
+  }),
+);

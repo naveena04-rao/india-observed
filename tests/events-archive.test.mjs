@@ -18,6 +18,49 @@ const shell = read("src/app/events/components/ArchiveShell.tsx");
 const homepage = read("src/app/page.tsx");
 const styles = read("src/app/globals.css");
 
+const newEventIds = [
+  "IO-CM-PB-0002",
+  "IO-CM-RJ-0002",
+  "IO-CM-MH-0002",
+  "IO-CM-MH-0003",
+  "IO-CM-AS-0002",
+  "IO-CM-AS-0003",
+  "IO-CM-NL-0001",
+  "IO-CM-MH-0004",
+  "IO-CM-MH-0005",
+  "IO-CM-PB-0003",
+  "IO-CM-MH-0006",
+  "IO-CM-PB-0004",
+  "IO-CM-KA-0003",
+  "IO-CM-MH-0007",
+  "IO-CM-DL-0006",
+  "IO-CM-DL-0007",
+  "IO-CM-MP-0002",
+  "IO-CM-TN-0001",
+  "IO-CM-MH-0008",
+  "IO-CM-PB-0005",
+  "IO-CM-MH-0009",
+  "IO-CM-GA-0001",
+  "IO-CM-TS-0002",
+  "IO-CM-TN-0002",
+  "IO-CM-MH-0010",
+  "IO-CM-JH-0001",
+  "IO-CM-HR-0003",
+];
+
+function eventBlock(internalId) {
+  const start = dataset.indexOf(`internalId: "${internalId}"`);
+  assert.ok(start >= 0, `${internalId} must exist`);
+  const end = dataset.indexOf("\n  {\n    internalId:", start + 1);
+  return dataset.slice(start, end === -1 ? dataset.indexOf("\n] as const", start) : end);
+}
+
+function literalField(block, name) {
+  const literal = block.match(new RegExp(`\\n\\s+${name}:\\s*(null|"(?:[^"\\\\]|\\\\.)*")`))?.[1];
+  assert.ok(literal, `Missing ${name}`);
+  return literal === "null" ? null : JSON.parse(literal);
+}
+
 test("reviewed Events routes and the canonical public-safe snapshot exist", () => {
   assert.match(archivePage, /export default async function EventsPage/);
   assert.match(detailPage, /export default async function EventRecordPage/);
@@ -25,11 +68,19 @@ test("reviewed Events routes and the canonical public-safe snapshot exist", () =
     dataset,
     /C:\\Users\\navee\\Documents\\IndiaObserved\\tasks\\India_Observed_Master_Tracker\.xlsx/,
   );
-  assert.match(dataset, /1A08A5B9798CC041B118A7D8F865267E568981F42CDC1ABA6707309BA81AC7BA/);
-  assert.match(dataset, /23 events, 143 claims, 83 sources, 98 organisations, 2 corrections/);
+  assert.match(dataset, /DBC584D2F81E0A45EF83DDF1A03590BFC9B18D7D19E962847F329338225E9E51/);
+  for (const total of [
+    "50 events",
+    "251 claims",
+    "159 sources",
+    "197 organisations",
+    "2 corrections",
+  ]) {
+    assert.match(dataset, new RegExp(total));
+  }
 });
 
-test("Preview snapshot has 23 unique readable slugs and one filled visual per event", () => {
+test("Preview snapshot has 50 unique readable slugs and one filled visual per event", () => {
   const ids = [...dataset.matchAll(/internalId: "([^"]+)"/g)].map((match) => match[1]);
   const slugs = [...dataset.matchAll(/slug: "([^"]+)"/g)].map((match) => match[1]);
   const recordCovers = [...dataset.matchAll(/visual: recordCover\(/g)];
@@ -40,18 +91,25 @@ test("Preview snapshot has 23 unique readable slugs and one filled visual per ev
   const states = [...dataset.matchAll(/stateOrUnionTerritory: "([^"]+)"/g)].map(
     (match) => match[1],
   );
+  const primaryTopics = [...dataset.matchAll(/"IO-CM-[A-Z]+-\d{4}": "([^"]+)",/g)].map(
+    (match) => match[1],
+  );
 
-  assert.equal(ids.length, 23);
-  assert.equal(slugs.length, 23);
-  assert.equal(new Set(slugs).size, 23);
-  assert.equal(recordCovers.length, 18);
+  assert.equal(ids.length, 50);
+  assert.equal(new Set(ids).size, 50);
+  assert.equal(slugs.length, 50);
+  assert.equal(new Set(slugs).size, 50);
+  assert.equal(recordCovers.length, 45);
   assert.equal(publisherVideos.length, 5);
-  assert.equal(recordCovers.length + publisherVideos.length, 23);
+  assert.equal(recordCovers.length + publisherVideos.length, 50);
+  assert.equal((dataset.match(/visual: documentPreview|visual: publisherImage/g) ?? []).length, 0);
   assert.equal(
     sourceCounts.reduce((total, count) => total + count, 0),
-    83,
+    159,
   );
-  assert.equal(new Set(states).size, 16);
+  assert.equal(new Set(states).size, 20);
+  assert.equal(primaryTopics.length, 50);
+  assert.equal(new Set(primaryTopics).size, 9);
   assert.equal(
     slugs.some((slug) => /IO-CM/i.test(slug)),
     false,
@@ -65,6 +123,56 @@ test("Preview snapshot has 23 unique readable slugs and one filled visual per ev
   assert.match(visual, /No approved visual media/);
   assert.match(visual, /role="img" aria-label=\{visual\.alt\}/);
   assert.doesNotMatch(dataset, /stock|unsplash|pexels|pixabay/i);
+});
+
+test("all public-safe records are complete and the 27 additions use record covers", () => {
+  const requiredFields = [
+    "slug",
+    "title",
+    "eventType",
+    "eventStatus",
+    "topic",
+    "stateOrUnionTerritory",
+    "publicLocation",
+    "startDate",
+    "endDate",
+    "lastConfirmedActive",
+    "lastReviewed",
+    "summary",
+    "directedAt",
+    "eventVerification",
+    "approvedSourceCount",
+    "visual",
+  ];
+  const ids = [...dataset.matchAll(/internalId: "([^"]+)"/g)].map((match) => match[1]);
+
+  for (const id of ids) {
+    const block = eventBlock(id);
+    for (const field of requiredFields) {
+      assert.match(block, new RegExp(`\\b${field}:`), `${id} must include ${field}`);
+    }
+    assert.match(dataset, new RegExp(`"${id}": "[^"]+",`), `${id} needs a primary topic`);
+  }
+
+  assert.equal(newEventIds.length, 27);
+  for (const id of newEventIds) {
+    const block = eventBlock(id);
+    assert.match(block, /visual: recordCover\(/);
+    assert.doesNotMatch(block, /publisherVideo|publisher_image|document_preview|embedUrl/);
+  }
+
+  assert.match(
+    dataset,
+    /alt: `Text-only record cover for \$\{title\}\. No approved visual media\.`/,
+  );
+  assert.match(visual, />No approved visual media</);
+  assert.equal((dataset.match(/https:\/\/www\.ndtv\.com\/videos\/embed-player/g) ?? []).length, 5);
+  assert.equal(
+    (dataset.match(/https:\/\/www\.instagram\.com\/reel\/DacYWWktqjL\/embed\//g) ?? []).length,
+    1,
+  );
+  assert.equal((dataset.match(/embedUrl:\s*"https:\/\//g) ?? []).length, 6);
+  assert.doesNotMatch(dataset, /(?:imageUrl|thumbnailUrl):\s*"(?:\/|\.\.\/|\.\/)/);
 });
 
 test("only controlled visual types are allowed and the archive never loads video iframes", () => {
@@ -203,6 +311,7 @@ test("archive filters use only public-safe search fields and preserve URL state"
     "event.title",
     "event.publicLocation",
     "event.stateOrUnionTerritory",
+    "event.primaryTopic",
     "event.topic",
     "event.directedAt",
   ]) {
@@ -218,6 +327,13 @@ test("archive filters use only public-safe search fields and preserve URL state"
   assert.match(filters, /Latest activity/);
   assert.match(filters, /Recently reviewed/);
   assert.match(filters, /Event date: oldest first/);
+  assert.match(
+    archivePage,
+    /states: unique\(events\.map\(\(event\) => event\.stateOrUnionTerritory\)\)/,
+  );
+  assert.match(archivePage, /topics: unique\(events\.map\(\(event\) => event\.primaryTopic\)\)/);
+  assert.match(archivePage, /eventTypes: unique\(events\.map\(\(event\) => event\.eventType\)\)/);
+  assert.match(archivePage, /statuses: unique\(events\.map\(\(event\) => event\.eventStatus\)\)/);
   assert.match(archivePage, /new URLSearchParams\(\)/);
   assert.match(pagination, /new URLSearchParams\(params\)/);
   assert.match(pagination, /nextParams\.set\("page", String\(page\)\)/);
@@ -229,12 +345,61 @@ test("latest-activity sorting and accessible ten-record pagination cover all rec
     /event\.lastConfirmedActive \?\? event\.endDate \?\? event\.startDate \?\? event\.lastReviewed/,
   );
   assert.match(archiveLogic, /export const EVENTS_PER_PAGE = 10/);
+  assert.equal(50 / 10, 5);
+  assert.match(archivePage, /Math\.ceil\(filteredEvents\.length \/ EVENTS_PER_PAGE\)/);
+  assert.match(archivePage, /Math\.min\(Math\.max\(requestedPage, 1\), pageCount\)/);
   assert.match(archivePage, /slice\(startIndex, startIndex \+ EVENTS_PER_PAGE\)/);
+  assert.match(archivePage, /<strong>50 reviewed records<\/strong>/);
   assert.match(archivePage, /Showing \{startIndex \+ 1\}–/);
   assert.match(pagination, /aria-label="Events pagination"/);
   assert.match(pagination, />Previous</);
   assert.match(pagination, />Next</);
   assert.match(pagination, /aria-current="page"/);
+
+  const records = [...dataset.matchAll(/internalId: "([^"]+)"/g)].map(([, id]) => {
+    const block = eventBlock(id);
+    return {
+      slug: literalField(block, "slug"),
+      title: literalField(block, "title"),
+      startDate: literalField(block, "startDate"),
+      endDate: literalField(block, "endDate"),
+      lastConfirmedActive: literalField(block, "lastConfirmedActive"),
+      lastReviewed: literalField(block, "lastReviewed"),
+    };
+  });
+  const activityDate = (record) =>
+    record.lastConfirmedActive ?? record.endDate ?? record.startDate ?? record.lastReviewed;
+  const ordered = records.toSorted(
+    (left, right) =>
+      activityDate(right).localeCompare(activityDate(left)) ||
+      right.lastReviewed.localeCompare(left.lastReviewed) ||
+      left.title.localeCompare(right.title),
+  );
+  const pages = Array.from({ length: Math.ceil(ordered.length / 10) }, (_, index) =>
+    ordered.slice(index * 10, index * 10 + 10),
+  );
+
+  assert.deepEqual(
+    ordered.slice(0, 10).map((record) => record.slug),
+    [
+      "kisan-ghat-india-us-trade-deal",
+      "indore-dewas-ring-road-compensation",
+      "jammu-kashmir-statehood-jantar-mantar",
+      "mumbai-police-action-education-protest",
+      "shamshabad-high-speed-rail-land-protest",
+      "bharat-tiwari-justice-rights-assembly",
+      "hidkal-displaced-farmers-belagavi-compensation",
+      "channot-drinking-water-pipeline-protest",
+      "khanna-mgnrega-workers-regularisation-salaries",
+      "bhaniyawala-rishikesh-tree-felling-protest",
+    ],
+  );
+  assert.deepEqual(
+    pages.map((page) => page.length),
+    [10, 10, 10, 10, 10],
+  );
+  assert.equal(pages[5], undefined);
+  assert.equal(Math.min(Math.max(6, 1), pages.length), 5);
 });
 
 test("archive rows follow the ON RECORD structure and link to readable detail routes", () => {
@@ -244,7 +409,7 @@ test("archive rows follow the ON RECORD structure and link to readable detail ro
     "event.title",
     "event.publicLocation",
     "event.stateOrUnionTerritory",
-    "event.topic",
+    "event.primaryTopic",
     "event.summary",
     "event.directedAt",
     "event.eventVerification",
@@ -301,7 +466,7 @@ test("archive controls use the compact title and spacing without changing grid, 
     /@media \(max-width: 700px\)[\s\S]*?\.events-archive \{[\s\S]*?padding-top: 0\.5rem[\s\S]*?\.event-filters input,[\s\S]*?min-height: 2\.75rem/,
   );
   assert.equal((dataset.match(/visual: publisherVideo\(\{/g) ?? []).length, 5);
-  assert.equal((dataset.match(/visual: recordCover\(/g) ?? []).length, 18);
+  assert.equal((dataset.match(/visual: recordCover\(/g) ?? []).length, 45);
 });
 
 test("detail pages show full public-safe records and disabled launch actions", () => {
@@ -332,9 +497,9 @@ test("detail pages show full public-safe records and disabled launch actions", (
 test("homepage navigation and coverage totals are synchronized with the canonical workbook", () => {
   assert.equal((homepage.match(/<Link href="\/events">Events<\/Link>/g) ?? []).length, 3);
   for (const [count, label] of [
-    ["16", "states and Union Territories represented"],
-    ["23", "reviewed event records"],
-    ["83", "source records linked to reviewed events"],
+    ["20", "states and Union Territories represented"],
+    ["50", "reviewed event records"],
+    ["159", "source records linked to reviewed events"],
   ]) {
     assert.match(homepage, new RegExp(`<strong>${count}<\\/strong>[\\s\\S]*?${label}`));
   }
