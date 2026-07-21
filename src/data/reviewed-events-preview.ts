@@ -1,19 +1,21 @@
 import "server-only";
 
+import { reviewedEventEvidenceByInternalId } from "./reviewed-event-evidence-preview";
 import type { EventVisual, ReviewedEventPreview } from "../lib/events/types";
 
 /**
  * Public-safe snapshot generated from the canonical reviewed workbook at
  * C:\Users\navee\Documents\IndiaObserved\tasks\India_Observed_Master_Tracker.xlsx
  * Workbook SHA-256:
- * DBC584D2F81E0A45EF83DDF1A03590BFC9B18D7D19E962847F329338225E9E51
+ * 0B0497363ABF26F86E94C5782349820FD61630358AE7710E866EDA5BB8492E42
  *
  * Canonical totals:
  * 50 events
- * 251 claims
- * 159 sources
+ * 263 claims
+ * 165 sources
  * 197 organisations
  * 2 corrections
+ * 12 safety incidents
  *
  * Media is limited to five approved NDTV source displays and one official Instagram embed in
  * Preview. Rights-pending photographs are not reproduced. All other events use non-evidentiary
@@ -92,13 +94,15 @@ const reviewedEventRecords = [
     publicLocation: "Jantar Mantar, New Delhi",
     startDate: "2026-06-20",
     endDate: null,
-    lastConfirmedActive: "2026-07-15",
-    lastReviewed: "2026-07-15",
+    lastConfirmedActive: "2026-07-20",
+    lastReviewed: "2026-07-21",
     summary:
-      "A sit-in organised by the Cockroach Janta Party continued at Jantar Mantar in New Delhi in July 2026, with participants demanding accountability over alleged examination irregularities and the resignation of Union Education Minister Dharmendra Pradhan. Education reformer Sonam Wangchuk joined the action through an indefinite hunger strike from 28 June. The occurrence, location and principal demand are independently corroborated; reported medical details and some examination-related claims remain attributed to organisers or media reports.",
+      "A sit-in organised by the Cockroach Janta Party continued at Jantar Mantar in New Delhi in July 2026, with participants demanding accountability over alleged examination irregularities and the resignation of Union Education Minister Dharmendra Pradhan. Education reformer Sonam Wangchuk joined through an indefinite hunger strike from 28 June. Police removed him from the site and transferred him to hospital on 18 July. A 20 July march towards Parliament encountered police baton charges and tear gas. The occurrence and principal demands are corroborated; the necessity of the removal, responsibility for escalation and injury totals remain disputed or attributed.",
     directedAt: "Union Ministry of Education; Government of India",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 4,
+    latestOfficialResponse:
+      "Police transferred Sonam Wangchuk to hospital on 18 July and used batons and tear gas during the 20 July march. Government representatives met protest delegates, but no final settlement of the movement's demands was identified.",
     visual: publisherVideo({
       sourceUrl:
         "https://www.ndtv.com/video/from-online-movement-to-street-protest-cjp-gathers-at-jantar-mantar-1109578",
@@ -1253,7 +1257,10 @@ const reviewedEventRecords = [
       "16 May 2026–15 July 2026",
     ),
   },
-] as const satisfies readonly Omit<ReviewedEventPreview, "primaryTopic">[];
+] as const satisfies readonly Omit<
+  ReviewedEventPreview,
+  "primaryTopic" | "sources" | "safety" | "safetyIncidents"
+>[];
 
 const primaryTopicByInternalId = {
   "IO-CM-MP-0001": "Land & rehabilitation",
@@ -1312,8 +1319,14 @@ const primaryTopicByInternalId = {
 >;
 
 export const reviewedEventsPreview: readonly ReviewedEventPreview[] = reviewedEventRecords.map(
-  (event) => ({
-    ...event,
-    primaryTopic: primaryTopicByInternalId[event.internalId],
-  }),
+  (event) => {
+    const evidence = reviewedEventEvidenceByInternalId[event.internalId];
+
+    return {
+      ...event,
+      ...evidence,
+      approvedSourceCount: evidence.sources.length,
+      primaryTopic: primaryTopicByInternalId[event.internalId],
+    };
+  },
 );

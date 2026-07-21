@@ -67,6 +67,52 @@ export type EventDetailMedia = {
   previewOnly: true;
 };
 
+export type EventSourceRole =
+  | "Lead"
+  | "Corroboration"
+  | "Follow-up"
+  | "Official context"
+  | "Official response"
+  | "Historical context"
+  | "Alternate access";
+
+export type EventPublicSource = {
+  publisher: string;
+  headline: string;
+  url: string;
+  publicationDate: string | null;
+  sourceType: string;
+  sourceRole: EventSourceRole;
+  reporter?: string;
+  independenceNote?: string;
+};
+
+export type EventSafetySummary = {
+  assessment: string;
+  incidentCount: number;
+  highestClassification: string;
+  injuriesAndDeathsStatus: string;
+  propertyDamageStatus: string;
+  summary: string;
+  lastReviewed: string;
+};
+
+export type EventSafetyIncident = {
+  date: string;
+  publicLocation: string;
+  category: string;
+  reportedActors: string;
+  publicWording: string;
+  policeOrStateForce: string;
+  protesterOrOtherForce: string;
+  injuriesStatus: string;
+  deathsStatus: string;
+  propertyDamage: string;
+  arrestsOrDetentions: string;
+  verificationStatus: string;
+  competingAccounts?: string;
+};
+
 export type ReviewedEventPreview = {
   internalId: string;
   slug: string;
@@ -85,6 +131,10 @@ export type ReviewedEventPreview = {
   directedAt: string;
   eventVerification: string;
   approvedSourceCount: number;
+  sources: readonly EventPublicSource[];
+  safety: EventSafetySummary;
+  safetyIncidents: readonly EventSafetyIncident[];
+  latestOfficialResponse?: string;
   visual: EventVisual;
   detailMedia?: EventDetailMedia;
 };

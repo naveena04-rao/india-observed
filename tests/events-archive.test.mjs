@@ -5,6 +5,7 @@ import test from "node:test";
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
 const dataset = read("src/data/reviewed-events-preview.ts");
+const evidenceDataset = read("src/data/reviewed-event-evidence-preview.ts");
 const archivePage = read("src/app/events/page.tsx");
 const detailPage = read("src/app/events/[slug]/page.tsx");
 const archiveLogic = read("src/lib/events/archive.ts");
@@ -14,9 +15,28 @@ const filters = read("src/app/events/components/EventFilters.tsx");
 const pagination = read("src/app/events/components/EventPagination.tsx");
 const visual = read("src/app/events/components/EventVisual.tsx");
 const detailMedia = read("src/app/events/components/EventDetailMedia.tsx");
+const eventSafety = read("src/app/events/components/EventSafety.tsx");
+const eventSources = read("src/app/events/components/EventSources.tsx");
 const shell = read("src/app/events/components/ArchiveShell.tsx");
 const homepage = read("src/app/page.tsx");
 const styles = read("src/app/globals.css");
+
+const evidenceSource = evidenceDataset.slice(
+  evidenceDataset.indexOf("export const reviewedEventEvidenceByInternalId = ") +
+    "export const reviewedEventEvidenceByInternalId = ".length,
+  evidenceDataset.indexOf(" as const satisfies"),
+);
+const evidence = Function(`"use strict"; return (${evidenceSource});`)();
+
+const sourceRolePriority = [
+  "Official response",
+  "Official context",
+  "Corroboration",
+  "Follow-up",
+  "Lead",
+  "Historical context",
+  "Alternate access",
+];
 
 const newEventIds = [
   "IO-CM-PB-0002",
@@ -68,13 +88,14 @@ test("reviewed Events routes and the canonical public-safe snapshot exist", () =
     dataset,
     /C:\\Users\\navee\\Documents\\IndiaObserved\\tasks\\India_Observed_Master_Tracker\.xlsx/,
   );
-  assert.match(dataset, /DBC584D2F81E0A45EF83DDF1A03590BFC9B18D7D19E962847F329338225E9E51/);
+  assert.match(dataset, /0B0497363ABF26F86E94C5782349820FD61630358AE7710E866EDA5BB8492E42/);
   for (const total of [
     "50 events",
-    "251 claims",
-    "159 sources",
+    "263 claims",
+    "165 sources",
     "197 organisations",
     "2 corrections",
+    "12 safety incidents",
   ]) {
     assert.match(dataset, new RegExp(total));
   }
@@ -85,9 +106,6 @@ test("Preview snapshot has 50 unique readable slugs and one filled visual per ev
   const slugs = [...dataset.matchAll(/slug: "([^"]+)"/g)].map((match) => match[1]);
   const recordCovers = [...dataset.matchAll(/visual: recordCover\(/g)];
   const publisherVideos = [...dataset.matchAll(/visual: publisherVideo\(\{/g)];
-  const sourceCounts = [...dataset.matchAll(/approvedSourceCount: (\d+)/g)].map((match) =>
-    Number(match[1]),
-  );
   const states = [...dataset.matchAll(/stateOrUnionTerritory: "([^"]+)"/g)].map(
     (match) => match[1],
   );
@@ -103,10 +121,7 @@ test("Preview snapshot has 50 unique readable slugs and one filled visual per ev
   assert.equal(publisherVideos.length, 5);
   assert.equal(recordCovers.length + publisherVideos.length, 50);
   assert.equal((dataset.match(/visual: documentPreview|visual: publisherImage/g) ?? []).length, 0);
-  assert.equal(
-    sourceCounts.reduce((total, count) => total + count, 0),
-    159,
-  );
+  assert.equal(Object.values(evidence).flatMap((event) => event.sources).length, 165);
   assert.equal(new Set(states).size, 20);
   assert.equal(primaryTopics.length, 50);
   assert.equal(new Set(primaryTopics).size, 9);
@@ -173,6 +188,127 @@ test("all public-safe records are complete and the 27 additions use record cover
   );
   assert.equal((dataset.match(/embedUrl:\s*"https:\/\//g) ?? []).length, 6);
   assert.doesNotMatch(dataset, /(?:imageUrl|thumbnailUrl):\s*"(?:\/|\.\.\/|\.\/)/);
+});
+
+test("every Preview record has an ordered public-safe source list", () => {
+  const entries = Object.entries(evidence);
+  const sources = entries.flatMap(([, event]) => event.sources);
+
+  assert.equal(entries.length, 50);
+  assert.equal(sources.length, 165);
+  assert.equal(
+    entries.every(([, event]) => event.sources.length >= 1),
+    true,
+  );
+  assert.match(dataset, /approvedSourceCount: evidence\.sources\.length/);
+  assert.doesNotMatch(evidenceDataset, /IO-SRC-|IO-CLM-|IO-SAFE-/);
+
+  for (const source of sources) {
+    assert.doesNotThrow(() => new URL(source.url));
+    assert.match(source.url, /^https?:\/\//);
+    assert.ok(sourceRolePriority.includes(source.sourceRole));
+  }
+
+  for (const [, event] of entries) {
+    for (let index = 1; index < event.sources.length; index += 1) {
+      const previous = event.sources[index - 1];
+      const current = event.sources[index];
+      const previousRole = sourceRolePriority.indexOf(previous.sourceRole);
+      const currentRole = sourceRolePriority.indexOf(current.sourceRole);
+      assert.ok(previousRole <= currentRole);
+      if (previousRole === currentRole) {
+        assert.ok((previous.publicationDate ?? "") >= (current.publicationDate ?? ""));
+      }
+    }
+  }
+
+  assert.match(eventSources, /target="_blank"/);
+  assert.match(eventSources, /rel="noreferrer noopener"/);
+  assert.match(eventSources, /Open original source/);
+  for (const label of [
+    "Official source",
+    "Independent reporting",
+    "Follow-up",
+    "Discovery lead",
+    "Historical context",
+    "Alternate access",
+  ]) {
+    assert.match(eventSources, new RegExp(label));
+  }
+});
+
+test("all events have qualified safety summaries and only attributed incident details", () => {
+  const entries = Object.entries(evidence);
+  const incidentEvents = entries.filter(([, event]) => event.safetyIncidents.length > 0);
+  const zeroIncidentEvents = entries.filter(([, event]) => event.safetyIncidents.length === 0);
+  const incidents = incidentEvents.flatMap(([, event]) => event.safetyIncidents);
+  const noIncidentStatement =
+    "No violence or coercive-force incident was identified in the source set reviewed for this event. This is an evidence statement, not proof that no incident occurred.";
+  const expectedIncidentEvents = [
+    "IO-CM-KA-0002",
+    "IO-CM-HR-0002",
+    "IO-CM-UP-0002",
+    "IO-CM-DL-0002",
+    "IO-CM-RJ-0001",
+    "IO-CM-PB-0002",
+    "IO-CM-PB-0004",
+    "IO-CM-MP-0002",
+    "IO-CM-TS-0002",
+    "IO-CM-DL-0001",
+    "IO-CM-MH-0007",
+  ];
+
+  assert.equal(
+    entries.every(([, event]) => event.safety),
+    true,
+  );
+  assert.equal(incidentEvents.length, 11);
+  assert.equal(incidents.length, 12);
+  assert.equal(zeroIncidentEvents.length, 39);
+  assert.equal(
+    entries.every(([, event]) =>
+      [
+        "assessment",
+        "incidentCount",
+        "highestClassification",
+        "injuriesAndDeathsStatus",
+        "propertyDamageStatus",
+        "summary",
+        "lastReviewed",
+      ].every((field) => event.safety[field] !== null && event.safety[field] !== ""),
+    ),
+    true,
+  );
+  assert.equal(
+    entries.every(([, event]) => event.safety.incidentCount === event.safetyIncidents.length),
+    true,
+  );
+  assert.equal(
+    zeroIncidentEvents.every(([, event]) => event.safety.summary === noIncidentStatement),
+    true,
+  );
+  assert.deepEqual(incidentEvents.map(([id]) => id).sort(), expectedIncidentEvents.sort());
+  assert.equal(
+    incidents.every((incident) => /^No deaths reported$/i.test(incident.deathsStatus)),
+    true,
+  );
+  assert.doesNotMatch(evidenceDataset, /violent protest/i);
+  assert.doesNotMatch(eventSafety, /violent protest/i);
+  assert.match(eventSafety, /\{event\.safety\.summary\}/);
+
+  const jantar = evidence["IO-CM-DL-0001"];
+  assert.equal(jantar.sources.length, 8);
+  assert.equal(jantar.safetyIncidents.length, 2);
+  assert.deepEqual(
+    jantar.safetyIncidents.map((incident) => incident.date),
+    ["2026-07-18", "2026-07-20"],
+  );
+  const jantarBlock = eventBlock("IO-CM-DL-0001");
+  assert.match(jantarBlock, /lastConfirmedActive: "2026-07-20"/);
+  assert.match(jantarBlock, /lastReviewed: "2026-07-21"/);
+  assert.match(jantarBlock, /Police removed him from the site and transferred him to hospital/);
+  assert.match(jantarBlock, /latestOfficialResponse:/);
+  assert.doesNotMatch(archiveRow, /safety|incident/i);
 });
 
 test("only controlled visual types are allowed and the archive never loads video iframes", () => {
@@ -383,6 +519,7 @@ test("latest-activity sorting and accessible ten-record pagination cover all rec
     ordered.slice(0, 10).map((record) => record.slug),
     [
       "kisan-ghat-india-us-trade-deal",
+      "education-accountability-jantar-mantar",
       "indore-dewas-ring-road-compensation",
       "jammu-kashmir-statehood-jantar-mantar",
       "mumbai-police-action-education-protest",
@@ -391,7 +528,6 @@ test("latest-activity sorting and accessible ten-record pagination cover all rec
       "hidkal-displaced-farmers-belagavi-compensation",
       "channot-drinking-water-pipeline-protest",
       "khanna-mgnrega-workers-regularisation-salaries",
-      "bhaniyawala-rishikesh-tree-felling-protest",
     ],
   );
   assert.deepEqual(
@@ -411,6 +547,8 @@ test("archive rows follow the ON RECORD structure and link to readable detail ro
     "event.stateOrUnionTerritory",
     "event.primaryTopic",
     "event.summary",
+    "event.startDate",
+    "event.endDate",
     "event.directedAt",
     "event.eventVerification",
     "event.lastReviewed",
@@ -425,7 +563,20 @@ test("archive rows follow the ON RECORD structure and link to readable detail ro
     styles,
     /\.event-archive-row[\s\S]*?grid-template-columns: minmax\(0, 68fr\) minmax\(15rem, 32fr\)/,
   );
-  assert.match(styles, /\.event-row-summary[\s\S]*?-webkit-line-clamp: 4/);
+  assert.match(styles, /\.event-row-summary[\s\S]*?-webkit-line-clamp: 2/);
+  assert.match(archiveRow, /Start date/);
+  assert.match(archiveRow, /Under verification/);
+  assert.match(archiveRow, /event\.endDate \? \(/);
+  assert.doesNotMatch(archiveRow, /formatEventDateRange/);
+  assert.match(archiveRow, /Last reviewed/);
+  assert.match(archiveRow, /event\.approvedSourceCount/);
+  assert.match(styles, /\.event-row-disclosure--with-end-date[\s\S]*?repeat\(4/);
+  assert.match(styles, /\.event-row-disclosure--without-end-date[\s\S]*?repeat\(3/);
+  assert.match(
+    styles,
+    /\.event-row-visual \.event-record-cover,[\s\S]*?aspect-ratio: 16 \/ 9;[\s\S]*?min-height: 0/,
+  );
+  assert.match(styles, /\.event-detail-embed \{[\s\S]*?aspect-ratio: 4 \/ 3/);
   assert.match(styles, /@media \(max-width: 700px\)[\s\S]*?\.event-row-visual[\s\S]*?grid-row: 1/);
 });
 
@@ -458,7 +609,7 @@ test("archive controls use the compact title and spacing without changing grid, 
   assert.match(styles, /\.events-result-count \{[\s\S]*?margin-block: 0\.3rem 0\.2rem/);
   assert.match(
     styles,
-    /\.event-archive-row \{[\s\S]*?grid-template-columns: minmax\(0, 68fr\) minmax\(15rem, 32fr\);[\s\S]*?padding-block: clamp\(1\.25rem, 2\.5vw, 2rem\)/,
+    /\.event-archive-row \{[\s\S]*?grid-template-columns: minmax\(0, 68fr\) minmax\(15rem, 32fr\);[\s\S]*?padding-block: clamp\(0\.9rem, 1\.7vw, 1\.35rem\)/,
   );
   assert.match(styles, /\.featured-carousel \.featured-slide \{[\s\S]*?height: 30rem/);
   assert.match(
@@ -492,6 +643,13 @@ test("detail pages show full public-safe records and disabled launch actions", (
   }
   assert.match(detailPage, /Available after public launch/);
   assert.match(detailPage, /<button key=\{label\} type="button" disabled>/);
+  assert.match(detailPage, /<EventSafety event=\{event\} \/>/);
+  assert.match(detailPage, /<EventSources sources=\{event\.sources\} \/>/);
+  assert.ok(detailPage.indexOf("<EventSafety") < detailPage.indexOf("<EventSources"));
+  assert.ok(detailPage.indexOf("<EventSources") < detailPage.indexOf("event-record-actions"));
+  assert.match(eventSafety, /Safety and conflict incidents/);
+  assert.match(eventSafety, /event\.safetyIncidents\.map/);
+  assert.match(eventSources, /sources\.map/);
 });
 
 test("homepage navigation and coverage totals are synchronized with the canonical workbook", () => {
@@ -499,7 +657,7 @@ test("homepage navigation and coverage totals are synchronized with the canonica
   for (const [count, label] of [
     ["20", "states and Union Territories represented"],
     ["50", "reviewed event records"],
-    ["159", "source records linked to reviewed events"],
+    ["165", "source records linked to reviewed events"],
   ]) {
     assert.match(homepage, new RegExp(`<strong>${count}<\\/strong>[\\s\\S]*?${label}`));
   }

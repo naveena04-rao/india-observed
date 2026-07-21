@@ -288,7 +288,7 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   for (const [count, label] of [
     ["20", "states and Union Territories represented"],
     ["50", "reviewed event records"],
-    ["159", "source records linked to reviewed events"],
+    ["165", "source records linked to reviewed events"],
   ]) {
     assert.match(page, new RegExp(`<strong>${count}<\\/strong>[\\s\\S]*?${label}`));
   }
@@ -645,7 +645,7 @@ test("homepage uses the refined section hierarchy and editorial footer", () => {
   for (const [count, label] of [
     ["20", "states and Union Territories represented"],
     ["50", "reviewed event records"],
-    ["159", "source records linked to reviewed events"],
+    ["165", "source records linked to reviewed events"],
   ]) {
     assert.match(page, new RegExp(`<strong>${count}<\\/strong>[\\s\\S]*?${label}`));
   }

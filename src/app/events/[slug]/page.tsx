@@ -4,6 +4,8 @@ import { formatEventDate, formatEventDateRange } from "../../../lib/events/archi
 import { getReviewedEvents, isReviewedPreviewEnabled } from "../../../lib/events/getReviewedEvents";
 import { ArchiveShell } from "../components/ArchiveShell";
 import { EventDetailMedia } from "../components/EventDetailMedia";
+import { EventSafety } from "../components/EventSafety";
+import { EventSources } from "../components/EventSources";
 
 export const dynamic = "force-dynamic";
 
@@ -82,6 +84,10 @@ export default async function EventRecordPage({ params }: EventPageProps) {
               {event.approvedSourceCount === 1 ? "source" : "sources"}
             </p>
           </section>
+
+          <EventSafety event={event} />
+
+          <EventSources sources={event.sources} />
 
           <section className="event-record-actions" aria-labelledby="record-actions-heading">
             <h2 id="record-actions-heading">Contribute to this record</h2>

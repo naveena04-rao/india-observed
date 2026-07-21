@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatEventDate, formatEventDateRange } from "../../../lib/events/archive";
+import { formatEventDate } from "../../../lib/events/archive";
 import type { ReviewedEventPreview } from "../../../lib/events/types";
 import { EventVisual } from "./EventVisual";
 
@@ -21,7 +21,23 @@ export function EventArchiveRow({ event }: { event: ReviewedEventPreview }) {
         </p>
         <p className="event-row-topic">{event.primaryTopic}</p>
         <p className="event-row-summary">{event.summary}</p>
-        <dl className="event-row-disclosure">
+        <dl
+          className={`event-row-disclosure ${
+            event.endDate
+              ? "event-row-disclosure--with-end-date"
+              : "event-row-disclosure--without-end-date"
+          }`}
+        >
+          <div>
+            <dt>Start date</dt>
+            <dd>{event.startDate ? formatEventDate(event.startDate) : "Under verification"}</dd>
+          </div>
+          {event.endDate ? (
+            <div>
+              <dt>End date</dt>
+              <dd>{formatEventDate(event.endDate)}</dd>
+            </div>
+          ) : null}
           <div>
             <dt>Directed at</dt>
             <dd>{event.directedAt}</dd>
@@ -32,7 +48,6 @@ export function EventArchiveRow({ event }: { event: ReviewedEventPreview }) {
           </div>
         </dl>
         <p className="event-row-dates">
-          <span>{formatEventDateRange(event)}</span>
           <span>Last reviewed {formatEventDate(event.lastReviewed)}</span>
           <span>
             {event.approvedSourceCount} public{" "}

@@ -338,7 +338,7 @@ export default function HomePage() {
               <span>reviewed event records</span>
             </div>
             <div>
-              <strong>159</strong>
+              <strong>165</strong>
               <span>source records linked to reviewed events</span>
             </div>
           </div>
