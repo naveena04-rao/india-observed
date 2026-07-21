@@ -846,12 +846,12 @@ main {
 
 .events-archive {
   padding-bottom: clamp(3.5rem, 7vw, 6rem);
-  padding-top: clamp(0.75rem, 1.5vw, 1.25rem);
+  padding-top: 0.5rem;
 }
 
 .events-intro {
   border-bottom: 3px double var(--ink);
-  padding-bottom: 0.6rem;
+  padding-bottom: 0.4rem;
 }
 
 .events-intro .section-kicker {
@@ -859,22 +859,22 @@ main {
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.1em;
-  margin-bottom: 0.15rem;
+  margin-bottom: 0.1rem;
   text-transform: uppercase;
 }
 
 .events-intro h1 {
-  font-size: clamp(2.6rem, 6vw, 5rem);
+  font-size: clamp(2.4rem, 4vw, 3.25rem);
   letter-spacing: -0.035em;
-  line-height: 0.95;
-  margin-bottom: 0.25rem;
+  line-height: 0.9;
+  margin-bottom: 0.2rem;
 }
 
 .events-intro > p:not(.section-kicker) {
   color: var(--muted);
   font-size: clamp(1rem, 1.5vw, 1.2rem);
-  line-height: 1.55;
-  margin-bottom: 0.2rem;
+  line-height: 1.3;
+  margin-bottom: 0.1rem;
   max-width: 48rem;
 }
 
@@ -891,22 +891,26 @@ main {
   color: #234f46;
   font-size: 0.78rem;
   font-weight: 700;
-  line-height: 1.5;
-  margin-block: 0.45rem;
-  padding: 0.35rem 0.65rem;
+  line-height: 1.25;
+  margin-block: 0.3rem;
+  padding: 0.25rem 0.6rem;
 }
 
 .event-filters {
   align-items: end;
   border-bottom: 1px solid var(--line-dark);
   display: grid;
-  gap: 0.35rem 1rem;
+  gap: 0.25rem 1rem;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  padding-block: 0.45rem 0.6rem;
+  padding-block: 0.3rem 0.4rem;
 }
 
 .event-filters > div {
   min-width: 0;
+}
+
+.event-filters > div:not(.event-filter-actions) {
+  position: relative;
 }
 
 .event-filter-search {
@@ -917,9 +921,13 @@ main {
   display: block;
   font-size: 0.67rem;
   font-weight: 800;
+  inset: 0.2rem auto auto 0.6rem;
   letter-spacing: 0.05em;
-  margin-bottom: 0.15rem;
+  line-height: 1;
+  margin-bottom: 0.1rem;
+  position: absolute;
   text-transform: uppercase;
+  z-index: 1;
 }
 
 .event-filters input,
@@ -931,7 +939,7 @@ main {
   font: inherit;
   font-size: 0.82rem;
   min-height: 2.3rem;
-  padding: 0.35rem 0.6rem;
+  padding: 0.95rem 0.6rem 0;
   width: 100%;
 }
 
@@ -980,7 +988,7 @@ main {
   color: var(--muted);
   font-size: 0.74rem;
   font-weight: 700;
-  margin-block: 0.45rem 0.3rem;
+  margin-block: 0.3rem 0.2rem;
 }
 
 .event-archive-list {
@@ -1483,7 +1491,7 @@ main {
 
 @media (max-width: 700px) {
   .events-archive {
-    padding-top: 0.75rem;
+    padding-top: 0.5rem;
   }
 
   .event-filters input,
