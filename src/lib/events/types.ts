@@ -12,6 +12,8 @@ export type EventType =
 
 export type EventStatus = "Ongoing" | "Concluded" | "Outcome pending";
 
+export type EventPublicationStatus = "published" | "candidate";
+
 export type PrimaryTopic =
   | "Land & rehabilitation"
   | "Education"
@@ -130,6 +132,8 @@ export type ReviewedEventPreview = {
   summary: string;
   directedAt: string;
   eventVerification: string;
+  publicationStatus: EventPublicationStatus;
+  publishedAt: string | null;
   approvedSourceCount: number;
   sources: readonly EventPublicSource[];
   safety: EventSafetySummary;
