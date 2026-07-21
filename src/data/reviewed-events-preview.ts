@@ -7,7 +7,7 @@ import type { EventVisual, ReviewedEventPreview } from "../lib/events/types";
  * Public-safe snapshot generated from the canonical reviewed workbook at
  * C:\Users\navee\Documents\IndiaObserved\tasks\India_Observed_Master_Tracker.xlsx
  * Workbook SHA-256:
- * 0B0497363ABF26F86E94C5782349820FD61630358AE7710E866EDA5BB8492E42
+ * 76958985A005AFE9EF332F657959FFB039334E7B97D0205D3FC82C5DDD249262
  *
  * Canonical totals:
  * 50 events
@@ -1259,7 +1259,7 @@ const reviewedEventRecords = [
   },
 ] as const satisfies readonly Omit<
   ReviewedEventPreview,
-  "primaryTopic" | "sources" | "safety" | "safetyIncidents"
+  "primaryTopic" | "publicationStatus" | "publishedAt" | "sources" | "safety" | "safetyIncidents"
 >[];
 
 const primaryTopicByInternalId = {
@@ -1325,6 +1325,8 @@ export const reviewedEventsPreview: readonly ReviewedEventPreview[] = reviewedEv
     return {
       ...event,
       ...evidence,
+      publicationStatus: "published",
+      publishedAt: "2026-07-21",
       approvedSourceCount: evidence.sources.length,
       primaryTopic: primaryTopicByInternalId[event.internalId],
     };

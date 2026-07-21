@@ -88,7 +88,7 @@ test("reviewed Events routes and the canonical public-safe snapshot exist", () =
     dataset,
     /C:\\Users\\navee\\Documents\\IndiaObserved\\tasks\\India_Observed_Master_Tracker\.xlsx/,
   );
-  assert.match(dataset, /0B0497363ABF26F86E94C5782349820FD61630358AE7710E866EDA5BB8492E42/);
+  assert.match(dataset, /76958985A005AFE9EF332F657959FFB039334E7B97D0205D3FC82C5DDD249262/);
   for (const total of [
     "50 events",
     "263 claims",
@@ -138,6 +138,19 @@ test("Preview snapshot has 50 unique readable slugs and one filled visual per ev
   assert.match(visual, /No approved visual media/);
   assert.match(visual, /role="img" aria-label=\{visual\.alt\}/);
   assert.doesNotMatch(dataset, /stock|unsplash|pexels|pixabay/i);
+});
+
+test("all reviewed records carry approved publication metadata", () => {
+  const ids = [...dataset.matchAll(/internalId: "(IO-CM-[^"]+)"/g)].map((match) => match[1]);
+
+  assert.equal(ids.length, 50);
+  assert.match(dataset, /publicationStatus: "published"/);
+  assert.match(dataset, /publishedAt: "2026-07-21"/);
+  assert.match(
+    dataset,
+    /reviewedEventRecords\.map\([\s\S]*?publicationStatus: "published",[\s\S]*?publishedAt: "2026-07-21"/,
+  );
+  assert.match(previewGate, /event\.publicationStatus === "published"/);
 });
 
 test("all public-safe records are complete and the 27 additions use record covers", () => {
@@ -390,7 +403,7 @@ test("exactly five NDTV records use verified publisher thumbnails and click-to-l
   assert.doesNotMatch(dataset, /thumbnailUrl:\s*"(?:\/|\.\.\/|\.\/)/);
 });
 
-test("detail embeds require activation and the Instagram candidate remains Preview-only", () => {
+test("detail embeds require activation and Instagram remains outside Production", () => {
   assert.match(detailMedia, /useState\(false\)/);
   assert.match(detailMedia, /onClick=\{\(\) => setIsActivated\(true\)\}/);
   assert.match(detailMedia, /isActivated \? \(/);
@@ -401,6 +414,11 @@ test("detail embeds require activation and the Instagram candidate remains Previ
   assert.match(dataset, /https:\/\/www\.instagram\.com\/reel\/DacYWWktqjL\/embed\//);
   assert.match(dataset, /previewOnly: true/);
   assert.match(dataset, /visual: recordCover\("Save SGNP human chain"/);
+  assert.match(
+    detailPage,
+    /candidatePreviewEnabled \|\| !event\.detailMedia\?\.previewOnly \? event\.detailMedia : undefined/,
+  );
+  assert.match(detailPage, /detailMedia=\{detailMedia\}/);
   assert.doesNotMatch(archivePage, /iframe/i);
   assert.doesNotMatch(archiveRow, /iframe/i);
 });
@@ -416,25 +434,41 @@ test("excluded media candidates remain disabled with truthful filled fallbacks",
   }
 });
 
-test("Preview and Production publication gates remain server-side and candidate-safe", () => {
+test("publication-aware server gate exposes published records and protects future candidates", () => {
   assert.match(
     previewGate,
     /process\.env\.NODE_ENV === "development" \|\| process\.env\.VERCEL_ENV === "preview"/,
   );
   assert.match(previewGate, /import "server-only"/);
-  assert.match(previewGate, /if \(!isReviewedPreviewEnabled\(\)\) return \[\]/);
+  assert.match(previewGate, /includeCandidates[\s\S]*?events\.filter/);
+  assert.match(previewGate, /event\.publicationStatus === "published"/);
   assert.doesNotMatch(previewGate, /NEXT_PUBLIC/);
-  assert.match(
-    archivePage,
-    /Preview of reviewed candidate records\. These records are not yet publicly published\./,
+
+  const candidateFixture = [
+    { slug: "published-record", publicationStatus: "published" },
+    { slug: "candidate-record", publicationStatus: "candidate" },
+  ];
+  const selectVisible = (events, includeCandidates) =>
+    includeCandidates ? events : events.filter((event) => event.publicationStatus === "published");
+  assert.deepEqual(
+    selectVisible(candidateFixture, true).map((event) => event.slug),
+    ["published-record", "candidate-record"],
   );
+  assert.deepEqual(
+    selectVisible(candidateFixture, false).map((event) => event.slug),
+    ["published-record"],
+  );
+
+  assert.match(archivePage, /candidatePreviewEnabled && candidateCount/);
+  assert.match(archivePage, /Preview includes \{candidateCount\} reviewed candidate/);
+  assert.doesNotMatch(archivePage, /Preview of reviewed candidate records/);
   assert.match(archivePage, /Public event records are being prepared for publication\./);
   assert.match(archivePage, /Records will appear here after human editorial approval\./);
+  assert.match(archivePage, /\{events\.length \? \(/);
+  assert.match(archivePage, /<strong>\{events\.length\} reviewed records<\/strong>/);
   assert.match(detailPage, /if \(!event\) notFound\(\)/);
-  assert.match(
-    detailPage,
-    /This is a reviewed candidate record shown for design and editorial testing\. It has not[\s\S]*yet been publicly published\./,
-  );
+  assert.match(detailPage, /event\.publicationStatus === "candidate"/);
+  assert.doesNotMatch(detailPage, /It has not yet been publicly published/);
   assert.doesNotMatch(archivePage, /internalId|IO-CM-/);
   assert.doesNotMatch(detailPage, /internalId|IO-CM-|Internal notes/i);
   assert.doesNotMatch(archiveRow, /internalId|IO-CM-/);
@@ -485,7 +519,7 @@ test("latest-activity sorting and accessible ten-record pagination cover all rec
   assert.match(archivePage, /Math\.ceil\(filteredEvents\.length \/ EVENTS_PER_PAGE\)/);
   assert.match(archivePage, /Math\.min\(Math\.max\(requestedPage, 1\), pageCount\)/);
   assert.match(archivePage, /slice\(startIndex, startIndex \+ EVENTS_PER_PAGE\)/);
-  assert.match(archivePage, /<strong>50 reviewed records<\/strong>/);
+  assert.match(archivePage, /<strong>\{events\.length\} reviewed records<\/strong>/);
   assert.match(archivePage, /Showing \{startIndex \+ 1\}–/);
   assert.match(pagination, /aria-label="Events pagination"/);
   assert.match(pagination, />Previous</);

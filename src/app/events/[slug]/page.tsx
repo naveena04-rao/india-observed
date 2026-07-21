@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { formatEventDate, formatEventDateRange } from "../../../lib/events/archive";
-import { getReviewedEvents, isReviewedPreviewEnabled } from "../../../lib/events/getReviewedEvents";
+import {
+  getReviewedEvents,
+  isCandidatePreviewEnabled,
+} from "../../../lib/events/getReviewedEvents";
 import { ArchiveShell } from "../components/ArchiveShell";
 import { EventDetailMedia } from "../components/EventDetailMedia";
 import { EventSafety } from "../components/EventSafety";
@@ -14,7 +17,6 @@ type EventPageProps = {
 };
 
 async function findEvent(slug: string) {
-  if (!isReviewedPreviewEnabled()) return undefined;
   const events = await getReviewedEvents();
   return events.find((event) => event.slug === slug);
 }
@@ -31,15 +33,21 @@ export default async function EventRecordPage({ params }: EventPageProps) {
   const { slug } = await params;
   const event = await findEvent(slug);
   if (!event) notFound();
+  const candidatePreviewEnabled = isCandidatePreviewEnabled();
+  const showCandidateNotice = candidatePreviewEnabled && event.publicationStatus === "candidate";
+  const detailMedia =
+    candidatePreviewEnabled || !event.detailMedia?.previewOnly ? event.detailMedia : undefined;
 
   return (
     <ArchiveShell>
       <article className="event-record-page">
         <div className="page-shell event-record-layout">
-          <p className="preview-notice" role="note">
-            This is a reviewed candidate record shown for design and editorial testing. It has not
-            yet been publicly published.
-          </p>
+          {showCandidateNotice ? (
+            <p className="preview-notice" role="note">
+              This reviewed candidate record is shown for editorial Preview and is not publicly
+              published.
+            </p>
+          ) : null}
 
           <header className="event-record-header">
             <div className="event-tags">
@@ -54,7 +62,7 @@ export default async function EventRecordPage({ params }: EventPageProps) {
           </header>
 
           <div className="event-record-visual">
-            <EventDetailMedia visual={event.visual} detailMedia={event.detailMedia} />
+            <EventDetailMedia visual={event.visual} detailMedia={detailMedia} />
           </div>
 
           <dl className="event-record-facts">

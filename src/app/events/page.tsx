@@ -5,7 +5,7 @@ import {
   EVENTS_PER_PAGE,
   sortReviewedEvents,
 } from "../../lib/events/archive";
-import { getReviewedEvents, isReviewedPreviewEnabled } from "../../lib/events/getReviewedEvents";
+import { getReviewedEvents, isCandidatePreviewEnabled } from "../../lib/events/getReviewedEvents";
 import type { ArchiveFilters, ArchiveSort } from "../../lib/events/types";
 import { ArchiveShell } from "./components/ArchiveShell";
 import { EventArchiveRow } from "./components/EventArchiveRow";
@@ -40,8 +40,9 @@ export default async function EventsPage({
 }: {
   searchParams: Promise<PageSearchParams>;
 }) {
-  const previewEnabled = isReviewedPreviewEnabled();
+  const candidatePreviewEnabled = isCandidatePreviewEnabled();
   const events = await getReviewedEvents();
+  const candidateCount = events.filter((event) => event.publicationStatus === "candidate").length;
   const params = await searchParams;
   const filters: ArchiveFilters = {
     query: readParam(params, "q"),
@@ -75,14 +76,17 @@ export default async function EventsPage({
             <p className="section-kicker">Reviewed civic record archive</p>
             <h1 id="events-heading">EVENTS</h1>
             <p>Browse reviewed records of protests and civic movements across India.</p>
-            {previewEnabled ? <strong>50 reviewed records</strong> : null}
+            {events.length ? <strong>{events.length} reviewed records</strong> : null}
           </div>
 
-          {previewEnabled ? (
+          {events.length ? (
             <>
-              <p className="preview-notice" role="note">
-                Preview of reviewed candidate records. These records are not yet publicly published.
-              </p>
+              {candidatePreviewEnabled && candidateCount ? (
+                <p className="preview-notice" role="note">
+                  Preview includes {candidateCount} reviewed candidate{" "}
+                  {candidateCount === 1 ? "record" : "records"} that are not publicly published.
+                </p>
+              ) : null}
               <EventFilters
                 filters={filters}
                 options={{
