@@ -52,7 +52,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   const { enabled } = getEventFollowingAvailability();
 
   return (
-    <ArchiveShell>
+    <ArchiveShell authReturnTo={returnTo}>
       <section className="auth-page page-shell" aria-labelledby="sign-in-heading">
         <div className="auth-panel">
           <p className="section-kicker">READER ACCOUNT</p>

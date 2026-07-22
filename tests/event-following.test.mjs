@@ -27,6 +27,7 @@ const archivePage = read("src/app/events/page.tsx");
 const filters = read("src/app/events/components/EventFilters.tsx");
 const homepage = read("src/app/page.tsx");
 const carousel = read("src/app/components/FeaturedRecordCarousel.tsx");
+const headerAuth = read("src/app/components/HeaderAuthControl.tsx");
 const archiveShell = read("src/app/events/components/ArchiveShell.tsx");
 const documentation = read("docs/EVENT_FOLLOWING.md");
 
@@ -251,17 +252,55 @@ test("all nine homepage definitions resolve to published slugs and render compac
   assert.match(homepage, /onRecords\.map[\s\S]*?className="on-record-footer"/);
 });
 
-test("homepage authentication is gated and exposes only Login or Logout", () => {
-  assert.match(homepage, /function HeaderAuthControl/);
-  assert.match(homepage, /href="\/auth\/sign-in\?returnTo=\/"[\s\S]*?>\s*Login/);
-  assert.match(homepage, /action="\/auth\/sign-out\?returnTo=\/" method="post"/);
-  assert.match(homepage, />\s*Logout\s*<\/button>/);
+test("shared header authentication uses safe return paths and secure sign-out", () => {
+  assert.match(headerAuth, /export function HeaderAuthControl/);
+  assert.match(headerAuth, /safeReturnPath\(returnTo\)/);
+  assert.match(headerAuth, /encodeURIComponent/);
+  assert.match(headerAuth, /href=\{`\/auth\/sign-in\?returnTo=\$\{encodedReturnTo\}`\}/);
+  assert.match(headerAuth, /action=\{`\/auth\/sign-out\?returnTo=\$\{encodedReturnTo\}`\}/);
+  assert.match(headerAuth, /method="post"/);
+  assert.match(headerAuth, />\s*Login\s*<\/Link>/);
+  assert.match(headerAuth, />\s*Logout\s*<\/button>/);
+  assert.doesNotMatch(headerAuth, /email|username|user ID|avatar|account identity/i);
+});
+
+test("homepage and archive navigation share gated Login or Logout controls", () => {
+  assert.match(homepage, /import \{ HeaderAuthControl \} from "\.\/components\/HeaderAuthControl"/);
+  assert.doesNotMatch(homepage, /function HeaderAuthControl/);
+  assert.equal((homepage.match(/<HeaderAuthControl/g) ?? []).length, 2);
+  assert.equal((homepage.match(/returnTo="\/"/g) ?? []).length, 2);
   assert.match(
     homepage,
-    /href="#methodology">Methodology<\/a>[\s\S]*?HeaderAuthControl[\s\S]*?className="nav-action"/,
+    /href="#methodology">Methodology<\/a>[\s\S]*?<HeaderAuthControl[\s\S]*?className="nav-action"/,
   );
-  assert.match(homepage, /following\.enabled \? <HeaderAuthControl/);
-  assert.doesNotMatch(homepage, /user\.email|user\.name|avatar|account ID/i);
+  assert.equal((homepage.match(/following\.enabled \? \(/g) ?? []).length, 2);
+
+  assert.match(archiveShell, /export async function ArchiveShell/);
+  assert.match(archiveShell, /authReturnTo: string/);
+  assert.match(archiveShell, /getEventFollowingAvailability\(\)/);
+  assert.match(archiveShell, /following\.enabled \? await createSessionSupabaseClient\(\) : null/);
+  assert.match(archiveShell, /supabase\.auth\.getUser\(\)/);
+  assert.match(archiveShell, /const signedIn = Boolean\(user\)/);
+  assert.equal((archiveShell.match(/<HeaderAuthControl/g) ?? []).length, 2);
+  assert.equal((archiveShell.match(/following\.enabled \? \(/g) ?? []).length, 2);
+  assert.equal((archiveShell.match(/returnTo=\{authReturnTo\}/g) ?? []).length, 2);
+  assert.match(
+    archiveShell,
+    /href="\/#methodology">Methodology<\/Link>[\s\S]*?<HeaderAuthControl[\s\S]*?className="nav-action"/,
+  );
+  assert.doesNotMatch(
+    homepage + archiveShell,
+    /user\.email|user\.name|username|avatar|account ID/i,
+  );
+});
+
+test("archive and detail authentication preserve normalised internal return paths", () => {
+  assert.match(archivePage, /const normalisedAuthFilters = \{/);
+  assert.match(archivePage, /const authReturnParams = new URLSearchParams\(\)/);
+  assert.match(archivePage, /authReturnParams\.set\("page", String\(currentPage\)\)/);
+  assert.match(archivePage, /<ArchiveShell authReturnTo=\{authReturnTo\}>/);
+  assert.match(detailPage, /<ArchiveShell authReturnTo=\{`\/events\/\$\{event\.slug\}`\}>/);
+  assert.match(control, /const returnTo = `\/events\/\$\{slug\}`/);
 });
 
 test("compact controls preserve icon, selected state, touch target and visible focus", () => {

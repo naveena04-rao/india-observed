@@ -1,8 +1,23 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { getEventFollowingAvailability } from "@/lib/events/following";
+import { createSessionSupabaseClient } from "@/lib/supabase/server";
 import { FooterSocialPlaceholders } from "../../components/FooterSocialPlaceholders";
+import { HeaderAuthControl } from "../../components/HeaderAuthControl";
 
-export function ArchiveShell({ children }: { children: ReactNode }) {
+type ArchiveShellProps = {
+  authReturnTo: string;
+  children: ReactNode;
+};
+
+export async function ArchiveShell({ authReturnTo, children }: ArchiveShellProps) {
+  const following = getEventFollowingAvailability();
+  const supabase = following.enabled ? await createSessionSupabaseClient() : null;
+  const {
+    data: { user },
+  } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
+  const signedIn = Boolean(user);
+
   return (
     <main className="events-site" id="events-top">
       <header className="site-header">
@@ -25,6 +40,9 @@ export function ArchiveShell({ children }: { children: ReactNode }) {
               Events
             </Link>
             <Link href="/#methodology">Methodology</Link>
+            {following.enabled ? (
+              <HeaderAuthControl signedIn={signedIn} returnTo={authReturnTo} />
+            ) : null}
             <Link className="nav-action" href="/#lead">
               Submit a lead
             </Link>
@@ -39,6 +57,9 @@ export function ArchiveShell({ children }: { children: ReactNode }) {
                 Events
               </Link>
               <Link href="/#methodology">Methodology</Link>
+              {following.enabled ? (
+                <HeaderAuthControl signedIn={signedIn} returnTo={authReturnTo} />
+              ) : null}
               <Link className="nav-action" href="/#lead">
                 Submit a lead
               </Link>

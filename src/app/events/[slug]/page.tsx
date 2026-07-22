@@ -48,7 +48,7 @@ export default async function EventRecordPage({ params }: EventPageProps) {
   } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
 
   return (
-    <ArchiveShell>
+    <ArchiveShell authReturnTo={`/events/${event.slug}`}>
       <article className="event-record-page">
         <div className="page-shell event-record-layout">
           {showCandidateNotice ? (

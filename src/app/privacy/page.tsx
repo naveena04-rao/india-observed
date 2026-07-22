@@ -8,7 +8,7 @@ export const metadata = {
 
 export default function PrivacyPage() {
   return (
-    <ArchiveShell>
+    <ArchiveShell authReturnTo="/privacy">
       <article className="privacy-page page-shell">
         <header>
           <p className="section-kicker">PRIVACY</p>

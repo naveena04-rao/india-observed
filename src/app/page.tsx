@@ -3,6 +3,7 @@ import { EventStatusTag } from "./components/EventStatusTag";
 import { EventTypeTag } from "./components/EventTypeTag";
 import { FooterSocialPlaceholders } from "./components/FooterSocialPlaceholders";
 import { FeaturedRecordCarousel } from "./components/FeaturedRecordCarousel";
+import { HeaderAuthControl } from "./components/HeaderAuthControl";
 import { EventFollowControl } from "./events/components/EventFollowControl";
 import { EventVisual } from "./events/components/EventVisual";
 import type { EventStatus } from "./eventStatuses";
@@ -204,20 +205,6 @@ const processSteps = [
   ["4", "Review before publication", "Apply accuracy, privacy, safety and correction checks."],
 ] as const;
 
-function HeaderAuthControl({ signedIn }: { signedIn: boolean }) {
-  return signedIn ? (
-    <form className="header-auth-form" action="/auth/sign-out?returnTo=/" method="post">
-      <button className="header-login-control" type="submit">
-        Logout
-      </button>
-    </form>
-  ) : (
-    <Link className="header-login-control" href="/auth/sign-in?returnTo=/">
-      Login
-    </Link>
-  );
-}
-
 export default async function HomePage() {
   const following = getEventFollowingAvailability();
   const supabase = following.enabled ? await createSessionSupabaseClient() : null;
@@ -246,7 +233,9 @@ export default async function HomePage() {
             <a href="#about">About</a>
             <Link href="/events">Events</Link>
             <a href="#methodology">Methodology</a>
-            {following.enabled ? <HeaderAuthControl signedIn={initiallySignedIn} /> : null}
+            {following.enabled ? (
+              <HeaderAuthControl signedIn={initiallySignedIn} returnTo="/" />
+            ) : null}
             <a className="nav-action" href="#lead">
               Submit a lead
             </a>
@@ -259,7 +248,9 @@ export default async function HomePage() {
               <a href="#about">About</a>
               <Link href="/events">Events</Link>
               <a href="#methodology">Methodology</a>
-              {following.enabled ? <HeaderAuthControl signedIn={initiallySignedIn} /> : null}
+              {following.enabled ? (
+                <HeaderAuthControl signedIn={initiallySignedIn} returnTo="/" />
+              ) : null}
               <a className="nav-action" href="#lead">
                 Submit a lead
               </a>
