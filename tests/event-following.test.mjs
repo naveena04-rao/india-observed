@@ -106,9 +106,25 @@ test("same-origin helper rejects missing origins and derives the forwarded host"
 });
 
 test("event pages show one compact accessible Follow control without visible clutter", () => {
+  const eventHeader = detailPage.match(
+    /<header className="event-record-header">([\s\S]*?)<\/header>/,
+  )?.[1];
+  assert.ok(eventHeader, "event detail page must have an event-record-header");
   assert.match(detailPage, /event\.publicationStatus === "published"/);
-  assert.match(detailPage, /<EventFollowControl/);
+  assert.match(eventHeader, /<p className="event-record-topic">\{event\.topic\}<\/p>/);
+  assert.match(eventHeader, /<EventFollowControl/);
+  assert.match(eventHeader, /className="event-page-follow-control"/);
+  assert.match(eventHeader, /enabled=\{followingEnabled\}/);
+  assert.match(eventHeader, /slug=\{event\.slug\}/);
+  assert.ok(
+    eventHeader.indexOf("event-record-topic") < eventHeader.indexOf("EventFollowControl"),
+    "Follow control must render below the event topic",
+  );
   assert.equal((detailPage.match(/<EventFollowControl/g) ?? []).length, 1);
+  assert.ok(
+    detailPage.indexOf("EventFollowControl") < detailPage.indexOf('className="event-record-facts"'),
+    "Follow control must not remain after the facts table",
+  );
   assert.match(control, /count === 1 \? "follower" : "followers"/);
   assert.match(control, /<FollowIcon following=\{following\}/);
   assert.match(control, /following \? "Following" : "Follow"/);
@@ -255,5 +271,9 @@ test("compact controls preserve icon, selected state, touch target and visible f
   assert.match(css, /\.event-follow-button\[aria-pressed="true"\][\s\S]*?color: #ffffff/);
   assert.match(css, /\.event-follow-button:focus-visible[\s\S]*?outline: 3px solid var\(--teal\)/);
   assert.match(css, /\.homepage-follow-control\s*\{[\s\S]*?margin-top: 0\.25rem/);
+  assert.match(css, /\.event-page-follow-control\s*\{[\s\S]*?margin-top: 0\.85rem/);
+  assert.doesNotMatch(css, /\.event-record-header\s*\{\s*grid-row: [23];\s*\}/);
+  assert.doesNotMatch(css, /\.event-record-visual\s*\{\s*grid-row: [23];\s*\}/);
+  assert.doesNotMatch(css, /\.event-record-layout > \.preview-notice\s*\{\s*grid-row: 1;\s*\}/);
   assert.doesNotMatch(css, /\.event-follow-control|\.event-follow-heading-row/);
 });

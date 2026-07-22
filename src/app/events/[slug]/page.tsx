@@ -68,6 +68,14 @@ export default async function EventRecordPage({ params }: EventPageProps) {
               {event.publicLocation} · {event.stateOrUnionTerritory}
             </p>
             <p className="event-record-topic">{event.topic}</p>
+            {event.publicationStatus === "published" ? (
+              <EventFollowControl
+                className="event-page-follow-control"
+                enabled={followingEnabled}
+                initiallySignedIn={Boolean(user)}
+                slug={event.slug}
+              />
+            ) : null}
           </header>
 
           <div className="event-record-visual">
@@ -92,14 +100,6 @@ export default async function EventRecordPage({ params }: EventPageProps) {
               <dd>{event.eventVerification}</dd>
             </div>
           </dl>
-
-          {event.publicationStatus === "published" ? (
-            <EventFollowControl
-              enabled={followingEnabled}
-              initiallySignedIn={Boolean(user)}
-              slug={event.slug}
-            />
-          ) : null}
 
           <section className="event-record-summary" aria-labelledby="record-summary-heading">
             <h2 id="record-summary-heading">Record summary</h2>

@@ -1741,18 +1741,6 @@ main {
     border-top: 1px solid var(--line);
   }
 
-  .event-record-layout > .preview-notice {
-    grid-row: 1;
-  }
-
-  .event-record-visual {
-    grid-row: 2;
-  }
-
-  .event-record-header {
-    grid-row: 3;
-  }
-
   .event-pagination {
     gap: 0.25rem;
   }
@@ -1856,6 +1844,10 @@ main {
 
 .homepage-follow-control {
   margin-top: 0.25rem;
+}
+
+.event-page-follow-control {
+  margin-top: 0.85rem;
 }
 
 .auth-privacy-link a,
