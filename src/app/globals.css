@@ -1769,6 +1769,230 @@ main {
   }
 }
 
+/* Private event following and passwordless reader authentication */
+.event-follow-control {
+  background: #ffffff;
+  border-bottom: 1px solid var(--ink);
+  border-top: 1px solid var(--ink);
+  display: grid;
+  gap: 0.6rem 1.5rem;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(12rem, 0.35fr) minmax(0, 0.65fr);
+  padding-block: 0.9rem;
+}
+
+.event-follow-control--unavailable {
+  display: block;
+}
+
+.event-follow-heading-row h2 {
+  font-size: clamp(1.35rem, 2.3vw, 1.9rem);
+  margin-bottom: 0.25rem;
+}
+
+.event-follower-count {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  min-height: 1.2rem;
+  text-transform: uppercase;
+}
+
+.event-follow-control > p,
+.event-follow-privacy,
+.event-follow-error {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.event-follow-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.event-follow-toggle,
+.event-follow-sign-in,
+.event-follow-sign-out,
+.auth-form button {
+  align-items: center;
+  background: var(--terracotta);
+  border: 1px solid var(--terracotta);
+  color: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 800;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.85rem;
+  text-decoration: none;
+}
+
+.event-follow-sign-out {
+  background: #ffffff;
+  border-color: var(--line-dark);
+  color: var(--ink);
+}
+
+.event-follow-toggle[aria-pressed="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.event-follow-toggle:disabled,
+.event-follow-sign-out:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.event-follow-toggle:focus-visible,
+.event-follow-sign-in:focus-visible,
+.event-follow-sign-out:focus-visible,
+.auth-form input:focus-visible,
+.auth-form button:focus-visible,
+.event-follow-privacy a:focus-visible,
+.auth-privacy-link a:focus-visible,
+.privacy-page a:focus-visible {
+  outline: 3px solid var(--teal);
+  outline-offset: 3px;
+}
+
+.event-follow-preview {
+  color: var(--teal-dark) !important;
+  font-weight: 700;
+}
+
+.event-follow-privacy a,
+.auth-privacy-link a,
+.privacy-page a {
+  color: var(--ink);
+  text-decoration-color: var(--terracotta);
+  text-underline-offset: 0.2em;
+}
+
+.event-follow-error,
+.form-error {
+  color: #7d3020 !important;
+  font-weight: 700;
+}
+
+.auth-page,
+.privacy-page {
+  background: #ffffff;
+  padding-block: clamp(2rem, 5vw, 4rem);
+}
+
+.auth-panel {
+  border-bottom: 1px solid var(--ink);
+  border-top: 1px solid var(--ink);
+  margin-inline: auto;
+  max-width: 38rem;
+  padding-block: clamp(1.25rem, 3vw, 2rem);
+}
+
+.auth-panel h1,
+.privacy-page h1 {
+  font-size: clamp(2.3rem, 5vw, 4rem);
+  margin-bottom: 0.75rem;
+}
+
+.auth-panel > p,
+.auth-status p,
+.privacy-page p,
+.privacy-page li {
+  color: var(--muted);
+  font-size: 0.94rem;
+  line-height: 1.65;
+}
+
+.auth-form {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 1.25rem;
+}
+
+.auth-form label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.auth-form input {
+  background: #ffffff;
+  border: 1px solid var(--line-dark);
+  color: var(--ink);
+  font: inherit;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.65rem;
+}
+
+.auth-form button {
+  margin-top: 0.35rem;
+  width: fit-content;
+}
+
+.auth-status {
+  background: #ffffff;
+  border-left: 3px solid var(--teal);
+  margin-top: 1.25rem;
+  padding: 0.75rem 1rem;
+}
+
+.auth-status h2 {
+  font-size: 1.35rem;
+  margin-bottom: 0.25rem;
+}
+
+.auth-privacy-link {
+  margin-top: 1.25rem;
+}
+
+.privacy-page {
+  max-width: 56rem;
+}
+
+.privacy-page header {
+  border-bottom: 1px solid var(--ink);
+  padding-bottom: 1.25rem;
+}
+
+.privacy-page section {
+  border-bottom: 1px solid var(--line);
+  padding-block: 1.1rem;
+}
+
+.privacy-page h2 {
+  font-size: clamp(1.35rem, 2.5vw, 1.9rem);
+  margin-bottom: 0.45rem;
+}
+
+.privacy-page ul {
+  padding-left: 1.25rem;
+}
+
+.privacy-back-link {
+  margin-top: 1.25rem;
+}
+
+@media (max-width: 700px) {
+  .event-follow-control {
+    grid-template-columns: 1fr;
+  }
+
+  .event-follow-toggle,
+  .event-follow-sign-in,
+  .event-follow-sign-out,
+  .auth-form button,
+  .auth-form input {
+    min-height: 44px;
+  }
+}
+
 /* Compact editorial density revision */
 :root {
   --page-width: 1200px;

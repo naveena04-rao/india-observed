@@ -14,3 +14,18 @@ major_version = 17
 [studio]
 enabled = true
 port = 54323
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000/**"]
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false
+max_frequency = "1s"
+
+[auth.email.template.magic_link]
+subject = "Your India Observed sign-in link"
+content_path = "./supabase/templates/magic_link.html"

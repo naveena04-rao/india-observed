@@ -5,8 +5,11 @@ import {
   getReviewedEvents,
   isCandidatePreviewEnabled,
 } from "../../../lib/events/getReviewedEvents";
+import { getEventFollowingAvailability } from "../../../lib/events/following";
+import { createSessionSupabaseClient } from "../../../lib/supabase/server";
 import { ArchiveShell } from "../components/ArchiveShell";
 import { EventDetailMedia } from "../components/EventDetailMedia";
+import { EventFollowControl } from "../components/EventFollowControl";
 import { EventSafety } from "../components/EventSafety";
 import { EventSources } from "../components/EventSources";
 
@@ -37,6 +40,12 @@ export default async function EventRecordPage({ params }: EventPageProps) {
   const showCandidateNotice = candidatePreviewEnabled && event.publicationStatus === "candidate";
   const detailMedia =
     candidatePreviewEnabled || !event.detailMedia?.previewOnly ? event.detailMedia : undefined;
+  const following = getEventFollowingAvailability();
+  const followingEnabled = following.enabled && event.publicationStatus === "published";
+  const supabase = followingEnabled ? await createSessionSupabaseClient() : null;
+  const {
+    data: { user },
+  } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
 
   return (
     <ArchiveShell>
@@ -83,6 +92,15 @@ export default async function EventRecordPage({ params }: EventPageProps) {
               <dd>{event.eventVerification}</dd>
             </div>
           </dl>
+
+          {event.publicationStatus === "published" ? (
+            <EventFollowControl
+              enabled={followingEnabled}
+              initiallySignedIn={Boolean(user)}
+              preview={following.isPreview}
+              slug={event.slug}
+            />
+          ) : null}
 
           <section className="event-record-summary" aria-labelledby="record-summary-heading">
             <h2 id="record-summary-heading">Record summary</h2>
