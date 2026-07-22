@@ -71,6 +71,7 @@ export function ArchiveShell({ children }: { children: ReactNode }) {
                 </Link>
                 <Link href="/#methodology">Methodology</Link>
                 <Link href="/#coverage">Coverage</Link>
+                <Link href="/privacy">Privacy</Link>
                 <Link href="/#lead">Submit a lead</Link>
               </nav>
             </div>

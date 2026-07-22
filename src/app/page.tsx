@@ -3,16 +3,22 @@ import { EventStatusTag } from "./components/EventStatusTag";
 import { EventTypeTag } from "./components/EventTypeTag";
 import { FooterSocialPlaceholders } from "./components/FooterSocialPlaceholders";
 import { FeaturedRecordCarousel } from "./components/FeaturedRecordCarousel";
+import { EventFollowControl } from "./events/components/EventFollowControl";
 import { EventVisual } from "./events/components/EventVisual";
 import type { EventStatus } from "./eventStatuses";
 import { eventTypes, type EventType } from "./eventTypes";
 import { reviewedEventsPreview } from "../data/reviewed-events-preview";
+import { getEventFollowingAvailability } from "../lib/events/following";
 import type { EventVisual as EventVisualData } from "../lib/events/types";
+import { createSessionSupabaseClient } from "../lib/supabase/server";
 
-const homepageVisualsByInternalId = new Map<string, { eventHref: string; visual: EventVisualData }>(
+const homepageVisualsByInternalId = new Map<
+  string,
+  { eventHref: string; slug: string; visual: EventVisualData }
+>(
   reviewedEventsPreview.map(({ internalId, slug, visual }) => [
     internalId,
-    { eventHref: `/events/${slug}`, visual },
+    { eventHref: `/events/${slug}`, slug, visual },
   ]),
 );
 
@@ -198,7 +204,28 @@ const processSteps = [
   ["4", "Review before publication", "Apply accuracy, privacy, safety and correction checks."],
 ] as const;
 
-export default function HomePage() {
+function HeaderAuthControl({ signedIn }: { signedIn: boolean }) {
+  return signedIn ? (
+    <form className="header-auth-form" action="/auth/sign-out?returnTo=/" method="post">
+      <button className="header-login-control" type="submit">
+        Logout
+      </button>
+    </form>
+  ) : (
+    <Link className="header-login-control" href="/auth/sign-in?returnTo=/">
+      Login
+    </Link>
+  );
+}
+
+export default async function HomePage() {
+  const following = getEventFollowingAvailability();
+  const supabase = following.enabled ? await createSessionSupabaseClient() : null;
+  const {
+    data: { user },
+  } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
+  const initiallySignedIn = Boolean(user);
+
   return (
     <main id="home">
       <header className="site-header">
@@ -219,6 +246,7 @@ export default function HomePage() {
             <a href="#about">About</a>
             <Link href="/events">Events</Link>
             <a href="#methodology">Methodology</a>
+            {following.enabled ? <HeaderAuthControl signedIn={initiallySignedIn} /> : null}
             <a className="nav-action" href="#lead">
               Submit a lead
             </a>
@@ -231,6 +259,7 @@ export default function HomePage() {
               <a href="#about">About</a>
               <Link href="/events">Events</Link>
               <a href="#methodology">Methodology</a>
+              {following.enabled ? <HeaderAuthControl signedIn={initiallySignedIn} /> : null}
               <a className="nav-action" href="#lead">
                 Submit a lead
               </a>
@@ -246,6 +275,8 @@ export default function HomePage() {
       </div>
 
       <FeaturedRecordCarousel
+        followingEnabled={following.enabled}
+        initiallySignedIn={initiallySignedIn}
         records={featuredRecordsWithVisuals}
         latestRecords={latestRecordsWithVisuals}
       />
@@ -256,7 +287,7 @@ export default function HomePage() {
 
           <div className="on-record-list">
             {onRecords.map((record) => {
-              const { eventHref, visual } = getHomepageVisual(record.id);
+              const { eventHref, slug, visual } = getHomepageVisual(record.id);
 
               return (
                 <article className="on-record-context" key={record.id}>
@@ -272,7 +303,15 @@ export default function HomePage() {
                     </div>
                     <h3>{record.title}</h3>
                     <p>{record.context}</p>
-                    <time dateTime="2026-07-15">Reviewed {record.reviewed}</time>
+                    <div className="on-record-footer">
+                      <time dateTime="2026-07-15">Reviewed {record.reviewed}</time>
+                      <EventFollowControl
+                        className="homepage-follow-control"
+                        enabled={following.enabled}
+                        initiallySignedIn={initiallySignedIn}
+                        slug={slug}
+                      />
+                    </div>
                   </div>
                   <EventVisual visual={visual} eventHref={eventHref} variant="homepage-on-record" />
                 </article>
@@ -377,6 +416,7 @@ export default function HomePage() {
                 <Link href="/events">Events</Link>
                 <a href="#methodology">Methodology</a>
                 <a href="#coverage">Coverage</a>
+                <Link href="/privacy">Privacy</Link>
                 <a href="#lead">Submit a lead</a>
               </nav>
             </div>

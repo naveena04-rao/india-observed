@@ -26,6 +26,9 @@ const css = read("src/app/globals.css");
 const archivePage = read("src/app/events/page.tsx");
 const filters = read("src/app/events/components/EventFilters.tsx");
 const homepage = read("src/app/page.tsx");
+const carousel = read("src/app/components/FeaturedRecordCarousel.tsx");
+const archiveShell = read("src/app/events/components/ArchiveShell.tsx");
+const documentation = read("docs/EVENT_FOLLOWING.md");
 
 test("migration registry exactly matches all 50 published application slugs", () => {
   const applicationSlugs = [...dataset.matchAll(/slug: "([^"]+)"/g)].map((match) => match[1]);
@@ -102,33 +105,37 @@ test("same-origin helper rejects missing origins and derives the forwarded host"
   assert.match(sameOrigin, /new URL\(suppliedOrigin\)\.origin === expectedOrigin/);
 });
 
-test("event pages show accessible aggregate following without follower identities", () => {
+test("event pages show one compact accessible Follow control without visible clutter", () => {
   assert.match(detailPage, /event\.publicationStatus === "published"/);
   assert.match(detailPage, /<EventFollowControl/);
-  assert.match(control, /0|followerLabel/);
+  assert.equal((detailPage.match(/<EventFollowControl/g) ?? []).length, 1);
   assert.match(control, /count === 1 \? "follower" : "followers"/);
-  assert.match(control, /Sign in to follow/);
-  assert.match(control, /Follow this event/);
-  assert.match(control, /✓ Following/);
+  assert.match(control, /<FollowIcon following=\{following\}/);
+  assert.match(control, /following \? "Following" : "Follow"/);
+  assert.match(control, /aria-label="Sign in to follow this event"/);
   assert.match(control, /aria-pressed/);
   assert.match(control, /aria-busy/);
   assert.match(control, /aria-live="polite"/);
   assert.match(control, /disabled=\{!summary \|\| pending\}/);
-  assert.match(control, /Loading follower count…/);
-  assert.match(control, /Follower identities are not displayed publicly\./);
+  assert.match(control, /Loading follower count/);
+  assert.match(control, /if \(!enabled\) return null/);
+  assert.doesNotMatch(control, /<aside|<h2|event-follow-control|event-follow-heading/);
+  assert.doesNotMatch(control, /Follow this record|Follow this event|Sign out/);
+  assert.doesNotMatch(
+    control,
+    /Following records reader interest|Follower identities are not displayed publicly|Preview follow data may be reset|href="\/privacy"/,
+  );
   assert.doesNotMatch(control, /follower name|follower list|email address|user id/i);
 });
 
-test("required non-endorsement copy is exact and no notification promise appears", () => {
-  assert.match(
-    control,
-    /Following records reader interest in this event\. It does not indicate endorsement of the[\s\S]*?event or its claims\./,
-  );
+test("required explanatory copy remains on sign-in, Privacy and documentation only", () => {
   assert.match(
     signIn,
     /Sign in to follow event records\. Your identity will not be displayed publicly\./,
   );
   assert.match(signIn, /Following does not indicate endorsement\./);
+  assert.match(privacy, /Following does not indicate endorsement of an event or its claims\./);
+  assert.match(documentation, /Preview follow[\s\S]*?may be reset before public launch/);
   assert.doesNotMatch(
     control + signIn,
     /We will notify you|Receive updates|Join this movement|Support this protest|Stand with them/i,
@@ -190,20 +197,63 @@ test("privacy page reflects implemented collection and public display", () => {
     assert.match(privacy, new RegExp(text, "i"));
   }
   assert.match(privacy, /has not yet approved a public account-deletion contact channel/);
-  assert.match(control, /href="\/privacy"/);
   assert.match(signIn, /href="\/privacy"/);
+  assert.match(homepage, /<Link href="\/privacy">Privacy<\/Link>/);
+  assert.match(archiveShell, /<Link href="\/privacy">Privacy<\/Link>/);
 });
 
 test("following does not alter archive or homepage editorial behavior", () => {
   assert.doesNotMatch(archivePage + filters, /follower|most-followed|trending/i);
-  assert.doesNotMatch(homepage, /follower|most-followed|trending/i);
+  assert.doesNotMatch(homepage + carousel, /most-followed|follower-count sort|trending/i);
   assert.match(archivePage, /EVENTS_PER_PAGE/);
   assert.match(archivePage, /filteredEvents\.slice\(startIndex, startIndex \+ EVENTS_PER_PAGE\)/);
   assert.match(filters, /Search reviewed records/);
+  assert.doesNotMatch(archivePage, /EventFollowControl|event-follow/);
 });
 
-test("follow controls preserve touch targets and visible focus", () => {
-  assert.match(css, /\.event-follow-toggle,[\s\S]*?min-height: 2\.75rem/);
-  assert.match(css, /\.event-follow-toggle:focus-visible[\s\S]*?outline: 3px solid var\(--teal\)/);
-  assert.match(css, /@media \(max-width: 700px\)[\s\S]*?min-height: 44px/);
+test("all nine homepage definitions resolve to published slugs and render compact controls", () => {
+  const homepageIds = [...homepage.matchAll(/\bid: "(IO-CM-[A-Z0-9-]+)"/g)].map(
+    (match) => match[1],
+  );
+  const reviewedSlugs = new Map(
+    [...dataset.matchAll(/internalId: "([^"]+)",\s+slug: "([^"]+)"/g)].map((match) => [
+      match[1],
+      match[2],
+    ]),
+  );
+
+  assert.equal(homepageIds.length, 9);
+  assert.equal(new Set(homepageIds).size, 9);
+  for (const id of homepageIds)
+    assert.ok(reviewedSlugs.has(id), `missing published slug for ${id}`);
+  assert.match(homepage, /\{ eventHref: `\/events\/\$\{slug\}`, slug, visual \}/);
+  assert.match(homepage, /getHomepageVisual\(record\.id\)[\s\S]*?slug=\{slug\}/);
+  assert.equal((carousel.match(/<EventFollowControl/g) ?? []).length, 2);
+  assert.equal((homepage.match(/<EventFollowControl/g) ?? []).length, 1);
+  assert.match(carousel, /key=\{activeRecord\.slug\}[\s\S]*?slug=\{activeRecord\.slug\}/);
+  assert.match(carousel, /latestRecords\.map[\s\S]*?slug=\{record\.slug\}/);
+  assert.match(homepage, /onRecords\.map[\s\S]*?className="on-record-footer"/);
+});
+
+test("homepage authentication is gated and exposes only Login or Logout", () => {
+  assert.match(homepage, /function HeaderAuthControl/);
+  assert.match(homepage, /href="\/auth\/sign-in\?returnTo=\/"[\s\S]*?>\s*Login/);
+  assert.match(homepage, /action="\/auth\/sign-out\?returnTo=\/" method="post"/);
+  assert.match(homepage, />\s*Logout\s*<\/button>/);
+  assert.match(
+    homepage,
+    /href="#methodology">Methodology<\/a>[\s\S]*?HeaderAuthControl[\s\S]*?className="nav-action"/,
+  );
+  assert.match(homepage, /following\.enabled \? <HeaderAuthControl/);
+  assert.doesNotMatch(homepage, /user\.email|user\.name|avatar|account ID/i);
+});
+
+test("compact controls preserve icon, selected state, touch target and visible focus", () => {
+  assert.match(css, /\.event-follow-compact\s*\{[\s\S]*?display: inline-flex/);
+  assert.match(css, /\.event-follow-button\s*\{[\s\S]*?min-height: 44px/);
+  assert.match(css, /\.event-follow-icon\s*\{[\s\S]*?height: 1\.05rem/);
+  assert.match(css, /\.event-follow-button\[aria-pressed="true"\][\s\S]*?color: #ffffff/);
+  assert.match(css, /\.event-follow-button:focus-visible[\s\S]*?outline: 3px solid var\(--teal\)/);
+  assert.match(css, /\.homepage-follow-control\s*\{[\s\S]*?margin-top: 0\.25rem/);
+  assert.doesNotMatch(css, /\.event-follow-control|\.event-follow-heading-row/);
 });

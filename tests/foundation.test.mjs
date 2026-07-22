@@ -690,6 +690,7 @@ test("homepage uses the refined section hierarchy and editorial footer", () => {
       ["/events", "Events"],
       ["#methodology", "Methodology"],
       ["#coverage", "Coverage"],
+      ["/privacy", "Privacy"],
       ["#lead", "Submit a lead"],
     ],
   );

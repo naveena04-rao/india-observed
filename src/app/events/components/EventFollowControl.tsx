@@ -6,9 +6,9 @@ import { useEffect, useRef, useState } from "react";
 type FollowResponse = { count: number; following: boolean };
 
 type EventFollowControlProps = {
+  className?: string;
   enabled: boolean;
   initiallySignedIn: boolean;
-  preview: boolean;
   slug: string;
 };
 
@@ -16,16 +16,25 @@ function followerLabel(count: number) {
   return `${count} ${count === 1 ? "follower" : "followers"}`;
 }
 
+function FollowIcon({ following }: { following: boolean }) {
+  return (
+    <svg className="event-follow-icon" viewBox="0 0 20 20" aria-hidden="true">
+      <circle cx="10" cy="10" r="8" />
+      {following ? <path d="m6.5 10 2.2 2.3 4.8-5" /> : <path d="M10 6v8M6 10h8" />}
+    </svg>
+  );
+}
+
 export function EventFollowControl({
+  className,
   enabled,
   initiallySignedIn,
-  preview,
   slug,
 }: EventFollowControlProps) {
   const [summary, setSummary] = useState<FollowResponse | null>(null);
   const [signedIn, setSignedIn] = useState(initiallySignedIn);
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const returnTo = `/events/${slug}`;
 
@@ -45,7 +54,7 @@ export function EventFollowControl({
       .then((data) => setSummary(data))
       .catch((requestError: unknown) => {
         if (!(requestError instanceof DOMException && requestError.name === "AbortError")) {
-          setError("Following is temporarily unavailable.");
+          setError(true);
         }
       });
 
@@ -55,7 +64,7 @@ export function EventFollowControl({
   async function toggleFollow() {
     if (!summary || pending) return;
     setPending(true);
-    setError("");
+    setError(false);
 
     try {
       const response = await fetch(`/api/events/${slug}/follow`, {
@@ -69,92 +78,61 @@ export function EventFollowControl({
       if (!response.ok) throw new Error("unavailable");
       setSummary((await response.json()) as FollowResponse);
     } catch {
-      setError("Following is temporarily unavailable.");
+      setError(true);
     } finally {
       setPending(false);
       toggleRef.current?.focus();
     }
   }
 
-  async function signOut() {
-    setPending(true);
-    setError("");
-    try {
-      const response = await fetch(`/auth/sign-out?returnTo=${encodeURIComponent(returnTo)}`, {
-        method: "POST",
-        credentials: "same-origin",
-      });
-      if (!response.ok) throw new Error("unavailable");
-      window.location.assign(returnTo);
-    } catch {
-      setError("Sign out is temporarily unavailable.");
-      setPending(false);
-    }
-  }
+  if (!enabled) return null;
 
-  if (!enabled) {
-    return (
-      <aside className="event-follow-control event-follow-control--unavailable" aria-label="Follow">
-        <p>Following is temporarily unavailable.</p>
-      </aside>
-    );
-  }
+  const following = summary?.following ?? false;
+  const controlContent = (
+    <>
+      <FollowIcon following={following} />
+      <span className="event-follow-label">{following ? "Following" : "Follow"}</span>
+    </>
+  );
 
   return (
-    <aside className="event-follow-control" aria-labelledby="event-follow-heading">
-      <div className="event-follow-heading-row">
-        <h2 id="event-follow-heading">Follow this record</h2>
-        <p className="event-follower-count" aria-live="polite" aria-atomic="true">
-          {summary ? followerLabel(summary.count) : "Loading follower count…"}
-        </p>
-      </div>
-
+    <div className={["event-follow-compact", className].filter(Boolean).join(" ")}>
       {signedIn ? (
-        <div className="event-follow-actions">
-          <button
-            ref={toggleRef}
-            type="button"
-            className="event-follow-toggle"
-            aria-pressed={summary?.following ?? false}
-            aria-busy={pending}
-            disabled={!summary || pending}
-            onClick={toggleFollow}
-          >
-            {summary?.following ? "✓ Following" : "Follow this event"}
-          </button>
-          <button
-            type="button"
-            className="event-follow-sign-out"
-            disabled={pending}
-            onClick={signOut}
-          >
-            Sign out
-          </button>
-        </div>
+        <button
+          ref={toggleRef}
+          type="button"
+          className="event-follow-button"
+          aria-pressed={following}
+          aria-busy={pending}
+          disabled={!summary || pending}
+          onClick={toggleFollow}
+        >
+          {controlContent}
+        </button>
       ) : (
-        <Link className="event-follow-sign-in" href={`/auth/sign-in?returnTo=${returnTo}`}>
-          Sign in to follow
+        <Link
+          className="event-follow-button"
+          href={`/auth/sign-in?returnTo=${encodeURIComponent(returnTo)}`}
+          aria-label="Sign in to follow this event"
+        >
+          {controlContent}
         </Link>
       )}
 
-      <p>
-        Following records reader interest in this event. It does not indicate endorsement of the
-        event or its claims.
-      </p>
-      <p>Follower identities are not displayed publicly.</p>
-      {preview ? (
-        <p className="event-follow-preview">
-          Preview follow data may be reset before public launch.
-        </p>
-      ) : null}
-      <p className="event-follow-privacy">
-        <Link href="/privacy">Privacy</Link>
-      </p>
-      {error ? (
-        <p className="event-follow-error" role="alert">
-          {error}
-        </p>
-      ) : null}
-    </aside>
+      <span className="event-follow-count" aria-live="polite" aria-atomic="true">
+        {error ? (
+          <span className="event-follow-error" role="alert">
+            Unavailable
+          </span>
+        ) : summary ? (
+          followerLabel(summary.count)
+        ) : (
+          <span className="event-follow-loading">
+            <span className="visually-hidden">Loading follower count</span>
+            <span aria-hidden="true">•••</span>
+          </span>
+        )}
+      </span>
+    </div>
   );
 }

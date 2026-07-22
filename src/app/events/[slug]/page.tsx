@@ -97,7 +97,6 @@ export default async function EventRecordPage({ params }: EventPageProps) {
             <EventFollowControl
               enabled={followingEnabled}
               initiallySignedIn={Boolean(user)}
-              preview={following.isPreview}
               slug={event.slug}
             />
           ) : null}

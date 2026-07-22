@@ -10,6 +10,24 @@ editorial behavior.
 Follower counts do not influence archive ordering, search, verification, publication, homepage
 selection or editorial priority.
 
+## Public interface
+
+Published event pages use one compact Follow control with a plus icon, the visible word `Follow`
+and the public aggregate count. A selected control uses a check icon and the word `Following`.
+Signed-out readers see the same compact `Follow` label and are sent to passwordless sign-in without
+creating an anonymous follow. The control renders nothing when the server-side feature gate is
+disabled.
+
+The homepage uses the same control for the active Featured record, the three Latest records and the
+three ON RECORD records. Each of the nine homepage record definitions resolves to its reviewed
+published slug. Counts do not change carousel timing, record selection, ordering or layout. When
+the feature is enabled, the homepage header shows only `Login` or `Logout`; it never displays account
+identity. Privacy remains linked from sign-in and from the site footer.
+
+The non-endorsement, follower-identity and Preview reset explanations remain documented here and on
+the sign-in or Privacy pages instead of being repeated beside every compact control. Preview follow
+data may be reset before public launch.
+
 ## Authentication
 
 Reader accounts use Supabase Auth passwordless email links and `@supabase/ssr` cookie sessions.
