@@ -4,7 +4,7 @@ import test from "node:test";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-const dataset = read("src/data/reviewed-events-preview.ts");
+const dataset = read("src/data/reviewed-events-preview.ts").replaceAll("\r\n", "\n");
 const evidenceDataset = read("src/data/reviewed-event-evidence-preview.ts");
 const archivePage = read("src/app/events/page.tsx");
 const detailPage = read("src/app/events/[slug]/page.tsx");

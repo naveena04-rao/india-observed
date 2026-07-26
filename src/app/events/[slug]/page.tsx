@@ -5,8 +5,11 @@ import {
   getReviewedEvents,
   isCandidatePreviewEnabled,
 } from "../../../lib/events/getReviewedEvents";
+import { getEventFollowingAvailability } from "../../../lib/events/following";
+import { createSessionSupabaseClient } from "../../../lib/supabase/server";
 import { ArchiveShell } from "../components/ArchiveShell";
 import { EventDetailMedia } from "../components/EventDetailMedia";
+import { EventFollowControl } from "../components/EventFollowControl";
 import { EventSafety } from "../components/EventSafety";
 import { EventSources } from "../components/EventSources";
 
@@ -37,9 +40,15 @@ export default async function EventRecordPage({ params }: EventPageProps) {
   const showCandidateNotice = candidatePreviewEnabled && event.publicationStatus === "candidate";
   const detailMedia =
     candidatePreviewEnabled || !event.detailMedia?.previewOnly ? event.detailMedia : undefined;
+  const following = getEventFollowingAvailability();
+  const followingEnabled = following.enabled && event.publicationStatus === "published";
+  const supabase = followingEnabled ? await createSessionSupabaseClient() : null;
+  const {
+    data: { user },
+  } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
 
   return (
-    <ArchiveShell>
+    <ArchiveShell authReturnTo={`/events/${event.slug}`}>
       <article className="event-record-page">
         <div className="page-shell event-record-layout">
           {showCandidateNotice ? (
@@ -59,6 +68,14 @@ export default async function EventRecordPage({ params }: EventPageProps) {
               {event.publicLocation} · {event.stateOrUnionTerritory}
             </p>
             <p className="event-record-topic">{event.topic}</p>
+            {event.publicationStatus === "published" ? (
+              <EventFollowControl
+                className="event-page-follow-control"
+                enabled={followingEnabled}
+                initiallySignedIn={Boolean(user)}
+                slug={event.slug}
+              />
+            ) : null}
           </header>
 
           <div className="event-record-visual">

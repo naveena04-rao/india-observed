@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { EventVisual as EventVisualData } from "../../lib/events/types";
+import { EventFollowControl } from "../events/components/EventFollowControl";
 import { EventVisual } from "../events/components/EventVisual";
 import { EventStatusTag } from "./EventStatusTag";
 import { EventTypeTag } from "./EventTypeTag";
@@ -73,6 +74,7 @@ export type FeaturedRecord = {
   media: FeaturedRecordMedia;
   visual: EventVisualData;
   eventHref: string;
+  slug: string;
 };
 
 type LatestRecord = Pick<
@@ -86,14 +88,22 @@ type LatestRecord = Pick<
   | "reviewed"
   | "visual"
   | "eventHref"
+  | "slug"
 >;
 
 type FeaturedRecordCarouselProps = {
+  followingEnabled: boolean;
+  initiallySignedIn: boolean;
   records: readonly FeaturedRecord[];
   latestRecords: readonly LatestRecord[];
 };
 
-export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecordCarouselProps) {
+export function FeaturedRecordCarousel({
+  followingEnabled,
+  initiallySignedIn,
+  records,
+  latestRecords,
+}: FeaturedRecordCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [hasFocus, setHasFocus] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
@@ -195,6 +205,13 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
         <span>{activeRecord.verification}</span>
         <span>{activeRecord.note}</span>
       </div>
+      <EventFollowControl
+        className="homepage-follow-control"
+        enabled={followingEnabled}
+        initiallySignedIn={initiallySignedIn}
+        key={activeRecord.slug}
+        slug={activeRecord.slug}
+      />
       {includeIndicators ? carouselPosition : null}
     </div>
   );
@@ -295,7 +312,15 @@ export function FeaturedRecordCarousel({ records, latestRecords }: FeaturedRecor
                   <span className="record-topic">{record.topic}</span>
                   <span className="latest-location">{record.place}</span>
                   <strong>{record.title}</strong>
-                  <time dateTime="2026-07-15">Reviewed {record.reviewed}</time>
+                  <div className="latest-entry-footer">
+                    <time dateTime="2026-07-15">Reviewed {record.reviewed}</time>
+                    <EventFollowControl
+                      className="homepage-follow-control"
+                      enabled={followingEnabled}
+                      initiallySignedIn={initiallySignedIn}
+                      slug={record.slug}
+                    />
+                  </div>
                 </div>
                 <EventVisual
                   visual={record.visual}

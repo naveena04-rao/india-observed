@@ -68,8 +68,25 @@ export default async function EventsPage({
     if (firstValue && key !== "page") queryParams.set(key, firstValue);
   }
 
+  const authReturnParams = new URLSearchParams();
+  const normalisedAuthFilters = {
+    q: filters.query,
+    state: filters.state,
+    topic: filters.topic,
+    type: filters.eventType,
+    status: filters.status,
+    sort: filters.sort === "latest" ? "" : filters.sort,
+  };
+
+  for (const [key, value] of Object.entries(normalisedAuthFilters)) {
+    if (value) authReturnParams.set(key, value);
+  }
+
+  if (currentPage > 1) authReturnParams.set("page", String(currentPage));
+  const authReturnTo = authReturnParams.size ? `/events?${authReturnParams.toString()}` : "/events";
+
   return (
-    <ArchiveShell>
+    <ArchiveShell authReturnTo={authReturnTo}>
       <section className="events-archive" aria-labelledby="events-heading">
         <div className="page-shell">
           <div className="events-intro">
