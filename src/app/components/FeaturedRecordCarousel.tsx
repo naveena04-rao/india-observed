@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import type { EventVisual as EventVisualData } from "../../lib/events/types";
+import { ExternalMediaImage } from "../events/components/ExternalMediaImage";
 import { EventFollowControl } from "../events/components/EventFollowControl";
+import { MediaClassificationLabel } from "../events/components/MediaClassificationLabel";
 import { EventVisual } from "../events/components/EventVisual";
 import { EventStatusTag } from "./EventStatusTag";
 import { EventTypeTag } from "./EventTypeTag";
@@ -238,16 +240,10 @@ export function FeaturedRecordCarousel({
           </aside>
           <div className="featured-record-content">
             {featuredRecordCopy(false)}
-            <figure
-              className={[
-                "featured-record-media",
-                activeVisual.kind === "record_cover" ? "featured-record-media--cover" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            >
+            <figure className="featured-record-media">
               {mayDisplaySourceEmbed ? (
                 <>
+                  <MediaClassificationLabel evidenceClass={activeVisual.evidenceClass} compact />
                   <div className="featured-record-video-frame">
                     {loadedMediaId === activeRecord.id ? (
                       <div className="publisher-video">
@@ -261,14 +257,18 @@ export function FeaturedRecordCarousel({
                       </div>
                     ) : (
                       <div className="publisher-video-gate">
-                        {/* Publisher metadata URL is rendered directly; the image is not reused locally. */}
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={activeVisual.thumbnailUrl} alt={activeVisual.alt} />
+                        <ExternalMediaImage
+                          imageUrl={activeVisual.thumbnailUrl}
+                          visual={activeVisual}
+                        />
                         <div className="publisher-video-gate-content">
                           <span>Official publisher video</span>
-                          <strong>NDTV · 2:49</strong>
+                          <strong>
+                            {activeVisual.publisher}
+                            {activeVisual.duration ? ` · ${activeVisual.duration}` : ""}
+                          </strong>
                           <button type="button" onClick={() => setLoadedMediaId(activeRecord.id)}>
-                            Load video from NDTV
+                            Load video from {activeVisual.publisher}
                           </button>
                           <small>Loading connects to the publisher&apos;s video player.</small>
                         </div>

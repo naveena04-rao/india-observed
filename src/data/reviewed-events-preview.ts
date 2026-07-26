@@ -1,7 +1,8 @@
 import "server-only";
 
+import { createEventMediaRegistry, type EventMediaRegistryEntry } from "./event-media-registry";
 import { reviewedEventEvidenceByInternalId } from "./reviewed-event-evidence-preview";
-import type { EventVisual, ReviewedEventPreview } from "../lib/events/types";
+import type { ReviewedEventPreview } from "../lib/events/types";
 
 /**
  * Public-safe snapshot generated from the canonical reviewed workbook at
@@ -17,42 +18,10 @@ import type { EventVisual, ReviewedEventPreview } from "../lib/events/types";
  * 2 corrections
  * 12 safety incidents
  *
- * Media is limited to five approved NDTV source displays and one official Instagram embed in
- * Preview. Rights-pending photographs are not reproduced. All other events use non-evidentiary
- * record covers until an applicable verification, safety, rights and editorial review is complete.
+ * Media review decisions live in event-media-registry.ts. Rights-pending photographs are not
+ * reproduced. Five approved NDTV source displays remain available, one official Instagram embed
+ * remains Preview-only, and all other published records use original non-evidentiary illustrations.
  */
-
-function recordCover(
-  title: string,
-  location: string,
-  dateLabel: string,
-): Extract<EventVisual, { kind: "record_cover" }> {
-  return {
-    kind: "record_cover",
-    title,
-    location,
-    dateLabel,
-    alt: `Text-only record cover for ${title}. No approved visual media.`,
-  };
-}
-
-function publisherVideo(config: {
-  sourceUrl: string;
-  embedUrl: string;
-  thumbnailUrl: string;
-  alt: string;
-}): Extract<EventVisual, { kind: "publisher_video" }> {
-  return {
-    kind: "publisher_video",
-    publisher: "NDTV",
-    sourceUrl: config.sourceUrl,
-    embedUrl: config.embedUrl,
-    thumbnailUrl: config.thumbnailUrl,
-    thumbnailSource: "og:image",
-    alt: config.alt,
-    credit: "Video: NDTV",
-  };
-}
 
 const reviewedEventRecords = [
   {
@@ -76,11 +45,6 @@ const reviewedEventRecords = [
       "Chhatarpur and Panna district administrations; Madhya Pradesh Government; Ken–Betwa Link Project authorities",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 7,
-    visual: recordCover(
-      "Bundelkhand rehabilitation and compensation protest",
-      "Chhatarpur–Panna, Madhya Pradesh",
-      "Ongoing",
-    ),
   },
   {
     internalId: "IO-CM-DL-0001",
@@ -103,15 +67,6 @@ const reviewedEventRecords = [
     approvedSourceCount: 4,
     latestOfficialResponse:
       "Police transferred Sonam Wangchuk to hospital on 18 July and used batons and tear gas during the 20 July march. Government representatives met protest delegates, but no final settlement of the movement's demands was identified.",
-    visual: publisherVideo({
-      sourceUrl:
-        "https://www.ndtv.com/video/from-online-movement-to-street-protest-cjp-gathers-at-jantar-mantar-1109578",
-      embedUrl:
-        "https://www.ndtv.com/videos/embed-player/?id=1109578&mute=1&autostart=0&mutestart=true&pWidth=100&pHeight=100",
-      thumbnailUrl:
-        "https://c.ndtvimg.com/2026-06/ihl87sqg_image_160x120_06_June_26.jpg?downsize=1600:900",
-      alt: "NDTV publisher thumbnail for its video report from the Jantar Mantar education protest.",
-    }),
   },
   {
     internalId: "IO-CM-KA-0001",
@@ -131,7 +86,6 @@ const reviewedEventRecords = [
     directedAt: "Mandya District Administration; Karnataka Government; Cauvery water authorities",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 3,
-    visual: recordCover("KRS irrigation-water protest", "Mandya, Karnataka", "Ongoing"),
   },
   {
     internalId: "IO-CM-CH-0001",
@@ -152,7 +106,6 @@ const reviewedEventRecords = [
     directedAt: "Government of India; Punjab Government; Chandigarh Administration and Police",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 2,
-    visual: recordCover("BKU-Rajewal motorcycle rally", "Chandigarh", "13 July 2026"),
   },
   {
     internalId: "IO-CM-MH-0001",
@@ -172,16 +125,6 @@ const reviewedEventRecords = [
     directedAt: "Thane Municipal Corporation; Maharashtra forest and environment authorities",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 4,
-    visual: recordCover("Save SGNP human chain", "Thane, Maharashtra", "5 July 2026"),
-    detailMedia: {
-      kind: "instagram_embed",
-      platform: "Instagram",
-      sourceUrl: "https://www.instagram.com/reel/DacYWWktqjL/",
-      embedUrl: "https://www.instagram.com/reel/DacYWWktqjL/embed/",
-      alt: "Official Instagram embed from the Save SGNP human-chain campaign in Thane.",
-      credit: "Official post: man_of_the_forest_ and musefoundationwts on Instagram",
-      previewOnly: true,
-    },
   },
   {
     internalId: "IO-CM-KA-0002",
@@ -204,15 +147,6 @@ const reviewedEventRecords = [
       "Karnataka Government; Greater Bengaluru Development Authority; Bengaluru South District Administration",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 8,
-    visual: publisherVideo({
-      sourceUrl:
-        "https://www.ndtv.com/video/protests-in-karnataka-s-bidadi-after-government-proposes-to-cut-trees-for-ai-city-project-1120270",
-      embedUrl:
-        "https://www.ndtv.com/videos/embed-player/?id=1120270&mute=1&autostart=0&mutestart=true&pWidth=100&pHeight=100",
-      thumbnailUrl:
-        "https://c.ndtvimg.com/2026-06/t9gf8cms_bidadi_160x120_30_June_26.png?downsize=1600:900",
-      alt: "NDTV publisher thumbnail showing a protest scene reported in Bidadi, Karnataka.",
-    }),
   },
   {
     internalId: "IO-CM-GJ-0001",
@@ -235,7 +169,6 @@ const reviewedEventRecords = [
       "Gujarat Government; Morbi District Administration; Halvad Transmission Ltd; Adani Energy Solutions Ltd",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 4,
-    visual: recordCover("Power-transmission compensation satyagraha", "Morbi, Gujarat", "Ongoing"),
   },
   {
     internalId: "IO-CM-UP-0001",
@@ -257,7 +190,6 @@ const reviewedEventRecords = [
       "Basti District Administration; Uttar Pradesh Pollution Control and industrial authorities",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 4,
-    visual: recordCover("Dasiya ethanol-plant protest", "Basti, Uttar Pradesh", "Ongoing"),
   },
   {
     internalId: "IO-CM-AS-0001",
@@ -279,7 +211,6 @@ const reviewedEventRecords = [
       "Assam Government; Bodoland Territorial Council; Assam Power Distribution Company Limited",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 3,
-    visual: recordCover("Kokrajhar land-allotment protest", "Kokrajhar, Assam", "12 July 2026"),
   },
   {
     internalId: "IO-CM-MN-0001",
@@ -301,7 +232,6 @@ const reviewedEventRecords = [
     directedAt: "Manipur Government; Chief Minister and Chief Secretary of Manipur",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 5,
-    visual: recordCover("Government employees' cease-work strike", "Manipur", "Ongoing"),
   },
   {
     internalId: "IO-CM-OD-0001",
@@ -321,7 +251,6 @@ const reviewedEventRecords = [
     directedAt: "Jajpur District Education Office; Odisha School and Mass Education Department",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 2,
-    visual: recordCover("Teacher-vacancy dharna", "Jajpur, Odisha", "10 July 2026"),
   },
   {
     internalId: "IO-CM-UK-0001",
@@ -344,7 +273,6 @@ const reviewedEventRecords = [
       "National Highways Authority of India; Uttarakhand Forest Department; Uttarakhand Government",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 6,
-    visual: recordCover("Highway tree-felling protest", "Dehradun, Uttarakhand", "Ongoing"),
   },
   {
     internalId: "IO-CM-HR-0001",
@@ -366,7 +294,6 @@ const reviewedEventRecords = [
       "Haryana Government; Food, Civil Supplies and Consumer Affairs Department; market committees",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 3,
-    visual: recordCover("Rabi procurement protests", "Haryana", "5–20 April 2026"),
   },
   {
     internalId: "IO-CM-HR-0002",
@@ -386,7 +313,6 @@ const reviewedEventRecords = [
     directedAt: "Haryana Government; Gurugram Police; labour department; industrial employers",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 2,
-    visual: recordCover("Industrial workers' protest", "Manesar, Haryana", "7–10 April 2026"),
   },
   {
     internalId: "IO-CM-UP-0002",
@@ -407,7 +333,6 @@ const reviewedEventRecords = [
       "Uttar Pradesh Government; Gautam Buddha Nagar Police; labour department; industrial employers",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 3,
-    visual: recordCover("Factory workers' protest", "Noida, Uttar Pradesh", "8–14 April 2026"),
   },
   {
     internalId: "IO-CM-DL-0002",
@@ -428,15 +353,6 @@ const reviewedEventRecords = [
     directedAt: "Jamia Millia Islamia administration; Delhi Police; CRPF",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 2,
-    visual: publisherVideo({
-      sourceUrl:
-        "https://www.ndtv.com/video/jamia-protests-rss-event-sparks-protests-at-jamia-university-in-delhi-1091649",
-      embedUrl:
-        "https://www.ndtv.com/videos/embed-player/?id=1091649&mute=1&autostart=0&mutestart=true&pWidth=100&pHeight=100",
-      thumbnailUrl:
-        "https://drop.ndtv.com/video/images/vod/medium/2026-04/1091649_maxresdefault.jpg?downsize=1600:900",
-      alt: "NDTV publisher thumbnail for its video report on the Jamia campus protest in New Delhi.",
-    }),
   },
   {
     internalId: "IO-CM-KL-0001",
@@ -456,7 +372,6 @@ const reviewedEventRecords = [
     directedAt: "Union petroleum authorities; Indian Oil Corporation; Kerala Government",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 3,
-    visual: recordCover("Hospitality-sector shutdown", "Kerala", "6 May 2026"),
   },
   {
     internalId: "IO-CM-PB-0001",
@@ -476,7 +391,6 @@ const reviewedEventRecords = [
     directedAt: "Punjab Transport Department; Punjab Government; public transport corporations",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 3,
-    visual: recordCover("Transport workers' gate rallies", "Punjab", "15 May 2026"),
   },
   {
     internalId: "IO-CM-DL-0003",
@@ -498,15 +412,6 @@ const reviewedEventRecords = [
       "National Testing Agency; Union Ministry of Education; Delhi Police; investigating agencies",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 2,
-    visual: publisherVideo({
-      sourceUrl:
-        "https://www.ndtv.com/video/neet-exam-leak-protesters-intensify-attack-on-nta-after-neet-exam-cancellation-1098156",
-      embedUrl:
-        "https://www.ndtv.com/videos/embed-player/?id=1098156&mute=1&autostart=0&mutestart=true&pWidth=100&pHeight=100",
-      thumbnailUrl:
-        "https://drop.ndtv.com/video/images/vod/medium/2026-05/1098156_maxresdefault.jpg?downsize=1600:900",
-      alt: "NDTV publisher thumbnail for its video report on NEET-UG accountability protests in Delhi.",
-    }),
   },
   {
     internalId: "IO-CM-TS-0001",
@@ -527,11 +432,6 @@ const reviewedEventRecords = [
     directedAt: "Telangana Police; National Testing Agency; Union Ministry of Education",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 2,
-    visual: recordCover(
-      "NEET-UG accountability protests",
-      "Hyderabad, Telangana",
-      "13–14 May 2026",
-    ),
   },
   {
     internalId: "IO-CM-RJ-0001",
@@ -551,15 +451,6 @@ const reviewedEventRecords = [
     directedAt: "Rajasthan Police; Union Ministry of Education; National Testing Agency",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 2,
-    visual: publisherVideo({
-      sourceUrl:
-        "https://www.ndtv.com/video/neet-paper-leak-row-protests-in-jaipur-water-cannons-used-to-disperse-crowds-1102287",
-      embedUrl:
-        "https://www.ndtv.com/videos/embed-player/?id=1102287&mute=1&autostart=0&mutestart=true&pWidth=100&pHeight=100",
-      thumbnailUrl:
-        "https://c.ndtvimg.com/2026-05/f1fjibmo_neet-protest_160x120_21_May_26.jpg?downsize=1600:900",
-      alt: "NDTV publisher thumbnail for its video report on the Jaipur NEET-UG accountability march.",
-    }),
   },
   {
     internalId: "IO-CM-DL-0004",
@@ -580,7 +471,6 @@ const reviewedEventRecords = [
       "Delhi Government; transport departments; app-based mobility companies; Union petroleum authorities",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 3,
-    visual: recordCover("Three-day transport strike", "Delhi-NCR", "21–23 May 2026"),
   },
   {
     internalId: "IO-CM-DL-0005",
@@ -602,7 +492,6 @@ const reviewedEventRecords = [
       "Bihar Government; Bihar Police; Bharat Bhushan Tiwari Judicial Inquiry Commission; Government of India",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 6,
-    visual: recordCover("Justice-rights assembly", "Jantar Mantar, New Delhi", "17 July 2026"),
   },
   {
     internalId: "IO-CM-PB-0002",
@@ -622,11 +511,6 @@ const reviewedEventRecords = [
     directedAt: "Punjab Government; Chandigarh Administration; Chandigarh Police",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 2,
-    visual: recordCover(
-      "Punjab farmers’ Lok Bhavan march",
-      "SAS Nagar–Chandigarh area, Punjab",
-      "15 May 2026",
-    ),
   },
   {
     internalId: "IO-CM-RJ-0002",
@@ -647,11 +531,6 @@ const reviewedEventRecords = [
       "Rajasthan Food and Civil Supplies authorities; Food Corporation of India; Hanumangarh District Administration; Railway authorities",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 2,
-    visual: recordCover(
-      "Hanumangarh wheat-procurement protest",
-      "Pilibanga, Hanumangarh district, Rajasthan",
-      "29 May 2026–30 May 2026",
-    ),
   },
   {
     internalId: "IO-CM-MH-0002",
@@ -674,11 +553,6 @@ const reviewedEventRecords = [
       "Maharashtra Government; Women and Child Development Department; Public Health Department",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 3,
-    visual: recordCover(
-      "Maharashtra scheme-workers protest",
-      "Mumbai, Maharashtra",
-      "Outcome pending",
-    ),
   },
   {
     internalId: "IO-CM-MH-0003",
@@ -701,11 +575,6 @@ const reviewedEventRecords = [
       "Maharashtra Government; Gadchiroli District Administration; Maharashtra Airport Development authorities",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 4,
-    visual: recordCover(
-      "Gadchiroli land-acquisition protest",
-      "Gadchiroli district, Maharashtra",
-      "Outcome pending",
-    ),
   },
   {
     internalId: "IO-CM-AS-0002",
@@ -727,11 +596,6 @@ const reviewedEventRecords = [
     directedAt: "Assam Government; Union Ministry of Tribal Affairs",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 3,
-    visual: recordCover(
-      "Moran and Motok shutdown",
-      "Tinsukia and Dibrugarh districts, Assam",
-      "5 June 2026–6 June 2026",
-    ),
   },
   {
     internalId: "IO-CM-AS-0003",
@@ -753,11 +617,6 @@ const reviewedEventRecords = [
     directedAt: "Assam Government; Guwahati development authorities; power-project authorities",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 2,
-    visual: recordCover(
-      "Guwahati township and hydropower protest",
-      "Guwahati, Assam",
-      "10 June 2026",
-    ),
   },
   {
     internalId: "IO-CM-NL-0001",
@@ -780,7 +639,6 @@ const reviewedEventRecords = [
       "Nagaland Government; Nagaland Police; relevant investigating and judicial authorities",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 4,
-    visual: recordCover("Kohima women’s justice rally", "Kohima, Nagaland", "19 June 2026"),
   },
   {
     internalId: "IO-CM-MH-0004",
@@ -801,7 +659,6 @@ const reviewedEventRecords = [
       "Brihanmumbai Electric Supply and Transport undertaking; Brihanmumbai Municipal Corporation; Maharashtra Government; Bombay High Court",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 4,
-    visual: recordCover("BEST workers’ strike", "Mumbai, Maharashtra", "Outcome pending"),
   },
   {
     internalId: "IO-CM-MH-0005",
@@ -822,7 +679,6 @@ const reviewedEventRecords = [
     directedAt: "Maharashtra Transport Department; Maharashtra Government",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 3,
-    visual: recordCover("Maharashtra RTO pen-down strike", "Maharashtra", "Outcome pending"),
   },
   {
     internalId: "IO-CM-PB-0003",
@@ -842,11 +698,6 @@ const reviewedEventRecords = [
     directedAt: "Punjab State Power Corporation Limited; Punjab Government",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 3,
-    visual: recordCover(
-      "Punjab tubewell-power protest",
-      "Multiple districts, Punjab",
-      "Outcome pending",
-    ),
   },
   {
     internalId: "IO-CM-MH-0006",
@@ -869,7 +720,6 @@ const reviewedEventRecords = [
       "Maharashtra School Education Department; Election Commission authorities; Maharashtra Government",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 3,
-    visual: recordCover("Maharashtra teachers’ school shutdown", "Maharashtra", "9 July 2026"),
   },
   {
     internalId: "IO-CM-PB-0004",
@@ -892,11 +742,6 @@ const reviewedEventRecords = [
       "Punjab Rural Development and Panchayats Department; Punjab Government; Khanna Police",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 2,
-    visual: recordCover(
-      "Khanna MGNREGA workers’ protest",
-      "Khanna, Ludhiana district, Punjab",
-      "15 July 2026",
-    ),
   },
   {
     internalId: "IO-CM-KA-0003",
@@ -918,7 +763,6 @@ const reviewedEventRecords = [
       "Karnataka Neeravari Nigam Limited; Karnataka Water Resources Department; Belagavi District Administration",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 2,
-    visual: recordCover("Hidkal-displaced farmers’ protest", "Belagavi, Karnataka", "Ongoing"),
   },
   {
     internalId: "IO-CM-MH-0007",
@@ -940,11 +784,6 @@ const reviewedEventRecords = [
     directedAt: "Mumbai Police; Maharashtra Government; Union Ministry of Education",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 3,
-    visual: recordCover(
-      "Mumbai education-accountability solidarity protest",
-      "Mumbai, Maharashtra",
-      "18 July 2026–19 July 2026",
-    ),
   },
   {
     internalId: "IO-CM-DL-0006",
@@ -965,11 +804,6 @@ const reviewedEventRecords = [
     directedAt: "Union Ministry of Home Affairs; Government of India",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 3,
-    visual: recordCover(
-      "Jammu and Kashmir statehood protest",
-      "Jantar Mantar, New Delhi",
-      "20 July 2026",
-    ),
   },
   {
     internalId: "IO-CM-DL-0007",
@@ -991,11 +825,6 @@ const reviewedEventRecords = [
       "Government of India; Union Ministry of Commerce and Industry; Delhi Police; Haryana Police",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 4,
-    visual: recordCover(
-      "Kisan Ghat trade-deal mobilisation",
-      "New Delhi and interstate approach routes",
-      "Ongoing",
-    ),
   },
   {
     internalId: "IO-CM-MP-0002",
@@ -1018,11 +847,6 @@ const reviewedEventRecords = [
       "Madhya Pradesh Government; Indore and Dewas district administrations; Madhya Pradesh Police; ring-road project authorities",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 2,
-    visual: recordCover(
-      "Indore–Dewas ring-road compensation protest",
-      "Indore–Dewas corridor, Madhya Pradesh",
-      "Ongoing",
-    ),
   },
   {
     internalId: "IO-CM-TN-0001",
@@ -1044,7 +868,6 @@ const reviewedEventRecords = [
       "Tamil Nadu Government; Karnataka Government; Cauvery Water Management Authority; Union Government",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 2,
-    visual: recordCover("Thanjavur Mekedatu dam protest", "Thanjavur, Tamil Nadu", "29 May 2026"),
   },
   {
     internalId: "IO-CM-MH-0008",
@@ -1064,7 +887,6 @@ const reviewedEventRecords = [
     directedAt: "National Testing Agency; Union Ministry of Education; investigating authorities",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 2,
-    visual: recordCover("Pune NEET paper-leak protest", "Pune, Maharashtra", "18 May 2026"),
   },
   {
     internalId: "IO-CM-PB-0005",
@@ -1086,7 +908,6 @@ const reviewedEventRecords = [
       "Greater Mohali Area Development Authority; Punjab Housing and Urban Development Department; Punjab Government",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 3,
-    visual: recordCover("Mohali Aerotropolis hunger strike", "Mohali, Punjab", "Outcome pending"),
   },
   {
     internalId: "IO-CM-MH-0009",
@@ -1106,7 +927,6 @@ const reviewedEventRecords = [
     directedAt: "Union Ministry of Petroleum and Natural Gas; Maharashtra Government",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 2,
-    visual: recordCover("Akola fuel-price protest", "Akola, Maharashtra", "25 May 2026"),
   },
   {
     internalId: "IO-CM-GA-0001",
@@ -1128,7 +948,6 @@ const reviewedEventRecords = [
       "Goa Government; Town and Country Planning Department; North Goa District Administration; project developer",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 4,
-    visual: recordCover("Karapur-Sarvan township protest", "Karapur-Sarvan, North Goa", "Ongoing"),
   },
   {
     internalId: "IO-CM-TS-0002",
@@ -1149,11 +968,6 @@ const reviewedEventRecords = [
       "Telangana Government; Ranga Reddy District Administration; Railway and high-speed rail project authorities; Telangana Police",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 3,
-    visual: recordCover(
-      "Shamshabad high-speed-rail land protest",
-      "Shamshabad, Telangana",
-      "18 July 2026",
-    ),
   },
   {
     internalId: "IO-CM-TN-0002",
@@ -1176,11 +990,6 @@ const reviewedEventRecords = [
       "Tamil Nadu Revenue and Disaster Management Department; Tamil Nadu Forest Department; Namakkal District Administration",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 2,
-    visual: recordCover(
-      "Kolli Hills land-patta protest",
-      "Kolli Hills, Namakkal district, Tamil Nadu",
-      "Outcome pending",
-    ),
   },
   {
     internalId: "IO-CM-MH-0010",
@@ -1200,11 +1009,6 @@ const reviewedEventRecords = [
     directedAt: "Maharashtra Government; Cooperation Department; Finance Department",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 3,
-    visual: recordCover(
-      "Pandharpur farm-loan-waiver hunger strike",
-      "Pandharpur, Solapur district, Maharashtra",
-      "Outcome pending",
-    ),
   },
   {
     internalId: "IO-CM-JH-0001",
@@ -1226,11 +1030,6 @@ const reviewedEventRecords = [
     directedAt: "Jharkhand Government; Ranchi District Administration; Jharkhand Police",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 2,
-    visual: recordCover(
-      "Jharkhand statehood activists’ protest",
-      "Ranchi, Jharkhand",
-      "Outcome pending",
-    ),
   },
   {
     internalId: "IO-CM-HR-0003",
@@ -1251,15 +1050,17 @@ const reviewedEventRecords = [
       "Haryana Public Health Engineering Department; Hisar District Administration; Haryana Government",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 4,
-    visual: recordCover(
-      "Channot drinking-water protest",
-      "Channot, Hisar district, Haryana",
-      "16 May 2026–15 July 2026",
-    ),
   },
 ] as const satisfies readonly Omit<
   ReviewedEventPreview,
-  "primaryTopic" | "publicationStatus" | "publishedAt" | "sources" | "safety" | "safetyIncidents"
+  | "primaryTopic"
+  | "publicationStatus"
+  | "publishedAt"
+  | "sources"
+  | "safety"
+  | "safetyIncidents"
+  | "visual"
+  | "detailMedia"
 >[];
 
 const primaryTopicByInternalId = {
@@ -1318,17 +1119,26 @@ const primaryTopicByInternalId = {
   ReviewedEventPreview["primaryTopic"]
 >;
 
-export const reviewedEventsPreview: readonly ReviewedEventPreview[] = reviewedEventRecords.map(
-  (event) => {
-    const evidence = reviewedEventEvidenceByInternalId[event.internalId];
+const reviewedEventsWithoutMedia = reviewedEventRecords.map((event) => {
+  const evidence = reviewedEventEvidenceByInternalId[event.internalId];
 
-    return {
-      ...event,
-      ...evidence,
-      publicationStatus: "published",
-      publishedAt: "2026-07-21",
-      approvedSourceCount: evidence.sources.length,
-      primaryTopic: primaryTopicByInternalId[event.internalId],
-    };
-  },
-);
+  return {
+    ...event,
+    ...evidence,
+    publicationStatus: "published" as const,
+    publishedAt: "2026-07-21",
+    approvedSourceCount: evidence.sources.length,
+    primaryTopic: primaryTopicByInternalId[event.internalId],
+  };
+});
+
+export type PublishedEventSlug = (typeof reviewedEventRecords)[number]["slug"];
+
+export const eventMediaRegistry = createEventMediaRegistry(reviewedEventsWithoutMedia);
+eventMediaRegistry satisfies Record<PublishedEventSlug, EventMediaRegistryEntry>;
+
+export const reviewedEventsPreview: readonly ReviewedEventPreview[] =
+  reviewedEventsWithoutMedia.map((event) => ({
+    ...event,
+    ...eventMediaRegistry[event.slug],
+  }));

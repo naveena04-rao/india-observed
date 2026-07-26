@@ -25,43 +25,106 @@ export type PrimaryTopic =
   | "Governance & transparency"
   | "Infrastructure & public services";
 
-export type EventVisual =
-  | {
-      kind: "publisher_image";
-      sourceUrl: string;
-      imageUrl: string;
-      alt: string;
-      credit: string;
-    }
-  | {
-      kind: "publisher_video";
-      publisher: "NDTV";
-      sourceUrl: string;
-      embedUrl: string;
-      thumbnailUrl: string;
-      thumbnailSource: "og:image" | "twitter:image";
-      alt: string;
-      credit: string;
-      duration?: string;
-    }
-  | {
-      kind: "document_preview";
-      sourceUrl: string;
-      title: string;
-      publisher: string;
-      alt: string;
-    }
-  | {
-      kind: "record_cover";
-      title: string;
-      location: string;
-      dateLabel: string;
-      alt: string;
-    };
+export type MediaEvidenceClass =
+  "verified_event_media" | "context_media" | "editorial_illustration";
 
-export type EventDetailMedia = {
+export type MediaRightsBasis =
+  | "explicit_permission"
+  | "official_embed"
+  | "cc_by"
+  | "cc_by_sa"
+  | "cc0"
+  | "public_domain"
+  | "owned_original";
+
+export type MediaRightsMetadata = {
+  evidenceClass: MediaEvidenceClass;
+  rightsBasis: MediaRightsBasis;
+  credit: string;
+  rightsReviewedAt: string;
+};
+
+export type EditorialIllustrationVisual = MediaRightsMetadata & {
+  kind: "editorial_illustration";
+  evidenceClass: "editorial_illustration";
+  rightsBasis: "owned_original";
+  slug: string;
+  title: string;
+  location: string;
+  dateLabel: string;
+  eventType: EventType;
+  primaryTopic: PrimaryTopic;
+  status: EventStatus;
+  alt: string;
+  credit: "Illustration: India Observed";
+};
+
+export type PublisherImageVisual = MediaRightsMetadata & {
+  kind: "publisher_image";
+  evidenceClass: "verified_event_media" | "context_media";
+  rightsBasis: "explicit_permission";
+  creator?: string;
+  publisher: string;
+  sourceUrl: string;
+  imageUrl: string;
+  alt: string;
+  attributionText: string;
+  fallbackIllustration: EditorialIllustrationVisual;
+};
+
+export type PublisherVideoVisual = MediaRightsMetadata & {
+  kind: "publisher_video";
+  evidenceClass: "verified_event_media";
+  rightsBasis: "official_embed" | "explicit_permission";
+  publisher: string;
+  sourceUrl: string;
+  embedUrl: string;
+  thumbnailUrl: string;
+  thumbnailSource: "publisher_page";
+  alt: string;
+  duration?: string;
+  fallbackIllustration: EditorialIllustrationVisual;
+};
+
+export type OpenLicensedImageVisual = MediaRightsMetadata & {
+  kind: "open_licensed_image";
+  evidenceClass: "verified_event_media" | "context_media";
+  rightsBasis: "cc_by" | "cc_by_sa" | "cc0" | "public_domain";
+  creator: string;
+  creatorUrl?: string;
+  publisher?: string;
+  sourceUrl: string;
+  imageUrl: string;
+  licenseName: string;
+  licenseUrl: string;
+  attributionText: string;
+  alt: string;
+  fallbackIllustration: EditorialIllustrationVisual;
+};
+
+export type DocumentPreviewVisual = MediaRightsMetadata & {
+  kind: "document_preview";
+  evidenceClass: "verified_event_media" | "context_media";
+  rightsBasis: "explicit_permission" | "official_embed" | "public_domain" | "owned_original";
+  sourceUrl: string;
+  title: string;
+  publisher: string;
+  alt: string;
+};
+
+export type EventVisual =
+  | PublisherImageVisual
+  | PublisherVideoVisual
+  | OpenLicensedImageVisual
+  | EditorialIllustrationVisual
+  | DocumentPreviewVisual;
+
+export type EventDetailMedia = MediaRightsMetadata & {
   kind: "instagram_embed";
+  evidenceClass: "verified_event_media";
+  rightsBasis: "official_embed";
   platform: "Instagram";
+  publisher: string;
   sourceUrl: string;
   embedUrl: string;
   alt: string;

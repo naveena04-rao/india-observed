@@ -1,6 +1,7 @@
-/* eslint-disable @next/next/no-img-element */
-import Link from "next/link";
 import type { EventVisual as EventVisualData } from "../../../lib/events/types";
+import { EventEditorialIllustration } from "./EventEditorialIllustration";
+import { ExternalMediaImage } from "./ExternalMediaImage";
+import { MediaClassificationLabel } from "./MediaClassificationLabel";
 
 type EventVisualVariant =
   "archive" | "homepage-latest" | "homepage-on-record" | "homepage-featured";
@@ -8,75 +9,74 @@ type EventVisualVariant =
 export function EventVisual({
   visual,
   eventHref,
+  showClassification = true,
   variant = "archive",
 }: {
   visual: EventVisualData;
   eventHref?: string;
+  showClassification?: boolean;
   variant?: EventVisualVariant;
 }) {
   const variantClassName = `event-visual--${variant}`;
 
-  if (visual.kind === "record_cover") {
+  if (visual.kind === "editorial_illustration") {
     return (
-      <div className={`event-record-cover ${variantClassName}`} role="img" aria-label={visual.alt}>
-        <span className="event-visual-kicker">Record preview</span>
-        <strong>{visual.title}</strong>
-        <span>{visual.location}</span>
-        <span>{visual.dateLabel}</span>
-        <small>No approved visual media</small>
-      </div>
+      <figure className={`event-visual-shell ${variantClassName}`}>
+        <EventEditorialIllustration visual={visual} />
+        {showClassification ? (
+          <figcaption>
+            <MediaClassificationLabel evidenceClass={visual.evidenceClass} compact />
+          </figcaption>
+        ) : null}
+      </figure>
     );
   }
 
   if (visual.kind === "document_preview") {
     return (
-      <a
-        className={`event-document-preview ${variantClassName}`}
-        href={visual.sourceUrl}
-        rel="noreferrer"
-      >
-        <span className="event-visual-kicker">Document preview</span>
-        <strong>{visual.title}</strong>
-        <span>{visual.publisher}</span>
-        <small>{visual.alt}</small>
-      </a>
+      <figure className={`event-visual-shell ${variantClassName}`}>
+        <a className="event-document-preview" href={visual.sourceUrl} rel="noreferrer">
+          <span className="event-visual-kicker">Document preview</span>
+          <strong>{visual.title}</strong>
+          <span>{visual.publisher}</span>
+          <small>{visual.alt}</small>
+        </a>
+        {showClassification ? (
+          <figcaption>
+            <MediaClassificationLabel evidenceClass={visual.evidenceClass} compact />
+          </figcaption>
+        ) : null}
+      </figure>
     );
   }
 
   const imageUrl = visual.kind === "publisher_video" ? visual.thumbnailUrl : visual.imageUrl;
   const media = (
-    <>
-      <img
-        src={imageUrl}
-        alt={visual.alt}
-        loading="lazy"
-        referrerPolicy="no-referrer-when-downgrade"
-      />
+    <ExternalMediaImage
+      imageUrl={imageUrl}
+      mediaHref={eventHref ?? visual.sourceUrl}
+      visual={visual}
+    >
       {visual.kind === "publisher_video" ? (
         <span className="event-video-indicator" aria-hidden="true">
           Play video
         </span>
       ) : null}
-    </>
+    </ExternalMediaImage>
   );
 
   return (
     <figure
       className={`event-publisher-visual event-publisher-visual--${visual.kind} ${variantClassName}`}
     >
-      {eventHref ? (
-        <Link href={eventHref} aria-label={`View event record: ${visual.alt}`}>
-          {media}
-        </Link>
-      ) : (
-        <a href={visual.sourceUrl} rel="noreferrer">
-          {media}
-        </a>
-      )}
-      <figcaption>
-        {visual.credit}
-        {visual.kind === "publisher_video" && visual.duration ? ` · ${visual.duration}` : ""}
-      </figcaption>
+      {media}
+      {showClassification ? (
+        <figcaption>
+          <MediaClassificationLabel evidenceClass={visual.evidenceClass} compact />
+          <span>{visual.credit}</span>
+          {visual.kind === "publisher_video" && visual.duration ? ` · ${visual.duration}` : ""}
+        </figcaption>
+      ) : null}
     </figure>
   );
 }

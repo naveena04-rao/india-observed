@@ -207,7 +207,7 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.match(carousel, /visual: EventVisualData;[\s\S]*eventHref: string;/);
   assert.match(
     carousel,
-    /loadedMediaId === activeRecord\.id[\s\S]*?<iframe[\s\S]*?: \([\s\S]*?publisher-video-gate[\s\S]*?<img src=\{activeVisual\.thumbnailUrl\}/,
+    /loadedMediaId === activeRecord\.id[\s\S]*?<iframe[\s\S]*?: \([\s\S]*?publisher-video-gate[\s\S]*?<ExternalMediaImage[\s\S]*?imageUrl=\{activeVisual\.thumbnailUrl\}/,
   );
   assert.match(carousel, /onClick=\{\(\) => setLoadedMediaId\(activeRecord\.id\)\}/);
   assert.doesNotMatch(carousel, /autoPlay/);
@@ -308,6 +308,8 @@ test("all nine homepage records use the central reviewed visual treatments", () 
   const page = read("src/app/page.tsx");
   const carousel = read("src/app/components/FeaturedRecordCarousel.tsx");
   const eventVisual = read("src/app/events/components/EventVisual.tsx");
+  const illustration = read("src/app/events/components/EventEditorialIllustration.tsx");
+  const mediaRegistry = read("src/data/event-media-registry.ts");
   const dataset = read("src/data/reviewed-events-preview.ts");
   const styles = read("src/app/globals.css");
 
@@ -321,22 +323,11 @@ test("all nine homepage records use the central reviewed visual treatments", () 
   const featuredIds = ["IO-CM-KA-0002", "IO-CM-MN-0001", "IO-CM-OD-0001"];
   const latestIds = ["IO-CM-MP-0001", "IO-CM-DL-0001", "IO-CM-MH-0001"];
   const onRecordIds = ["IO-CM-GJ-0001", "IO-CM-UP-0001", "IO-CM-AS-0001"];
-  const recordCoverIds = [
-    "IO-CM-MN-0001",
-    "IO-CM-OD-0001",
-    "IO-CM-MP-0001",
-    "IO-CM-MH-0001",
-    "IO-CM-GJ-0001",
-    "IO-CM-UP-0001",
-    "IO-CM-AS-0001",
-  ];
-
   assert.equal(new Set([...featuredIds, ...latestIds, ...onRecordIds]).size, 9);
   for (const id of [...featuredIds, ...latestIds, ...onRecordIds]) datasetBlock(id);
-  for (const id of recordCoverIds) assert.match(datasetBlock(id), /visual: recordCover\(/);
-  assert.match(datasetBlock("IO-CM-KA-0002"), /visual: publisherVideo\(\{/);
-  assert.match(datasetBlock("IO-CM-DL-0001"), /visual: publisherVideo\(\{/);
-  assert.equal(recordCoverIds.length, 7);
+  assert.doesNotMatch(dataset, /visual: (?:recordCover|publisherVideo)/);
+  assert.equal((mediaRegistry.match(/kind: "publisher_video"/g) ?? []).length, 5);
+  assert.match(mediaRegistry, /createEditorialIllustration\(event\)/);
 
   assert.match(
     page,
@@ -351,7 +342,7 @@ test("all nine homepage records use the central reviewed visual treatments", () 
   assert.match(carousel, /variant="homepage-latest"/);
   assert.match(page, /variant="homepage-on-record"/);
   assert.match(carousel, /activeVisual\.kind === "publisher_video"/);
-  assert.match(carousel, /src=\{activeVisual\.thumbnailUrl\}/);
+  assert.match(carousel, /imageUrl=\{activeVisual\.thumbnailUrl\}/);
   assert.match(carousel, /src=\{activeVisual\.embedUrl\}/);
   assert.match(carousel, /useState<string \| null>\(null\)/);
   assert.match(
@@ -368,11 +359,14 @@ test("all nine homepage records use the central reviewed visual treatments", () 
   assert.doesNotMatch(page, /instagram\.com|facebook\.com|(?:https?:\/\/)?x\.com/);
   assert.doesNotMatch(page, /<iframe/);
 
-  assert.match(eventVisual, /role="img"[\s\S]*aria-label=\{visual\.alt\}/);
-  assert.match(eventVisual, /No approved visual media/);
-  assert.match(eventVisual, /alt=\{visual\.alt\}/);
+  assert.match(illustration, /role="img"[\s\S]*aria-label=\{visual\.alt\}/);
+  assert.match(eventVisual, /EventEditorialIllustration visual=\{visual\}/);
+  assert.match(eventVisual, /MediaClassificationLabel/);
   assert.match(eventVisual, /visual\.credit/);
-  assert.match(eventVisual, /aria-label=\{`View event record: \$\{visual\.alt\}`\}/);
+  assert.match(
+    read("src/app/events/components/ExternalMediaImage.tsx"),
+    /aria-label=\{`View event record: \$\{visual\.alt\}`\}/,
+  );
 
   assert.match(styles, /\.featured-carousel \.featured-slide[\s\S]*?height: 30rem;/);
   assert.match(
