@@ -2,14 +2,14 @@ import type { MediaEvidenceClass } from "../../../lib/events/types";
 
 const fullLabels: Record<MediaEvidenceClass, string> = {
   verified_event_media: "Verified event media",
-  context_media: "Context image — does not depict this event",
-  editorial_illustration: "Editorial illustration — not event evidence",
+  context_media: "Context photograph — does not depict this event",
+  documentary_context: "Documentary context — does not depict this event",
 };
 
 const compactLabels: Record<MediaEvidenceClass, string> = {
   verified_event_media: "Event media",
-  context_media: "Context image",
-  editorial_illustration: "Illustration",
+  context_media: "Context photograph",
+  documentary_context: "Documentary context",
 };
 
 export function mediaClassificationText(evidenceClass: MediaEvidenceClass) {

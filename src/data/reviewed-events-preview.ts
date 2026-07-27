@@ -20,7 +20,8 @@ import type { ReviewedEventPreview } from "../lib/events/types";
  *
  * Media review decisions live in event-media-registry.ts. Rights-pending photographs are not
  * reproduced. Five approved NDTV source displays remain available, one official Instagram embed
- * remains Preview-only, and all other published records use original non-evidentiary illustrations.
+ * remains Preview-only, and other records use reviewed, open-licensed contextual or documentary
+ * visuals with explicit non-event labels.
  */
 
 const reviewedEventRecords = [

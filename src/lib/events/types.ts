@@ -25,8 +25,7 @@ export type PrimaryTopic =
   | "Governance & transparency"
   | "Infrastructure & public services";
 
-export type MediaEvidenceClass =
-  "verified_event_media" | "context_media" | "editorial_illustration";
+export type MediaEvidenceClass = "verified_event_media" | "context_media" | "documentary_context";
 
 export type MediaRightsBasis =
   | "explicit_permission"
@@ -44,32 +43,24 @@ export type MediaRightsMetadata = {
   rightsReviewedAt: string;
 };
 
-export type EditorialIllustrationVisual = MediaRightsMetadata & {
-  kind: "editorial_illustration";
-  evidenceClass: "editorial_illustration";
-  rightsBasis: "owned_original";
-  slug: string;
+export type RecordFallbackVisual = {
   title: string;
   location: string;
-  dateLabel: string;
-  eventType: EventType;
-  primaryTopic: PrimaryTopic;
-  status: EventStatus;
-  alt: string;
-  credit: "Illustration: India Observed";
+  sourceUrl: string;
 };
 
 export type PublisherImageVisual = MediaRightsMetadata & {
   kind: "publisher_image";
-  evidenceClass: "verified_event_media" | "context_media";
+  evidenceClass: "verified_event_media";
   rightsBasis: "explicit_permission";
+  sameEventVerified: true;
   creator?: string;
   publisher: string;
   sourceUrl: string;
   imageUrl: string;
   alt: string;
   attributionText: string;
-  fallbackIllustration: EditorialIllustrationVisual;
+  fallbackRecord: RecordFallbackVisual;
 };
 
 export type PublisherVideoVisual = MediaRightsMetadata & {
@@ -83,29 +74,39 @@ export type PublisherVideoVisual = MediaRightsMetadata & {
   thumbnailSource: "publisher_page";
   alt: string;
   duration?: string;
-  fallbackIllustration: EditorialIllustrationVisual;
+  sameEventVerified: true;
+  fallbackRecord: RecordFallbackVisual;
 };
 
 export type OpenLicensedImageVisual = MediaRightsMetadata & {
   kind: "open_licensed_image";
-  evidenceClass: "verified_event_media" | "context_media";
+  evidenceClass: "verified_event_media" | "context_media" | "documentary_context";
   rightsBasis: "cc_by" | "cc_by_sa" | "cc0" | "public_domain";
   creator: string;
   creatorUrl?: string;
-  publisher?: string;
+  publisher: string;
   sourceUrl: string;
+  originalMediaUrl: string;
   imageUrl: string;
+  localPath: string;
+  originalFileName: string;
   licenseName: string;
   licenseUrl: string;
   attributionText: string;
+  modificationDisclosure: string;
+  relevance: string;
+  privacyReview: string;
+  safetyReview: string;
+  sameEventVerified?: true;
   alt: string;
-  fallbackIllustration: EditorialIllustrationVisual;
+  fallbackRecord: RecordFallbackVisual;
 };
 
 export type DocumentPreviewVisual = MediaRightsMetadata & {
   kind: "document_preview";
-  evidenceClass: "verified_event_media" | "context_media";
+  evidenceClass: "verified_event_media" | "documentary_context";
   rightsBasis: "explicit_permission" | "official_embed" | "public_domain" | "owned_original";
+  sameEventVerified?: true;
   sourceUrl: string;
   title: string;
   publisher: string;
@@ -113,16 +114,13 @@ export type DocumentPreviewVisual = MediaRightsMetadata & {
 };
 
 export type EventVisual =
-  | PublisherImageVisual
-  | PublisherVideoVisual
-  | OpenLicensedImageVisual
-  | EditorialIllustrationVisual
-  | DocumentPreviewVisual;
+  PublisherImageVisual | PublisherVideoVisual | OpenLicensedImageVisual | DocumentPreviewVisual;
 
 export type EventDetailMedia = MediaRightsMetadata & {
   kind: "instagram_embed";
   evidenceClass: "verified_event_media";
   rightsBasis: "official_embed";
+  sameEventVerified: true;
   platform: "Instagram";
   publisher: string;
   sourceUrl: string;

@@ -6,7 +6,7 @@ import type {
   EventVisual as EventVisualData,
 } from "../../../lib/events/types";
 import { EventVisual } from "./EventVisual";
-import { MediaClassificationLabel } from "./MediaClassificationLabel";
+import { MediaClassificationLabel, mediaClassificationText } from "./MediaClassificationLabel";
 
 type EventDetailMediaProps = {
   visual: EventVisualData;
@@ -33,7 +33,7 @@ export function EventDetailMedia({ visual, detailMedia }: EventDetailMediaProps)
   const actionLabel = isInstagram ? "Load Instagram post" : `Load video from ${publisher}`;
   const connectionNotice = isInstagram
     ? "Loading connects to Instagram's official embed."
-    : "Loading connects to NDTV's publisher-hosted player.";
+    : `Loading connects to ${publisher}'s publisher-hosted player.`;
 
   return (
     <div className="event-detail-media">
@@ -52,7 +52,7 @@ export function EventDetailMedia({ visual, detailMedia }: EventDetailMediaProps)
       ) : (
         <>
           <EventVisual visual={visual} showClassification={false} />
-          {isInstagram && visual.evidenceClass === "editorial_illustration" ? (
+          {isInstagram && visual.evidenceClass !== embed.evidenceClass ? (
             <MediaClassificationLabel evidenceClass={visual.evidenceClass} />
           ) : null}
         </>
@@ -75,21 +75,10 @@ export function EventDetailMedia({ visual, detailMedia }: EventDetailMediaProps)
 }
 
 function MediaRightsDisclosure({ visual }: { visual: EventVisualData }) {
-  if (visual.kind === "editorial_illustration") {
-    return (
-      <p className="event-media-rights">
-        Editorial illustration — not event evidence · {visual.credit}
-      </p>
-    );
-  }
-
   if (visual.kind === "document_preview") {
     return (
       <p className="event-media-rights">
-        {visual.evidenceClass === "context_media"
-          ? "Context image — does not depict this event"
-          : "Verified event media"}{" "}
-        · {visual.credit} ·{" "}
+        {mediaClassificationText(visual.evidenceClass)} · {visual.credit} ·{" "}
         <a href={visual.sourceUrl} rel="noreferrer">
           Original source
         </a>
@@ -99,36 +88,40 @@ function MediaRightsDisclosure({ visual }: { visual: EventVisualData }) {
 
   if (visual.kind === "open_licensed_image") {
     return (
-      <p className="event-media-rights">
-        {visual.evidenceClass === "context_media"
-          ? "Context image — does not depict this event"
-          : "Verified event media"}{" "}
-        ·{" "}
-        {visual.creatorUrl ? (
-          <a href={visual.creatorUrl} rel="noreferrer">
-            {visual.creator}
+      <div className="event-media-rights">
+        <p>
+          <strong>{mediaClassificationText(visual.evidenceClass)}</strong> ·{" "}
+          {visual.creatorUrl ? (
+            <a href={visual.creatorUrl} rel="noreferrer">
+              {visual.creator}
+            </a>
+          ) : (
+            visual.creator
+          )}{" "}
+          · {visual.publisher} ·{" "}
+          <a href={visual.licenseUrl} rel="noreferrer">
+            {visual.licenseName}
           </a>
-        ) : (
-          visual.creator
-        )}{" "}
-        ·{" "}
-        <a href={visual.licenseUrl} rel="noreferrer">
-          {visual.licenseName}
-        </a>{" "}
-        ·{" "}
-        <a href={visual.sourceUrl} rel="noreferrer">
-          Original source
-        </a>
-      </p>
+        </p>
+        <p>{visual.attributionText}</p>
+        <p>{visual.modificationDisclosure}</p>
+        <p>{visual.relevance}</p>
+        <p>
+          <a href={visual.sourceUrl} rel="noreferrer">
+            Original file page
+          </a>{" "}
+          ·{" "}
+          <a href={visual.originalMediaUrl} rel="noreferrer">
+            Original media
+          </a>
+        </p>
+      </div>
     );
   }
 
   return (
     <p className="event-media-rights">
-      {visual.evidenceClass === "context_media"
-        ? "Context image — does not depict this event"
-        : "Verified event media"}{" "}
-      · {visual.credit} ·{" "}
+      {mediaClassificationText(visual.evidenceClass)} · {visual.credit} ·{" "}
       <a href={visual.sourceUrl} rel="noreferrer">
         Original source
       </a>

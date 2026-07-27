@@ -7,7 +7,6 @@ import type {
   PublisherImageVisual,
   PublisherVideoVisual,
 } from "../../../lib/events/types";
-import { EventEditorialIllustration } from "./EventEditorialIllustration";
 
 type ExternalMediaVisual = PublisherImageVisual | PublisherVideoVisual | OpenLicensedImageVisual;
 
@@ -25,15 +24,21 @@ export function ExternalMediaImage({
   const [failed, setFailed] = useState(false);
 
   if (failed) {
+    const fallbackLabel =
+      visual.kind === "publisher_video"
+        ? "Publisher thumbnail unavailable"
+        : "Visual temporarily unavailable";
+
     return (
-      <div className="external-media-fallback">
-        <EventEditorialIllustration visual={visual.fallbackIllustration} />
+      <div className="event-record-fallback">
+        <span>Record preview</span>
+        <strong>{visual.fallbackRecord.title}</strong>
+        <p>{visual.fallbackRecord.location}</p>
         <div className="external-media-fallback-message">
-          <strong>Publisher thumbnail unavailable</strong>
+          <small>{fallbackLabel}</small>
           <a href={visual.sourceUrl} rel="noreferrer" target="_blank">
-            Open the original source to view the media
+            Open original source
           </a>
-          <small>Fallback illustration — not event evidence</small>
         </div>
       </div>
     );
@@ -41,7 +46,7 @@ export function ExternalMediaImage({
 
   const image = (
     <>
-      {/* External publisher media is loaded from its original URL and is never copied locally. */}
+      {/* Publisher thumbnails stay remote; licensed context files are reviewed local derivatives. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={imageUrl}

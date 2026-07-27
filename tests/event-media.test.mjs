@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { extname, join } from "node:path";
 import test from "node:test";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -10,100 +10,137 @@ const dataset = read("src/data/reviewed-events-preview.ts");
 const registry = read("src/data/event-media-registry.ts");
 const types = read("src/lib/events/types.ts");
 const eventVisual = read("src/app/events/components/EventVisual.tsx");
-const illustration = read("src/app/events/components/EventEditorialIllustration.tsx");
 const externalMedia = read("src/app/events/components/ExternalMediaImage.tsx");
 const classification = read("src/app/events/components/MediaClassificationLabel.tsx");
 const detailMedia = read("src/app/events/components/EventDetailMedia.tsx");
+const archivePage = read("src/app/events/page.tsx");
 const archiveRow = read("src/app/events/components/EventArchiveRow.tsx");
 const detailPage = read("src/app/events/[slug]/page.tsx");
 const homepage = read("src/app/page.tsx");
 const carousel = read("src/app/components/FeaturedRecordCarousel.tsx");
 const policy = read("docs/MEDIA_POLICY.md");
+const audit = read("docs/EVENT_MEDIA_AUDIT.md");
 
 const publishedSlugs = [...dataset.matchAll(/slug: "([^"]+)"/g)].map((match) => match[1]);
 const configuredVideoSlugs = [
   ...registry.matchAll(/^  "([^"]+)": \{\r?\n    kind: "publisher_video"/gm),
 ].map((match) => match[1]);
+const selections = registry.slice(
+  registry.indexOf("const licensedMediaSelections = {"),
+  registry.indexOf("} as const satisfies Record<string, LicensedSelection>;"),
+);
+const licensedSlugs = [...selections.matchAll(/^  "([^"]+)": \{/gm)].map((match) => match[1]);
+const auditRows = audit.split(/\r?\n/).filter((line) => line.startsWith("| `"));
+const auditSlugs = auditRows.map((line) => line.match(/^\|\s+`([^`]+)`/)?.[1]);
 
-function repositoryFiles(directory) {
+function repositorySourceFiles(directory) {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    if ([".git", ".next", "node_modules"].includes(entry.name)) return [];
+    if ([".git", ".next", "node_modules", "public"].includes(entry.name)) return [];
     const path = join(directory, entry.name);
-    return entry.isDirectory() ? repositoryFiles(path) : [path];
+    return entry.isDirectory() ? repositorySourceFiles(path) : [path];
   });
 }
 
-test("the media registry exhaustively resolves all 50 published events", () => {
+test("the registry exhaustively gives one approved visual to all 50 events", () => {
   assert.equal(publishedSlugs.length, 50);
   assert.equal(new Set(publishedSlugs).size, 50);
   assert.equal(configuredVideoSlugs.length, 5);
-  assert.match(registry, /const entries = events\.map\(\(event\) => \{/);
-  assert.match(registry, /Media registry contains unknown event slug/);
+  assert.equal(licensedSlugs.length, 45);
+  assert.equal(new Set([...configuredVideoSlugs, ...licensedSlugs]).size, 50);
+  assert.deepEqual(
+    [...new Set([...configuredVideoSlugs, ...licensedSlugs])].sort(),
+    [...publishedSlugs].sort(),
+  );
+  assert.match(registry, /Published event has no approved primary visual/);
+  assert.match(registry, /Published event has multiple primary visuals/);
   assert.match(dataset, /createEventMediaRegistry\(reviewedEventsWithoutMedia\)/);
   assert.match(
     dataset,
     /eventMediaRegistry satisfies Record<PublishedEventSlug, EventMediaRegistryEntry>/,
   );
-  assert.match(dataset, /\.\.\.eventMediaRegistry\[event\.slug\]/);
 });
 
-test("published visuals comprise five verified publisher videos and 45 illustrations", () => {
+test("the visual mix is five event videos, 43 context photographs and two documentary maps", () => {
   assert.equal((registry.match(/kind: "publisher_video"/g) ?? []).length, 5);
-  assert.match(
-    registry,
-    /visual: publisherVideo[\s\S]*?\? \{ \.\.\.publisherVideo, fallbackIllustration \}[\s\S]*?: fallbackIllustration/,
+  assert.equal((selections.match(/evidenceClass: "context_media"/g) ?? []).length, 43);
+  assert.equal((selections.match(/evidenceClass: "documentary_context"/g) ?? []).length, 2);
+  assert.doesNotMatch(types, /editorial_illustration|record_cover/);
+  assert.doesNotMatch(registry, /editorial_illustration|record_cover/);
+  assert.doesNotMatch(eventVisual, /EventEditorialIllustration|<svg|illustration/i);
+  assert.equal(
+    existsSync(
+      new URL("../src/app/events/components/EventEditorialIllustration.tsx", import.meta.url),
+    ),
+    false,
   );
-  assert.equal(50 - configuredVideoSlugs.length, 45);
-  assert.doesNotMatch(dataset, /record_cover|recordCover/);
-  assert.doesNotMatch(types, /kind: "record_cover"/);
-  assert.match(types, /kind: "editorial_illustration"/);
 });
 
-test("rights and attribution metadata are controlled and validated", () => {
-  for (const field of ["evidenceClass", "rightsBasis", "credit", "rightsReviewedAt"]) {
-    assert.match(types, new RegExp(`${field}:`));
+test("all 45 licensed local derivatives exist in their event folders", () => {
+  for (const slug of licensedSlugs) {
+    const visualPath = new URL(`../public/media/events/${slug}/context.webp`, import.meta.url);
+    assert.equal(existsSync(visualPath), true, `${slug} must have a context.webp visual`);
+    assert.ok(statSync(visualPath).size > 0, `${slug} visual must not be empty`);
   }
-  assert.match(types, /publisher: string;/);
-  assert.doesNotMatch(types, /publisher: "NDTV"/);
+
+  const localVisuals = readdirSync(new URL("../public/media/events", import.meta.url), {
+    recursive: true,
+  }).filter((path) => path.endsWith("context.webp"));
+  assert.equal(localVisuals.length, 45);
+});
+
+test("rights, attribution, relevance, privacy and safety metadata are controlled", () => {
+  for (const field of [
+    "evidenceClass",
+    "rightsBasis",
+    "credit",
+    "rightsReviewedAt",
+    "creator",
+    "sourceUrl",
+    "originalMediaUrl",
+    "licenseName",
+    "licenseUrl",
+    "attributionText",
+    "modificationDisclosure",
+    "relevance",
+    "privacyReview",
+    "safetyReview",
+  ]) {
+    assert.match(types, new RegExp(`${field}[?:]`));
+  }
   assert.match(registry, /assertCompleteRightsMetadata/);
-  assert.match(registry, /Incomplete media rights metadata/);
+  assert.match(registry, /Open-licensed media lacks audit metadata/);
   assert.match(registry, /External media source is not HTTPS/);
-  assert.match(registry, /rightsBasis: "owned_original"/);
-  assert.match(registry, /credit: "Illustration: India Observed"/);
+  assert.match(registry, /item\.localPath !== item\.imageUrl/);
+  assert.match(registry, /Wikimedia Commons/);
 });
 
-test("all three visible media classifications use unambiguous wording", () => {
-  assert.match(classification, /Verified event media/);
-  assert.match(classification, /Context image — does not depict this event/);
-  assert.match(classification, /Editorial illustration — not event evidence/);
+test("the public interface uses the three exact evidence labels", () => {
+  for (const label of [
+    "Verified event media",
+    "Context photograph — does not depict this event",
+    "Documentary context — does not depict this event",
+  ]) {
+    assert.match(classification, new RegExp(label));
+  }
   assert.match(classification, /aria-label=\{compact \? fullLabel : undefined\}/);
-  assert.match(detailMedia, /MediaClassificationLabel evidenceClass=/);
-  assert.match(detailMedia, /Editorial illustration — not event evidence/);
-  assert.match(detailMedia, /Context image — does not depict this event/);
+  assert.match(detailMedia, /mediaClassificationText\(visual\.evidenceClass\)/);
+  assert.match(detailMedia, /visual\.attributionText/);
+  assert.match(detailMedia, /visual\.modificationDisclosure/);
+  assert.match(detailMedia, /visual\.relevance/);
 });
 
-test("procedural illustrations are deterministic and avoid documentary depictions", () => {
-  assert.match(illustration, /function stableSeed\(value: string\)/);
-  assert.match(illustration, /Math\.imul/);
-  assert.doesNotMatch(illustration, /Math\.random|Date\.now/);
-  assert.match(illustration, /MovementMotif/);
-  assert.match(illustration, /TopicPattern/);
-  assert.match(illustration, /visual\.slug/);
-  assert.match(registry, /It does not depict the event/);
-});
-
-test("external thumbnail failure performs one attempt and falls back truthfully", () => {
+test("failed images use one load attempt and a truthful text-record fallback", () => {
   assert.match(externalMedia, /useState\(false\)/);
   assert.equal((externalMedia.match(/onError=/g) ?? []).length, 1);
-  assert.match(externalMedia, /if \(failed\)/);
-  assert.match(externalMedia, /EventEditorialIllustration visual=\{visual\.fallbackIllustration\}/);
+  assert.match(externalMedia, /className="event-record-fallback"/);
+  assert.match(externalMedia, /visual\.fallbackRecord\.title/);
+  assert.match(externalMedia, /visual\.fallbackRecord\.location/);
   assert.match(externalMedia, /Publisher thumbnail unavailable/);
-  assert.match(externalMedia, /Open the original source to view the media/);
-  assert.match(externalMedia, /Fallback illustration — not event evidence/);
-  assert.doesNotMatch(externalMedia, /setTimeout|setInterval|retry/i);
+  assert.match(externalMedia, /Open original source/);
+  assert.doesNotMatch(externalMedia, /svg|illustration|setTimeout|setInterval|retry/i);
 });
 
-test("homepage, archive and detail routes share the registry visual", () => {
+test("homepage, archive and detail routes share each registry visual", () => {
   assert.match(homepage, /reviewedEventsPreview\.map\(\(\{ internalId, slug, visual \}\)/);
   assert.equal((homepage.match(/getHomepageVisual\(record\.id\)/g) ?? []).length, 3);
   assert.match(carousel, /<EventVisual[\s\S]*?variant="homepage-featured"/);
@@ -111,10 +148,9 @@ test("homepage, archive and detail routes share the registry visual", () => {
   assert.match(homepage, /variant="homepage-on-record"/);
   assert.match(archiveRow, /<EventVisual visual=\{event\.visual\} eventHref=\{href\}/);
   assert.match(detailPage, /<EventDetailMedia visual=\{event\.visual\}/);
-  assert.match(eventVisual, /MediaClassificationLabel/);
 });
 
-test("publisher video and Preview-only Instagram remain click-to-load", () => {
+test("NDTV and Preview-only Instagram remain source-hosted and click-to-load", () => {
   assert.equal((registry.match(/https:\/\/www\.ndtv\.com\/videos\/embed-player/g) ?? []).length, 5);
   assert.match(registry, /"save-sgnp-human-chain-thane"/);
   assert.match(registry, /kind: "instagram_embed"/);
@@ -124,18 +160,40 @@ test("publisher video and Preview-only Instagram remain click-to-load", () => {
   assert.match(detailMedia, /onClick=\{\(\) => setIsActivated\(true\)\}/);
   assert.match(carousel, /loadedMediaId === activeRecord\.id \? \([\s\S]*?<iframe/);
   assert.doesNotMatch(carousel, /autoPlay/);
+  assert.doesNotMatch(archivePage, /iframe/i);
+  assert.doesNotMatch(archiveRow, /iframe/i);
 });
 
-test("no copied image asset, scraper or media proxy is introduced", () => {
-  const files = repositoryFiles(fileURLToPath(new URL("../", import.meta.url)));
-  const copiedImageExtensions = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"]);
-
+test("the audit has exactly one complete row for each published event", () => {
+  assert.equal(auditSlugs.length, 50);
+  assert.equal(new Set(auditSlugs).size, 50);
+  assert.deepEqual([...auditSlugs].sort(), [...publishedSlugs].sort());
+  const columns = auditRows.map((row) => row.split("|").map((cell) => cell.trim()));
   assert.equal(
-    files.some((file) => copiedImageExtensions.has(extname(file).toLowerCase())),
-    false,
+    columns.filter((cells) => cells[11] === "Passed" && cells[12] === "Passed").length,
+    50,
   );
-  assert.doesNotMatch(eventVisual, /fetch\(|proxy|scrap/i);
+  assert.equal(columns.filter((cells) => cells[13].startsWith("Local WebP")).length, 45);
+  assert.equal(columns.filter((cells) => cells[13] === "Click-to-load embed").length, 5);
+});
+
+test("all nine topics retain meaningful, event-specific relevance statements", () => {
+  const primaryTopics = [...dataset.matchAll(/"IO-CM-[A-Z]+-\d{4}": "([^"]+)",/g)].map(
+    (match) => match[1],
+  );
+  assert.equal(primaryTopics.length, 50);
+  assert.equal(new Set(primaryTopics).size, 9);
+  assert.equal((selections.match(/\n    relevance:/g) ?? []).length, 45);
+  assert.doesNotMatch(selections, /generic stock|unrelated crowd|placeholder/i);
+});
+
+test("no abstract, AI, scraped or unlicensed visual path remains in source", () => {
+  const sourceFiles = repositorySourceFiles(fileURLToPath(new URL("../src", import.meta.url)));
+  const sourceText = sourceFiles.map((file) => readFileSync(file, "utf8")).join("\n");
+  assert.doesNotMatch(sourceText, /editorial_illustration|EventEditorialIllustration/);
+  assert.doesNotMatch(eventVisual, /fetch\(|proxy|scrap|base64/i);
   assert.doesNotMatch(externalMedia, /fetch\(|proxy|scrap|base64/i);
+  assert.doesNotMatch(registry, /unsplash|pexels|pixabay|generated image|ai-generated/i);
 });
 
 test("media policy records legal, safety, replacement and takedown boundaries", () => {
@@ -145,7 +203,8 @@ test("media policy records legal, safety, replacement and takedown boundaries", 
     "A search-engine image result is never sufficient provenance.",
     "An `og:image` URL is not itself permission.",
     "No image is added solely because a card needs visual variety.",
-    "Visual classifications do not affect event verification status.",
+    "Visual classifications do not affect an event's verification status.",
+    "Auto-publication remains disabled.",
   ]) {
     assert.match(normalisedPolicy, new RegExp(statement.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }

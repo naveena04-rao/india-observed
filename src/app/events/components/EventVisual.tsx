@@ -1,5 +1,4 @@
 import type { EventVisual as EventVisualData } from "../../../lib/events/types";
-import { EventEditorialIllustration } from "./EventEditorialIllustration";
 import { ExternalMediaImage } from "./ExternalMediaImage";
 import { MediaClassificationLabel } from "./MediaClassificationLabel";
 
@@ -18,19 +17,6 @@ export function EventVisual({
   variant?: EventVisualVariant;
 }) {
   const variantClassName = `event-visual--${variant}`;
-
-  if (visual.kind === "editorial_illustration") {
-    return (
-      <figure className={`event-visual-shell ${variantClassName}`}>
-        <EventEditorialIllustration visual={visual} />
-        {showClassification ? (
-          <figcaption>
-            <MediaClassificationLabel evidenceClass={visual.evidenceClass} compact />
-          </figcaption>
-        ) : null}
-      </figure>
-    );
-  }
 
   if (visual.kind === "document_preview") {
     return (

@@ -308,7 +308,6 @@ test("all nine homepage records use the central reviewed visual treatments", () 
   const page = read("src/app/page.tsx");
   const carousel = read("src/app/components/FeaturedRecordCarousel.tsx");
   const eventVisual = read("src/app/events/components/EventVisual.tsx");
-  const illustration = read("src/app/events/components/EventEditorialIllustration.tsx");
   const mediaRegistry = read("src/data/event-media-registry.ts");
   const dataset = read("src/data/reviewed-events-preview.ts");
   const styles = read("src/app/globals.css");
@@ -327,7 +326,7 @@ test("all nine homepage records use the central reviewed visual treatments", () 
   for (const id of [...featuredIds, ...latestIds, ...onRecordIds]) datasetBlock(id);
   assert.doesNotMatch(dataset, /visual: (?:recordCover|publisherVideo)/);
   assert.equal((mediaRegistry.match(/kind: "publisher_video"/g) ?? []).length, 5);
-  assert.match(mediaRegistry, /createEditorialIllustration\(event\)/);
+  assert.match(mediaRegistry, /createLicensedVisual\(event, selection!\)/);
 
   assert.match(
     page,
@@ -359,8 +358,7 @@ test("all nine homepage records use the central reviewed visual treatments", () 
   assert.doesNotMatch(page, /instagram\.com|facebook\.com|(?:https?:\/\/)?x\.com/);
   assert.doesNotMatch(page, /<iframe/);
 
-  assert.match(illustration, /role="img"[\s\S]*aria-label=\{visual\.alt\}/);
-  assert.match(eventVisual, /EventEditorialIllustration visual=\{visual\}/);
+  assert.doesNotMatch(eventVisual, /EventEditorialIllustration|<svg/);
   assert.match(eventVisual, /MediaClassificationLabel/);
   assert.match(eventVisual, /visual\.credit/);
   assert.match(

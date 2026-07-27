@@ -15,7 +15,6 @@ const archiveRow = read("src/app/events/components/EventArchiveRow.tsx");
 const filters = read("src/app/events/components/EventFilters.tsx");
 const pagination = read("src/app/events/components/EventPagination.tsx");
 const visual = read("src/app/events/components/EventVisual.tsx");
-const illustration = read("src/app/events/components/EventEditorialIllustration.tsx");
 const classificationLabel = read("src/app/events/components/MediaClassificationLabel.tsx");
 const detailMedia = read("src/app/events/components/EventDetailMedia.tsx");
 const eventSafety = read("src/app/events/components/EventSafety.tsx");
@@ -142,8 +141,8 @@ test("Preview snapshot has 50 unique readable slugs and one filled visual per ev
     true,
   );
   assert.match(dataset, /Rights-pending photographs are not[\s\S]*?reproduced/);
-  assert.match(illustration, /role="img"[\s\S]*?aria-label=\{visual\.alt\}/);
-  assert.match(classificationLabel, /Editorial illustration — not event evidence/);
+  assert.match(classificationLabel, /Context photograph — does not depict this event/);
+  assert.match(classificationLabel, /Documentary context — does not depict this event/);
   assert.doesNotMatch(dataset, /stock|unsplash|pexels|pixabay/i);
 });
 
@@ -194,8 +193,8 @@ test("all public-safe records are complete and resolve media through the registr
     assert.doesNotMatch(block, /visual:|detailMedia:|embedUrl/);
   }
 
-  assert.match(mediaRegistry, /kind: "editorial_illustration"/);
-  assert.match(mediaRegistry, /rightsBasis: "owned_original"/);
+  assert.match(mediaRegistry, /kind: "open_licensed_image"/);
+  assert.match(mediaRegistry, /publisher: "Wikimedia Commons"/);
   assert.equal(
     (mediaRegistry.match(/https:\/\/www\.ndtv\.com\/videos\/embed-player/g) ?? []).length,
     5,
@@ -336,7 +335,6 @@ test("only controlled visual types are allowed and the archive never loads video
     "publisher_image",
     "publisher_video",
     "open_licensed_image",
-    "editorial_illustration",
     "document_preview",
   ]) {
     assert.match(types, new RegExp(`kind: "${kind}"`));
@@ -424,7 +422,7 @@ test("detail embeds require activation and Instagram remains outside Production"
   assert.match(detailMedia, /onClick=\{\(\) => setIsActivated\(true\)\}/);
   assert.match(detailMedia, /isActivated \? \(/);
   assert.match(detailMedia, /<iframe/);
-  assert.match(detailMedia, /Loading connects to NDTV's publisher-hosted player\./);
+  assert.match(detailMedia, /Loading connects to \$\{publisher\}'s publisher-hosted player\./);
   assert.match(detailMedia, /Loading connects to Instagram's official embed\./);
   assert.match(detailMedia, /View original on \{publisher\}/);
   assert.match(mediaRegistry, /https:\/\/www\.instagram\.com\/reel\/DacYWWktqjL\/embed\//);
@@ -453,7 +451,7 @@ test("excluded media candidates remain disabled with truthful filled fallbacks",
   }
   assert.match(
     mediaRegistry,
-    /publisherVideo[\s\S]*?\? \{ \.\.\.publisherVideo, fallbackIllustration \}[\s\S]*?: fallbackIllustration/,
+    /publisherVideo[\s\S]*?\? \{[\s\S]*?\.\.\.publisherVideo,[\s\S]*?fallbackRecord:[\s\S]*?: createLicensedVisual/,
   );
 });
 
@@ -631,7 +629,7 @@ test("archive rows follow the ON RECORD structure and link to readable detail ro
   assert.match(styles, /\.event-row-disclosure--without-end-date[\s\S]*?repeat\(3/);
   assert.match(
     styles,
-    /\.event-row-visual \.event-editorial-illustration,[\s\S]*?aspect-ratio: 16 \/ 9;[\s\S]*?min-height: 0/,
+    /\.event-row-visual \.event-document-preview,[\s\S]*?aspect-ratio: 16 \/ 9;[\s\S]*?min-height: 0/,
   );
   assert.match(styles, /\.event-detail-embed \{[\s\S]*?aspect-ratio: 4 \/ 3/);
   assert.match(styles, /@media \(max-width: 700px\)[\s\S]*?\.event-row-visual[\s\S]*?grid-row: 1/);
@@ -674,7 +672,7 @@ test("archive controls use the compact title and spacing without changing grid, 
     /@media \(max-width: 700px\)[\s\S]*?\.events-archive \{[\s\S]*?padding-top: 0\.5rem[\s\S]*?\.event-filters input,[\s\S]*?min-height: 2\.75rem/,
   );
   assert.equal((mediaRegistry.match(/kind: "publisher_video"/g) ?? []).length, 5);
-  assert.match(mediaRegistry, /: fallbackIllustration/);
+  assert.match(mediaRegistry, /createLicensedVisual\(event, selection!\)/);
 });
 
 test("detail pages show full public-safe records and disabled launch actions", () => {
