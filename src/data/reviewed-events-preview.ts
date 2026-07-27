@@ -18,10 +18,10 @@ import type { ReviewedEventPreview } from "../lib/events/types";
  * 2 corrections
  * 12 safety incidents
  *
- * Media review decisions live in event-media-registry.ts. Rights-pending photographs are not
- * reproduced. Five approved NDTV source displays remain available, one official Instagram embed
- * remains Preview-only, and other records use reviewed, open-licensed contextual or documentary
- * visuals with explicit non-event labels.
+ * Media review decisions live in event-media-registry.ts. Only exact-event media from an event's
+ * approved source set may be displayed. One approved NDTV video and three approved-source social
+ * embeds remain click-to-load; every other record uses an honest text fallback. No contextual or
+ * substitute imagery is reproduced.
  */
 
 const reviewedEventRecords = [

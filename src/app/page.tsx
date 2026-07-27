@@ -44,23 +44,10 @@ const featuredRecords = [
     note: "Some details remain disputed",
     reviewed: "15 July 2026",
     media: {
-      format: "Publisher-hosted video (2:49)",
-      sourceProvenance: "NDTV · Original publisher page · 30 June 2026",
+      format: "Text record",
+      sourceProvenance: "Reviewed record sources; no approved event visual",
       eventVerification: "Event confirmed",
-      publicationRightsStatus: "Official source embed · Reuse permission pending",
-      caption:
-        "NDTV's report depicts a public protest in Bidadi concerning the proposed AI City project; it does not independently resolve disputed land-acquisition details.",
-      reviewStatus: "event_match_confirmed",
-      rightsStatus: "permission_requested",
-      publicationStatus: "published_source_embed",
-      gates: {
-        authenticity: true,
-        eventMatch: true,
-        integrity: true,
-        privacy: true,
-        safety: true,
-        humanEditorialApproval: true,
-      },
+      publicationRightsStatus: "Text fallback · No visual media published",
     },
   },
   {

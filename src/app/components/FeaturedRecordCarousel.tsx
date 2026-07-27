@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import type { EventVisual as EventVisualData } from "../../lib/events/types";
-import { ExternalMediaImage } from "../events/components/ExternalMediaImage";
 import { EventFollowControl } from "../events/components/EventFollowControl";
 import { MediaClassificationLabel } from "../events/components/MediaClassificationLabel";
 import { EventVisual } from "../events/components/EventVisual";
@@ -256,22 +255,17 @@ export function FeaturedRecordCarousel({
                         />
                       </div>
                     ) : (
-                      <div className="publisher-video-gate">
-                        <ExternalMediaImage
-                          imageUrl={activeVisual.thumbnailUrl}
-                          visual={activeVisual}
-                        />
-                        <div className="publisher-video-gate-content">
-                          <span>Official publisher video</span>
-                          <strong>
-                            {activeVisual.publisher}
-                            {activeVisual.duration ? ` · ${activeVisual.duration}` : ""}
-                          </strong>
-                          <button type="button" onClick={() => setLoadedMediaId(activeRecord.id)}>
-                            Load video from {activeVisual.publisher}
-                          </button>
-                          <small>Loading connects to the publisher&apos;s video player.</small>
-                        </div>
+                      <div className="publisher-video-gate event-media-activation">
+                        <span>Verified event media</span>
+                        <strong>{activeRecord.title}</strong>
+                        <p>{activeRecord.place}</p>
+                        <button type="button" onClick={() => setLoadedMediaId(activeRecord.id)}>
+                          Load video from {activeVisual.publisher}
+                        </button>
+                        <small>
+                          Loading connects to the publisher&apos;s official embed. No third-party
+                          frame loads before activation.
+                        </small>
                       </div>
                     )}
                   </div>

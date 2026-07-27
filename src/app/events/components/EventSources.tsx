@@ -13,7 +13,11 @@ const readerFacingRole: Record<EventSourceRole, string> = {
 
 export function EventSources({ sources }: { sources: readonly EventPublicSource[] }) {
   return (
-    <section className="event-record-sources" aria-labelledby="event-sources-heading">
+    <section
+      className="event-record-sources"
+      id="event-sources"
+      aria-labelledby="event-sources-heading"
+    >
       <h2 id="event-sources-heading">Sources</h2>
       <ol className="event-source-list">
         {sources.map((source) => (

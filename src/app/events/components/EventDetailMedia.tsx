@@ -6,7 +6,7 @@ import type {
   EventVisual as EventVisualData,
 } from "../../../lib/events/types";
 import { EventVisual } from "./EventVisual";
-import { MediaClassificationLabel, mediaClassificationText } from "./MediaClassificationLabel";
+import { MediaClassificationLabel } from "./MediaClassificationLabel";
 
 type EventDetailMediaProps = {
   visual: EventVisualData;
@@ -14,7 +14,7 @@ type EventDetailMediaProps = {
 };
 
 export function EventDetailMedia({ visual, detailMedia }: EventDetailMediaProps) {
-  const [isActivated, setIsActivated] = useState(false);
+  const [embedState, setEmbedState] = useState<"idle" | "loaded" | "failed">("idle");
   const publisherVideo = visual.kind === "publisher_video" ? visual : undefined;
   const embed = publisherVideo ?? detailMedia;
 
@@ -23,22 +23,29 @@ export function EventDetailMedia({ visual, detailMedia }: EventDetailMediaProps)
       <div className="event-detail-media">
         <MediaClassificationLabel evidenceClass={visual.evidenceClass} />
         <EventVisual visual={visual} showClassification={false} />
-        <MediaRightsDisclosure visual={visual} />
       </div>
     );
   }
 
-  const isInstagram = embed.kind === "instagram_embed";
-  const publisher = isInstagram ? embed.platform : embed.publisher;
-  const actionLabel = isInstagram ? "Load Instagram post" : `Load video from ${publisher}`;
-  const connectionNotice = isInstagram
-    ? "Loading connects to Instagram's official embed."
-    : `Loading connects to ${publisher}'s publisher-hosted player.`;
+  const isSocial = embed.kind === "social_embed";
+  const publisher = isSocial ? embed.platform : embed.publisher;
+  const actionLabel =
+    publisher === "Instagram"
+      ? "Load Instagram post"
+      : publisher === "Facebook"
+        ? "Load Facebook video"
+        : `Load video from ${publisher}`;
+  const connectionNotice = `Loading connects to ${publisher}'s official embed.`;
+  const eventTitle =
+    visual.kind === "no_approved_event_media" ? visual.title : "Verified publisher video";
+  const eventLocation =
+    visual.kind === "no_approved_event_media" ? visual.location : embed.publisher;
 
   return (
     <div className="event-detail-media">
       <MediaClassificationLabel evidenceClass={embed.evidenceClass} />
-      {isActivated ? (
+
+      {embedState === "loaded" ? (
         <div className={`event-detail-embed event-detail-embed--${embed.kind}`}>
           <iframe
             src={embed.embedUrl}
@@ -47,84 +54,39 @@ export function EventDetailMedia({ visual, detailMedia }: EventDetailMediaProps)
             allow="encrypted-media; picture-in-picture; fullscreen"
             allowFullScreen
             referrerPolicy="strict-origin-when-cross-origin"
+            onError={() => setEmbedState("failed")}
           />
         </div>
+      ) : embedState === "failed" ? (
+        <div className="event-media-unavailable" role="status">
+          <strong>Event media unavailable</strong>
+          <p>{eventTitle}</p>
+          <p>{eventLocation}</p>
+          <a href={embed.sourceUrl} rel="noreferrer">
+            Open original source
+          </a>
+        </div>
       ) : (
-        <>
-          <EventVisual visual={visual} showClassification={false} />
-          {isInstagram && visual.evidenceClass !== embed.evidenceClass ? (
-            <MediaClassificationLabel evidenceClass={visual.evidenceClass} />
-          ) : null}
-        </>
+        <div className="event-media-activation">
+          <span>Verified event media</span>
+          <strong>{eventTitle}</strong>
+          <p>{eventLocation}</p>
+          <button type="button" onClick={() => setEmbedState("loaded")}>
+            {actionLabel}
+          </button>
+          <small>{connectionNotice} No third-party frame loads before activation.</small>
+        </div>
       )}
 
       <div className="event-detail-media-controls">
-        <p>Verified event media · {embed.credit}</p>
-        {!isActivated ? (
-          <button type="button" onClick={() => setIsActivated(true)}>
-            {actionLabel}
-          </button>
-        ) : null}
-        <p>{connectionNotice}</p>
+        <p>Verified event media · {embed.credit} · Official embed · Same-event match verified</p>
+        <p>{embed.identifiablePeopleAssessment}</p>
+        <p>{embed.privacyReview}</p>
+        <p>{embed.safetyReview}</p>
         <a href={embed.sourceUrl} rel="noreferrer">
           View original on {publisher} →
         </a>
       </div>
     </div>
-  );
-}
-
-function MediaRightsDisclosure({ visual }: { visual: EventVisualData }) {
-  if (visual.kind === "document_preview") {
-    return (
-      <p className="event-media-rights">
-        {mediaClassificationText(visual.evidenceClass)} · {visual.credit} ·{" "}
-        <a href={visual.sourceUrl} rel="noreferrer">
-          Original source
-        </a>
-      </p>
-    );
-  }
-
-  if (visual.kind === "open_licensed_image") {
-    return (
-      <div className="event-media-rights">
-        <p>
-          <strong>{mediaClassificationText(visual.evidenceClass)}</strong> ·{" "}
-          {visual.creatorUrl ? (
-            <a href={visual.creatorUrl} rel="noreferrer">
-              {visual.creator}
-            </a>
-          ) : (
-            visual.creator
-          )}{" "}
-          · {visual.publisher} ·{" "}
-          <a href={visual.licenseUrl} rel="noreferrer">
-            {visual.licenseName}
-          </a>
-        </p>
-        <p>{visual.attributionText}</p>
-        <p>{visual.modificationDisclosure}</p>
-        <p>{visual.relevance}</p>
-        <p>
-          <a href={visual.sourceUrl} rel="noreferrer">
-            Original file page
-          </a>{" "}
-          ·{" "}
-          <a href={visual.originalMediaUrl} rel="noreferrer">
-            Original media
-          </a>
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <p className="event-media-rights">
-      {mediaClassificationText(visual.evidenceClass)} · {visual.credit} ·{" "}
-      <a href={visual.sourceUrl} rel="noreferrer">
-        Original source
-      </a>
-    </p>
   );
 }

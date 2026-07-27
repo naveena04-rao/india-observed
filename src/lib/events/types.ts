@@ -25,7 +25,7 @@ export type PrimaryTopic =
   | "Governance & transparency"
   | "Infrastructure & public services";
 
-export type MediaEvidenceClass = "verified_event_media" | "context_media" | "documentary_context";
+export type MediaEvidenceClass = "verified_event_media" | "no_approved_event_media";
 
 export type MediaRightsBasis =
   | "explicit_permission"
@@ -43,24 +43,14 @@ export type MediaRightsMetadata = {
   rightsReviewedAt: string;
 };
 
-export type RecordFallbackVisual = {
+export type NoApprovedEventMediaVisual = {
+  kind: "no_approved_event_media";
+  evidenceClass: "no_approved_event_media";
   title: string;
   location: string;
-  sourceUrl: string;
-};
-
-export type PublisherImageVisual = MediaRightsMetadata & {
-  kind: "publisher_image";
-  evidenceClass: "verified_event_media";
-  rightsBasis: "explicit_permission";
-  sameEventVerified: true;
-  creator?: string;
-  publisher: string;
-  sourceUrl: string;
-  imageUrl: string;
-  alt: string;
-  attributionText: string;
-  fallbackRecord: RecordFallbackVisual;
+  dateOrStatus: string;
+  sourceCount: number;
+  sourceHref: string;
 };
 
 export type PublisherVideoVisual = MediaRightsMetadata & {
@@ -69,65 +59,34 @@ export type PublisherVideoVisual = MediaRightsMetadata & {
   rightsBasis: "official_embed" | "explicit_permission";
   publisher: string;
   sourceUrl: string;
+  approvedSourceUrl: string;
   embedUrl: string;
-  thumbnailUrl: string;
-  thumbnailSource: "publisher_page";
   alt: string;
   duration?: string;
   sameEventVerified: true;
-  fallbackRecord: RecordFallbackVisual;
-};
-
-export type OpenLicensedImageVisual = MediaRightsMetadata & {
-  kind: "open_licensed_image";
-  evidenceClass: "verified_event_media" | "context_media" | "documentary_context";
-  rightsBasis: "cc_by" | "cc_by_sa" | "cc0" | "public_domain";
-  creator: string;
-  creatorUrl?: string;
-  publisher: string;
-  sourceUrl: string;
-  originalMediaUrl: string;
-  imageUrl: string;
-  localPath: string;
-  originalFileName: string;
-  licenseName: string;
-  licenseUrl: string;
-  attributionText: string;
-  modificationDisclosure: string;
-  relevance: string;
   privacyReview: string;
   safetyReview: string;
-  sameEventVerified?: true;
-  alt: string;
-  fallbackRecord: RecordFallbackVisual;
+  identifiablePeopleAssessment: string;
 };
 
-export type DocumentPreviewVisual = MediaRightsMetadata & {
-  kind: "document_preview";
-  evidenceClass: "verified_event_media" | "documentary_context";
-  rightsBasis: "explicit_permission" | "official_embed" | "public_domain" | "owned_original";
-  sameEventVerified?: true;
-  sourceUrl: string;
-  title: string;
-  publisher: string;
-  alt: string;
-};
-
-export type EventVisual =
-  PublisherImageVisual | PublisherVideoVisual | OpenLicensedImageVisual | DocumentPreviewVisual;
+export type EventVisual = PublisherVideoVisual | NoApprovedEventMediaVisual;
 
 export type EventDetailMedia = MediaRightsMetadata & {
-  kind: "instagram_embed";
+  kind: "social_embed";
   evidenceClass: "verified_event_media";
   rightsBasis: "official_embed";
   sameEventVerified: true;
-  platform: "Instagram";
+  platform: "Instagram" | "Facebook";
   publisher: string;
   sourceUrl: string;
+  approvedSourceUrl: string;
   embedUrl: string;
   alt: string;
   credit: string;
-  previewOnly: true;
+  privacyReview: string;
+  safetyReview: string;
+  identifiablePeopleAssessment: string;
+  previewOnly?: true;
 };
 
 export type EventSourceRole =

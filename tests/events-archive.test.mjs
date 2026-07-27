@@ -117,7 +117,7 @@ test("Preview snapshot has 50 unique readable slugs and one filled visual per ev
   assert.equal(new Set(ids).size, 50);
   assert.equal(slugs.length, 50);
   assert.equal(new Set(slugs).size, 50);
-  assert.equal((mediaRegistry.match(/kind: "publisher_video"/g) ?? []).length, 5);
+  assert.equal((mediaRegistry.match(/kind: "publisher_video"/g) ?? []).length, 1);
   assert.match(mediaRegistry, /createEventMediaRegistry[\s\S]*?events\.map\(\(event\)/);
   assert.match(
     dataset,
@@ -140,9 +140,9 @@ test("Preview snapshot has 50 unique readable slugs and one filled visual per ev
     slugs.every((slug) => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)),
     true,
   );
-  assert.match(dataset, /Rights-pending photographs are not[\s\S]*?reproduced/);
-  assert.match(classificationLabel, /Context photograph — does not depict this event/);
-  assert.match(classificationLabel, /Documentary context — does not depict this event/);
+  assert.match(dataset, /No contextual or[\s\S]*?substitute imagery is reproduced/);
+  assert.match(classificationLabel, /Verified event media/);
+  assert.match(classificationLabel, /No approved event image available/);
   assert.doesNotMatch(dataset, /stock|unsplash|pexels|pixabay/i);
 });
 
@@ -193,18 +193,18 @@ test("all public-safe records are complete and resolve media through the registr
     assert.doesNotMatch(block, /visual:|detailMedia:|embedUrl/);
   }
 
-  assert.match(mediaRegistry, /kind: "open_licensed_image"/);
-  assert.match(mediaRegistry, /publisher: "Wikimedia Commons"/);
+  assert.match(mediaRegistry, /kind: "no_approved_event_media"/);
   assert.equal(
     (mediaRegistry.match(/https:\/\/www\.ndtv\.com\/videos\/embed-player/g) ?? []).length,
-    5,
-  );
-  assert.equal(
-    (mediaRegistry.match(/https:\/\/www\.instagram\.com\/reel\/DacYWWktqjL\/embed\//g) ?? [])
-      .length,
     1,
   );
-  assert.equal((mediaRegistry.match(/embedUrl:\s*"https:\/\//g) ?? []).length, 6);
+  assert.match(
+    mediaRegistry,
+    /saveSgnpInstagramSource = "https:\/\/www\.instagram\.com\/reel\/DacYWWktqjL\/"/,
+  );
+  assert.match(mediaRegistry, /embedUrl: instagramEmbed\(saveSgnpInstagramSource\)/);
+  assert.equal((mediaRegistry.match(/embedUrl:\s*"https:\/\//g) ?? []).length, 1);
+  assert.equal((mediaRegistry.match(/kind: "social_embed"/g) ?? []).length, 3);
   assert.doesNotMatch(mediaRegistry, /(?:imageUrl|thumbnailUrl):\s*"(?:\/|\.\.\/|\.\/)/);
 });
 
@@ -331,101 +331,42 @@ test("all events have qualified safety summaries and only attributed incident de
 
 test("only controlled visual types are allowed and the archive never loads video iframes", () => {
   const types = read("src/lib/events/types.ts");
-  for (const kind of [
-    "publisher_image",
-    "publisher_video",
-    "open_licensed_image",
-    "document_preview",
-  ]) {
+  for (const kind of ["publisher_video", "no_approved_event_media", "social_embed"]) {
     assert.match(types, new RegExp(`kind: "${kind}"`));
   }
-  assert.doesNotMatch(types, /kind: "record_cover"/);
+  assert.doesNotMatch(
+    types,
+    /kind: "(?:record_cover|publisher_image|open_licensed_image|document_preview)"/,
+  );
   assert.doesNotMatch(archivePage, /iframe/i);
   assert.doesNotMatch(archiveRow, /iframe/i);
   assert.doesNotMatch(visual, /iframe/i);
-  assert.match(visual, /visual\.credit/);
-  assert.match(visual, /mediaHref=\{eventHref \?\? visual\.sourceUrl\}/);
+  assert.match(visual, /View event sources/);
+  assert.match(visual, /View event media/);
   assert.match(archiveRow, /eventHref=\{href\}/);
 });
 
-test("exactly five NDTV records use verified publisher thumbnails and click-to-load embeds", () => {
-  const approved = [
-    {
-      slug: "bidadi-farmers-land-acquisition",
-      source:
-        "https://www.ndtv.com/video/protests-in-karnataka-s-bidadi-after-government-proposes-to-cut-trees-for-ai-city-project-1120270",
-      embed:
-        "https://www.ndtv.com/videos/embed-player/?id=1120270&mute=1&autostart=0&mutestart=true&pWidth=100&pHeight=100",
-      thumbnail:
-        "https://c.ndtvimg.com/2026-06/t9gf8cms_bidadi_160x120_30_June_26.png?downsize=1600:900",
-    },
-    {
-      slug: "education-accountability-jantar-mantar",
-      source:
-        "https://www.ndtv.com/video/from-online-movement-to-street-protest-cjp-gathers-at-jantar-mantar-1109578",
-      embed:
-        "https://www.ndtv.com/videos/embed-player/?id=1109578&mute=1&autostart=0&mutestart=true&pWidth=100&pHeight=100",
-      thumbnail:
-        "https://c.ndtvimg.com/2026-06/ihl87sqg_image_160x120_06_June_26.jpg?downsize=1600:900",
-    },
-    {
-      slug: "jamia-yuva-kumbh-campus-protest",
-      source:
-        "https://www.ndtv.com/video/jamia-protests-rss-event-sparks-protests-at-jamia-university-in-delhi-1091649",
-      embed:
-        "https://www.ndtv.com/videos/embed-player/?id=1091649&mute=1&autostart=0&mutestart=true&pWidth=100&pHeight=100",
-      thumbnail:
-        "https://drop.ndtv.com/video/images/vod/medium/2026-04/1091649_maxresdefault.jpg?downsize=1600:900",
-    },
-    {
-      slug: "delhi-neet-paper-leak-protests",
-      source:
-        "https://www.ndtv.com/video/neet-exam-leak-protesters-intensify-attack-on-nta-after-neet-exam-cancellation-1098156",
-      embed:
-        "https://www.ndtv.com/videos/embed-player/?id=1098156&mute=1&autostart=0&mutestart=true&pWidth=100&pHeight=100",
-      thumbnail:
-        "https://drop.ndtv.com/video/images/vod/medium/2026-05/1098156_maxresdefault.jpg?downsize=1600:900",
-    },
-    {
-      slug: "jaipur-neet-irregularities-march",
-      source:
-        "https://www.ndtv.com/video/neet-paper-leak-row-protests-in-jaipur-water-cannons-used-to-disperse-crowds-1102287",
-      embed:
-        "https://www.ndtv.com/videos/embed-player/?id=1102287&mute=1&autostart=0&mutestart=true&pWidth=100&pHeight=100",
-      thumbnail:
-        "https://c.ndtvimg.com/2026-05/f1fjibmo_neet-protest_160x120_21_May_26.jpg?downsize=1600:900",
-    },
-  ];
-
-  assert.equal((mediaRegistry.match(/kind: "publisher_video"/g) ?? []).length, 5);
-  for (const media of approved) {
-    const start = mediaRegistry.indexOf(`"${media.slug}": {`);
-    const end = mediaRegistry.indexOf('\n  "', start + 1);
-    const block = mediaRegistry.slice(
-      start,
-      end === -1 ? mediaRegistry.indexOf("\n} as const", start) : end,
-    );
-    assert.ok(start >= 0, `${media.slug} must exist`);
-    assert.ok(block.includes(media.source));
-    assert.ok(block.includes(media.embed));
-    assert.ok(block.includes(media.thumbnail));
-    assert.match(block, /alt: "[^"]+"/);
-  }
+test("only the approved Jamia NDTV video remains in the source-only registry", () => {
+  assert.equal((mediaRegistry.match(/kind: "publisher_video"/g) ?? []).length, 1);
+  assert.match(mediaRegistry, /"jamia-yuva-kumbh-campus-protest": \{/);
+  assert.match(
+    mediaRegistry,
+    /approvedSourceUrl:[\s\S]*?jamia-students-protest-rss-yuva-kumbh-event-on-campus/,
+  );
+  assert.match(mediaRegistry, /1091649/);
   assert.match(mediaRegistry, /credit: "Video: NDTV"/);
-  assert.match(mediaRegistry, /thumbnailSource: "publisher_page"/);
-  assert.equal((mediaRegistry.match(/thumbnailUrl:\s*"https:\/\//g) ?? []).length, 5);
-  assert.doesNotMatch(mediaRegistry, /thumbnailUrl:\s*"(?:\/|\.\.\/|\.\/)/);
+  assert.doesNotMatch(mediaRegistry, /1120270|1109578|1098156|1102287|thumbnailUrl/);
 });
 
 test("detail embeds require activation and Instagram remains outside Production", () => {
-  assert.match(detailMedia, /useState\(false\)/);
-  assert.match(detailMedia, /onClick=\{\(\) => setIsActivated\(true\)\}/);
-  assert.match(detailMedia, /isActivated \? \(/);
+  assert.match(detailMedia, /useState<"idle" \| "loaded" \| "failed">\("idle"\)/);
+  assert.match(detailMedia, /onClick=\{\(\) => setEmbedState\("loaded"\)\}/);
+  assert.match(detailMedia, /embedState === "loaded" \? \(/);
   assert.match(detailMedia, /<iframe/);
-  assert.match(detailMedia, /Loading connects to \$\{publisher\}'s publisher-hosted player\./);
-  assert.match(detailMedia, /Loading connects to Instagram's official embed\./);
+  assert.match(detailMedia, /Loading connects to \$\{publisher\}'s official embed\./);
   assert.match(detailMedia, /View original on \{publisher\}/);
-  assert.match(mediaRegistry, /https:\/\/www\.instagram\.com\/reel\/DacYWWktqjL\/embed\//);
+  assert.match(mediaRegistry, /https:\/\/www\.instagram\.com\/reel\/DacYWWktqjL\//);
+  assert.match(mediaRegistry, /embedUrl: instagramEmbed\(saveSgnpInstagramSource\)/);
   assert.match(mediaRegistry, /previewOnly: true/);
   assert.match(mediaRegistry, /"save-sgnp-human-chain-thane": \{/);
   assert.match(
@@ -440,19 +381,16 @@ test("detail embeds require activation and Instagram remains outside Production"
 test("excluded media candidates remain disabled with truthful filled fallbacks", () => {
   for (const slug of [
     "noida-factory-workers-protest",
-    "dasiya-villagers-ethanol-plant",
     "bhaniyawala-rishikesh-tree-felling-protest",
+    "bidadi-farmers-land-acquisition",
   ]) {
     assert.match(dataset, new RegExp(`slug: "${slug}"`));
     assert.doesNotMatch(
       mediaRegistry,
-      new RegExp(`"${slug}": \\{[\\s\\S]*?(?:publisher_video|instagram_embed)`),
+      new RegExp(`"${slug}": \\{[\\s\\S]*?(?:publisher_video|social_embed)`),
     );
   }
-  assert.match(
-    mediaRegistry,
-    /publisherVideo[\s\S]*?\? \{[\s\S]*?\.\.\.publisherVideo,[\s\S]*?fallbackRecord:[\s\S]*?: createLicensedVisual/,
-  );
+  assert.match(mediaRegistry, /publisherVideo \?\? createNoApprovedMediaVisual\(event\)/);
 });
 
 test("publication-aware server gate exposes published records and protects future candidates", () => {
@@ -616,7 +554,7 @@ test("archive rows follow the ON RECORD structure and link to readable detail ro
   assert.match(archiveRow, /View full record →/);
   assert.match(
     styles,
-    /\.event-archive-row[\s\S]*?grid-template-columns: minmax\(0, 68fr\) minmax\(15rem, 32fr\)/,
+    /\.event-archive-row[\s\S]*?grid-template-columns: minmax\(0, 58fr\) minmax\(20rem, 42fr\)/,
   );
   assert.match(styles, /\.event-row-summary[\s\S]*?-webkit-line-clamp: 2/);
   assert.match(archiveRow, /Start date/);
@@ -629,9 +567,12 @@ test("archive rows follow the ON RECORD structure and link to readable detail ro
   assert.match(styles, /\.event-row-disclosure--without-end-date[\s\S]*?repeat\(3/);
   assert.match(
     styles,
-    /\.event-row-visual \.event-document-preview,[\s\S]*?aspect-ratio: 16 \/ 9;[\s\S]*?min-height: 0/,
+    /\.event-no-media,[\s\S]*?\.event-source-media-cover \{[\s\S]*?aspect-ratio: 16 \/ 9/,
   );
-  assert.match(styles, /\.event-detail-embed \{[\s\S]*?aspect-ratio: 4 \/ 3/);
+  assert.match(
+    styles,
+    /\.event-detail-embed,[\s\S]*?\.event-media-activation,[\s\S]*?\.event-media-unavailable \{[\s\S]*?aspect-ratio: 16 \/ 9/,
+  );
   assert.match(styles, /@media \(max-width: 700px\)[\s\S]*?\.event-row-visual[\s\S]*?grid-row: 1/);
 });
 
@@ -664,15 +605,15 @@ test("archive controls use the compact title and spacing without changing grid, 
   assert.match(styles, /\.events-result-count \{[\s\S]*?margin-block: 0\.3rem 0\.2rem/);
   assert.match(
     styles,
-    /\.event-archive-row \{[\s\S]*?grid-template-columns: minmax\(0, 68fr\) minmax\(15rem, 32fr\);[\s\S]*?padding-block: clamp\(0\.9rem, 1\.7vw, 1\.35rem\)/,
+    /\.event-archive-row \{[\s\S]*?grid-template-columns: minmax\(0, 58fr\) minmax\(20rem, 42fr\);[\s\S]*?padding-block: clamp\(0\.9rem, 1\.7vw, 1\.35rem\)/,
   );
   assert.match(styles, /\.featured-carousel \.featured-slide \{[\s\S]*?height: 30rem/);
   assert.match(
     styles,
     /@media \(max-width: 700px\)[\s\S]*?\.events-archive \{[\s\S]*?padding-top: 0\.5rem[\s\S]*?\.event-filters input,[\s\S]*?min-height: 2\.75rem/,
   );
-  assert.equal((mediaRegistry.match(/kind: "publisher_video"/g) ?? []).length, 5);
-  assert.match(mediaRegistry, /createLicensedVisual\(event, selection!\)/);
+  assert.equal((mediaRegistry.match(/kind: "publisher_video"/g) ?? []).length, 1);
+  assert.match(mediaRegistry, /createNoApprovedMediaVisual\(event\)/);
 });
 
 test("detail pages show full public-safe records and disabled launch actions", () => {

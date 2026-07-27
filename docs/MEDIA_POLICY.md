@@ -1,110 +1,118 @@
 # Event media policy
 
-India Observed uses visuals to help readers understand a record without overstating what an image
-proves. Visual classifications do not affect an event's verification status. Every displayed asset
-must have recorded provenance, rights, relevance, privacy and safety review.
+India Observed displays media only when it depicts the recorded event and belongs to that event's
+approved source set. Visual classifications do not affect an event's verification status.
+Auto-publication remains disabled, and rights approval cannot override a failed verification,
+privacy, safety or human-editorial gate.
 
-## Publication hierarchy
+## Primary classifications
 
-Use the first option that passes all applicable gates:
+Only two primary visual classifications are permitted:
 
-1. **Verified event media** — media whose provenance and same-event match are confirmed.
-2. **Context photograph — does not depict this event** — a relevant, lawfully reusable photograph
-   of the place, institution, infrastructure or subject. It must not be presented as event evidence.
-3. **Documentary context — does not depict this event** — a lawfully reusable official document,
-   map or geographic visual that materially helps a reader locate or understand the record.
+1. **Verified event media** — an exact-event photograph, video or official social post whose source,
+   event match, display route, privacy and safety review have been approved.
+2. **No approved event image available** — a text-record fallback used when no lawful exact-event
+   candidate passes every gate.
 
-Abstract procedural artwork, AI-generated imagery, generic stock protest photographs, unrelated
-crowd photographs and unlicensed news photographs are not acceptable primary event visuals. No
-image is added solely because a card needs visual variety.
+Context photography, documentary maps, editorial illustrations, generic protest imagery, file
+photographs, representative images, stock images, AI-generated images and media from another event
+are not permitted. No image is added solely because a card needs visual variety.
 
-## Rights and provenance
+## Source and same-event gate
+
+Every candidate must come from an approved source attached to the event. An external search may
+locate the publisher's official version of media directly corresponding to an approved source, but
+may not supply substitute imagery.
+
+Reviewers verify the same action, location or clearly identified event site, compatible date or
+phase, participants or organising group, demand and issue. File, archive, representative,
+illustrative and symbolic images fail unless independent evidence proves they depict the exact
+event.
+
+## Attribution and rights verification
 
 A source article is not automatically a media licence. A search-engine image result is never
 sufficient provenance. An `og:image` URL is not itself permission.
 
-Before publication, the registry must record:
+Media may be displayed only by:
 
-- creator or publisher;
-- original file or publisher page;
-- original media URL where applicable;
-- licence or documented permission;
-- exact attribution;
-- whether the displayed file is a resized or cropped derivative;
-- evidence classification and same-event decision;
-- privacy, safety and relevance review;
-- review date.
+- an official source-hosted embed;
+- an openly licensed exact-event image with documented creator, source and licence; or
+- an exact-event asset covered by recorded written permission.
 
-Open-licensed files may be stored locally only after their source page and licence are verified.
-Local derivatives retain the original file name, creator, repository, licence name and licence URL
-in the registry and audit. Publisher video thumbnails and players remain at the publisher source.
+India Observed does not download, re-upload, proxy, crop, materially edit or extract unofficial
+streams from permission-pending publisher media. No static image is locally hosted unless its
+exact-event match and reuse basis are recorded.
 
-## Attribution and licence verification
+## Publisher and social embeds
 
-Review the source page itself, not a search result or mirror. Confirm that the named creator,
-licence version and source URL belong to the same file. If a share-alike licence applies, publish
-the derivative under the same licence. Attribution must remain visible on the event detail page and
-in `EVENT_MEDIA_AUDIT.md`.
+Official publisher video and social embeds remain click-to-load, without autoplay. No iframe,
+third-party tracker or player request is made before activation. The current reviewed set contains
+one NDTV publisher-video embed and three approved-source social embeds. The Save SGNP Instagram
+post remains Preview-only because ordinary participants and possible minors may be identifiable.
 
-## Verification, privacy and safety
+## Privacy and safety
 
-Same-event media requires provenance confirmation, event matching, integrity review, privacy
-review, safety review and human editorial approval. Rights approval cannot override a failed
-verification, privacy or safety gate. Auto-publication remains disabled.
+Publisher use does not itself establish that republication is proportionate. Reviewers assess:
 
-Context and documentary visuals must have a clear record-specific relevance statement. They must
-avoid identifiable participants, minors, precise tactical locations, number plates and other
-unnecessary personal or operational information.
+- identifiable ordinary participants and minors;
+- survivors of violence, medical distress, arrest or detention;
+- caste, religious, ethnic or political identification;
+- graphic injury or death;
+- precise vulnerable or live tactical locations; and
+- retaliation, dignity and operational risk.
 
-## Publisher embeds
+Prefer wide public-event scenes over close portraits. If the risk is disproportionate, publish the
+text fallback and retain the internal rejection reason.
 
-Official publisher-hosted video and social embeds are click-to-load. No third-party request or
-iframe is made on initial page render. India Observed does not download, re-upload, proxy, crop or
-extract unofficial streams from publisher media. The five reviewed NDTV videos remain official
-source embeds. The reviewed Save SGNP Instagram post remains Preview-only.
+## Text fallback
+
+When no media passes every gate, the interface states `No approved event image available` and
+shows the event title, broad location, date or status, reviewed-source count and a `View event
+sources` link. It contains no photograph, map, illustration or image from another event and is not
+described as event media.
 
 ## Broken media and takedowns
 
-If an image or publisher thumbnail fails, show a restrained text-record fallback containing the
-record title, broad location and original-source link. Never generate or substitute a documentary-
-looking image. The fallback is not evidence.
+If publisher-hosted media fails, show `Event media unavailable`, preserve the original-source link
+and do not repeatedly retry or substitute a contextual image. A failed embed is not counted as
+successful visual coverage.
 
-Takedown requests are recorded and reviewed by an editor. When justified, remove or withhold the
-display without erasing the decision trail, update the public disclosure where necessary, and
-confirm that cached or copied assets do not remain under India Observed's control.
+Takedown requests receive human editorial review. When justified, India Observed withholds the
+display, preserves the decision trail, updates the public disclosure and removes controlled copies
+where any exist.
 
 ## Replacement workflow
 
-A visual may be replaced only after the new candidate completes provenance, event-match (where
-claimed), integrity, privacy, safety, rights and human-editorial review. Update the media registry,
-the 50-record audit and the visible attribution together. The event's factual record is not edited
-merely to change its visual.
+A replacement must complete source-membership, provenance, same-event, integrity, privacy, safety,
+rights and human-editorial review. Update the registry, the 50-record audit and visible credit
+together. Changing media does not change event facts, sources or evidence classifications.
 
 ## Media review template
 
 ```text
 Event slug:
+All approved sources checked:
 Candidate media:
+Approved source containing candidate:
 Media type:
-Evidence class:
-Creator:
-Publisher/repository:
+Primary classification:
 Original source:
-Licence or permission:
-Licence URL:
-Attribution:
 Same-event verification:
-Date verification:
+Date or phase verification:
 Integrity review:
+Rights basis:
+Permission or licence:
+Attribution:
 Privacy review:
 Safety review:
 Identifiable people:
-Minor present:
+Minors:
 Sensitive location:
-Manipulation/cropping:
-Description relevance:
+Display method:
 Editorial decision:
+Rejection or withholding reason:
 Reviewer:
 Review date:
-Takedown contact/process:
+Takedown process:
 ```

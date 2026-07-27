@@ -1,5 +1,5 @@
+import Link from "next/link";
 import type { EventVisual as EventVisualData } from "../../../lib/events/types";
-import { ExternalMediaImage } from "./ExternalMediaImage";
 import { MediaClassificationLabel } from "./MediaClassificationLabel";
 
 type EventVisualVariant =
@@ -18,51 +18,44 @@ export function EventVisual({
 }) {
   const variantClassName = `event-visual--${variant}`;
 
-  if (visual.kind === "document_preview") {
+  if (visual.kind === "publisher_video") {
     return (
-      <figure className={`event-visual-shell ${variantClassName}`}>
-        <a className="event-document-preview" href={visual.sourceUrl} rel="noreferrer">
-          <span className="event-visual-kicker">Document preview</span>
-          <strong>{visual.title}</strong>
-          <span>{visual.publisher}</span>
-          <small>{visual.alt}</small>
-        </a>
+      <figure className={`event-source-media-cover ${variantClassName}`}>
+        <div className="event-source-media-cover__body">
+          {showClassification ? (
+            <MediaClassificationLabel evidenceClass={visual.evidenceClass} compact />
+          ) : null}
+          <span>Publisher-hosted video</span>
+          <strong>{visual.publisher}</strong>
+          <p>{visual.alt}</p>
+          {eventHref ? <Link href={eventHref}>View event media →</Link> : null}
+        </div>
         {showClassification ? (
           <figcaption>
-            <MediaClassificationLabel evidenceClass={visual.evidenceClass} compact />
+            <span>{visual.credit}</span>
+            {visual.duration ? ` · ${visual.duration}` : ""}
           </figcaption>
         ) : null}
       </figure>
     );
   }
 
-  const imageUrl = visual.kind === "publisher_video" ? visual.thumbnailUrl : visual.imageUrl;
-  const media = (
-    <ExternalMediaImage
-      imageUrl={imageUrl}
-      mediaHref={eventHref ?? visual.sourceUrl}
-      visual={visual}
-    >
-      {visual.kind === "publisher_video" ? (
-        <span className="event-video-indicator" aria-hidden="true">
-          Play video
-        </span>
-      ) : null}
-    </ExternalMediaImage>
-  );
+  const sourceHref = eventHref ? `${eventHref}#event-sources` : visual.sourceHref;
 
   return (
-    <figure
-      className={`event-publisher-visual event-publisher-visual--${visual.kind} ${variantClassName}`}
-    >
-      {media}
-      {showClassification ? (
-        <figcaption>
+    <figure className={`event-no-media ${variantClassName}`}>
+      <div className="event-no-media__body">
+        {showClassification ? (
           <MediaClassificationLabel evidenceClass={visual.evidenceClass} compact />
-          <span>{visual.credit}</span>
-          {visual.kind === "publisher_video" && visual.duration ? ` · ${visual.duration}` : ""}
-        </figcaption>
-      ) : null}
+        ) : null}
+        <strong>{visual.title}</strong>
+        <p>{visual.location}</p>
+        <p className="event-no-media__meta">
+          {visual.dateOrStatus} · {visual.sourceCount} reviewed{" "}
+          {visual.sourceCount === 1 ? "source" : "sources"}
+        </p>
+        <Link href={sourceHref}>View event sources</Link>
+      </div>
     </figure>
   );
 }

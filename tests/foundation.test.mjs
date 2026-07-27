@@ -139,9 +139,12 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.match(page, /reviewedEventsPreview\.map\(\(\{ internalId, slug, visual \}\)/);
   assert.match(page, /getHomepageVisual\(record\.id\)/);
   assert.doesNotMatch(page, /https?:\/\//);
-  assert.match(featuredBlock, /publicationStatus: "published_source_embed"/);
-  assert.match(featuredBlock, /rightsStatus: "permission_requested"/);
-  assert.match(featuredBlock, /sourceProvenance: "NDTV · Original publisher page/);
+  assert.doesNotMatch(featuredBlock, /publicationStatus: "published_source_embed"/);
+  assert.doesNotMatch(featuredBlock, /rightsStatus: "permission_requested"/);
+  assert.match(
+    featuredBlock,
+    /sourceProvenance: "Reviewed record sources; no approved event visual"/,
+  );
   assert.equal((featuredBlock.match(/publicationRightsStatus:/g) ?? []).length, 3);
   assert.match(carousel, /sourceProvenance: string;/);
   assert.match(carousel, /publicationRightsStatus: string;/);
@@ -176,7 +179,7 @@ test("homepage keeps the public archive safety boundaries visible", () => {
       /occurrence verified|provenance|event match|corroborated|human editorial review|verification gate|status code/i,
     );
   }
-  assert.equal((featuredBlock.match(/format: "Text record"/g) ?? []).length, 2);
+  assert.equal((featuredBlock.match(/format: "Text record"/g) ?? []).length, 3);
   assert.match(styles, /\.media-status-grid\s*\{[\s\S]*?grid-template-columns: 1fr 1fr;/);
   assert.match(
     styles,
@@ -207,7 +210,7 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.match(carousel, /visual: EventVisualData;[\s\S]*eventHref: string;/);
   assert.match(
     carousel,
-    /loadedMediaId === activeRecord\.id[\s\S]*?<iframe[\s\S]*?: \([\s\S]*?publisher-video-gate[\s\S]*?<ExternalMediaImage[\s\S]*?imageUrl=\{activeVisual\.thumbnailUrl\}/,
+    /loadedMediaId === activeRecord\.id[\s\S]*?<iframe[\s\S]*?: \([\s\S]*?publisher-video-gate event-media-activation[\s\S]*?No third-party[\s\S]*?before activation/,
   );
   assert.match(carousel, /onClick=\{\(\) => setLoadedMediaId\(activeRecord\.id\)\}/);
   assert.doesNotMatch(carousel, /autoPlay/);
@@ -325,8 +328,8 @@ test("all nine homepage records use the central reviewed visual treatments", () 
   assert.equal(new Set([...featuredIds, ...latestIds, ...onRecordIds]).size, 9);
   for (const id of [...featuredIds, ...latestIds, ...onRecordIds]) datasetBlock(id);
   assert.doesNotMatch(dataset, /visual: (?:recordCover|publisherVideo)/);
-  assert.equal((mediaRegistry.match(/kind: "publisher_video"/g) ?? []).length, 5);
-  assert.match(mediaRegistry, /createLicensedVisual\(event, selection!\)/);
+  assert.equal((mediaRegistry.match(/kind: "publisher_video"/g) ?? []).length, 1);
+  assert.match(mediaRegistry, /createNoApprovedMediaVisual\(event\)/);
 
   assert.match(
     page,
@@ -341,7 +344,6 @@ test("all nine homepage records use the central reviewed visual treatments", () 
   assert.match(carousel, /variant="homepage-latest"/);
   assert.match(page, /variant="homepage-on-record"/);
   assert.match(carousel, /activeVisual\.kind === "publisher_video"/);
-  assert.match(carousel, /imageUrl=\{activeVisual\.thumbnailUrl\}/);
   assert.match(carousel, /src=\{activeVisual\.embedUrl\}/);
   assert.match(carousel, /useState<string \| null>\(null\)/);
   assert.match(
@@ -361,10 +363,7 @@ test("all nine homepage records use the central reviewed visual treatments", () 
   assert.doesNotMatch(eventVisual, /EventEditorialIllustration|<svg/);
   assert.match(eventVisual, /MediaClassificationLabel/);
   assert.match(eventVisual, /visual\.credit/);
-  assert.match(
-    read("src/app/events/components/ExternalMediaImage.tsx"),
-    /aria-label=\{`View event record: \$\{visual\.alt\}`\}/,
-  );
+  assert.doesNotMatch(eventVisual, /ExternalMediaImage|<img/);
 
   assert.match(styles, /\.featured-carousel \.featured-slide[\s\S]*?height: 30rem;/);
   assert.match(
@@ -381,11 +380,11 @@ test("all nine homepage records use the central reviewed visual treatments", () 
   );
   assert.match(
     styles,
-    /\.latest-entry-preview[\s\S]*?grid-template-columns: minmax\(0, 70fr\) minmax\(0, 30fr\);/,
+    /\.latest-entry-preview[\s\S]*?grid-template-columns: minmax\(0, 1fr\);[\s\S]*?grid-template-rows: auto auto;/,
   );
   assert.match(
     styles,
-    /\.on-record-context[\s\S]*?border-bottom: 1px solid var\(--ink\);[\s\S]*?border-top: 1px solid var\(--ink\);[\s\S]*?grid-template-columns: minmax\(0, 70fr\) minmax\(0, 30fr\);/,
+    /\.on-record-context[\s\S]*?border-bottom: 1px solid var\(--ink\);[\s\S]*?border-top: 1px solid var\(--ink\);[\s\S]*?grid-template-columns: minmax\(0, 58fr\) minmax\(0, 42fr\);/,
   );
   assert.match(
     styles,
@@ -739,13 +738,14 @@ test("homepage preserves the approved black header and white page surfaces", () 
     ".coverage-section",
     ".participation-section",
     ".mobile-menu nav",
-    ".document-preview",
-    ".media-fallback",
   ]) {
     assert.ok(activeSurfaceStyles.includes(selector));
   }
 
-  assert.match(activeSurfaceStyles, /\.media-fallback,[\s\S]*?background: #ffffff;/);
+  assert.match(
+    styles,
+    /\.event-no-media,[\s\S]*?\.event-source-media-cover \{[\s\S]*?background: #ffffff;/,
+  );
   const whiteSurfaceRule = activeSurfaceStyles.match(
     /body,[\s\S]*?main \.lead-panel\s*\{\s*background: #ffffff;\s*\}/,
   )?.[0];
