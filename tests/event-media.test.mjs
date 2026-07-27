@@ -179,6 +179,10 @@ test("media is substantial on detail, archive and homepage layouts", () => {
   );
   assert.match(
     styles,
+    /@media \(max-width: 700px\)[\s\S]*?\.event-record-visual \{[\s\S]*?margin-inline: -1rem;[\s\S]*?width: calc\(100% \+ 2rem\)/,
+  );
+  assert.match(
+    styles,
     /@media \(max-width: 700px\)[\s\S]*?\.event-visual--homepage-on-record \{[\s\S]*?grid-row: 1/,
   );
 });

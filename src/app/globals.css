@@ -1740,6 +1740,11 @@ main {
     width: 100%;
   }
 
+  .event-record-visual {
+    margin-inline: -1rem;
+    width: calc(100% + 2rem);
+  }
+
   .event-row-disclosure,
   .event-record-facts {
     grid-template-columns: 1fr;
