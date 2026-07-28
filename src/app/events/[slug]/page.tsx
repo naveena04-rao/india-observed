@@ -28,7 +28,30 @@ export async function generateMetadata({ params }: EventPageProps): Promise<Meta
   const { slug } = await params;
   const event = await findEvent(slug);
   return event
-    ? { title: `${event.title} | India Observed`, description: event.summary }
+    ? {
+        title: event.title,
+        description: event.summary,
+        alternates: { canonical: `/events/${event.slug}` },
+        openGraph: {
+          type: "article",
+          title: event.title,
+          description: event.summary,
+          url: `/events/${event.slug}`,
+          images:
+            event.approvedMedia?.mediaType === "uploaded_event_image"
+              ? [event.approvedMedia.publicUrl]
+              : ["/opengraph-image"],
+        },
+        twitter: {
+          card: "summary_large_image",
+          title: event.title,
+          description: event.summary,
+          images:
+            event.approvedMedia?.mediaType === "uploaded_event_image"
+              ? [event.approvedMedia.publicUrl]
+              : ["/opengraph-image"],
+        },
+      }
     : { title: "Event record unavailable | India Observed" };
 }
 
@@ -38,8 +61,6 @@ export default async function EventRecordPage({ params }: EventPageProps) {
   if (!event) notFound();
   const candidatePreviewEnabled = isCandidatePreviewEnabled();
   const showCandidateNotice = candidatePreviewEnabled && event.publicationStatus === "candidate";
-  const detailMedia =
-    candidatePreviewEnabled || !event.detailMedia?.previewOnly ? event.detailMedia : undefined;
   const following = getEventFollowingAvailability();
   const followingEnabled = following.enabled && event.publicationStatus === "published";
   const supabase = followingEnabled ? await createSessionSupabaseClient() : null;
@@ -79,7 +100,7 @@ export default async function EventRecordPage({ params }: EventPageProps) {
           </header>
 
           <div className="event-record-visual">
-            <EventDetailMedia visual={event.visual} detailMedia={detailMedia} />
+            <EventDetailMedia approvedMedia={event.approvedMedia} visual={event.visual} />
           </div>
 
           <dl className="event-record-facts">

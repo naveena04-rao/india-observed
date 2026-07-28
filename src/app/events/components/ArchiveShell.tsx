@@ -35,11 +35,11 @@ export async function ArchiveShell({ authReturnTo, children }: ArchiveShellProps
 
           <nav className="desktop-nav" aria-label="Primary navigation">
             <Link href="/">Home</Link>
-            <Link href="/#about">About</Link>
+            <Link href="/about">About</Link>
             <Link href="/events" aria-current="page">
               Events
             </Link>
-            <Link href="/#methodology">Methodology</Link>
+            <Link href="/methodology">Methodology</Link>
             {following.enabled ? (
               <HeaderAuthControl signedIn={signedIn} returnTo={authReturnTo} />
             ) : null}
@@ -52,11 +52,11 @@ export async function ArchiveShell({ authReturnTo, children }: ArchiveShellProps
             <summary>Menu</summary>
             <nav aria-label="Mobile navigation">
               <Link href="/">Home</Link>
-              <Link href="/#about">About</Link>
+              <Link href="/about">About</Link>
               <Link href="/events" aria-current="page">
                 Events
               </Link>
-              <Link href="/#methodology">Methodology</Link>
+              <Link href="/methodology">Methodology</Link>
               {following.enabled ? (
                 <HeaderAuthControl signedIn={signedIn} returnTo={authReturnTo} />
               ) : null}
@@ -90,9 +90,16 @@ export async function ArchiveShell({ authReturnTo, children }: ArchiveShellProps
                 <Link href="/events" aria-current="page">
                   Events
                 </Link>
-                <Link href="/#methodology">Methodology</Link>
+                <Link href="/methodology">Methodology</Link>
                 <Link href="/#coverage">Coverage</Link>
+                <Link href="/editorial-policy">Editorial policy</Link>
+                <Link href="/sources-verification">Sources & verification</Link>
+                <Link href="/corrections">Corrections</Link>
+                <Link href="/media-policy">Media policy</Link>
                 <Link href="/privacy">Privacy</Link>
+                <Link href="/terms">Terms</Link>
+                <Link href="/contact">Contact</Link>
+                <Link href="/copyright">Copyright & takedown</Link>
                 <Link href="/#lead">Submit a lead</Link>
               </nav>
             </div>

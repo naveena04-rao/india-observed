@@ -47,9 +47,33 @@ exact-event match and reuse basis are recorded.
 ## Publisher and social embeds
 
 Official publisher video and social embeds remain click-to-load, without autoplay. No iframe,
-third-party tracker or player request is made before activation. The current reviewed set contains
-one NDTV publisher-video embed and three approved-source social embeds. The Save SGNP Instagram
-post remains Preview-only because ordinary participants and possible minors may be identifiable.
+third-party tracker or player request is made before activation. Previously reviewed NDTV,
+Instagram and Facebook candidates enter the media library as drafts, not approvals. A media
+administrator must revalidate event matching, source membership, integrity, privacy and safety
+before public display. The Save SGNP Instagram candidate begins with privacy approval withheld
+because ordinary participants and possible minors may be identifiable.
+
+## Administrator media library
+
+The protected `/admin/media` route uses existing passwordless authentication plus a private UUID
+allow-list in `media_admins`. Email address or email domain is never the authorization boundary.
+Administrators select one of the 50 controlled published records and one of that event's 165
+approved source URLs; free-text event slugs and cross-event sources are rejected.
+
+Uploaded JPEG, PNG or WebP originals are decoded in the browser, resized to a maximum 2,000-pixel
+edge and re-encoded as high-quality WebP. The browser records the original filename and SHA-256 in
+private review metadata. The approval action independently downloads the staged derivative,
+verifies the 10 MB limit and WebP signature, and rejects EXIF, GPS or XMP markers before writing
+the immutable public derivative.
+
+Staging objects are private and follow
+`<event-slug>/<media-id>/upload.webp`. Approved derivatives follow
+`<event-slug>/<media-id>/primary.webp`. The client cannot choose an arbitrary public path.
+
+Accepted rights bases are `owned_original`, `explicit_permission`, `official_embed`,
+`official_reuse_terms`, `cc0`, `public_domain`, `cc_by` and `cc_by_sa`. Uploaded files may not use
+`official_embed`. Credit, a source link, fair-use assertions, unknown rights and assumed permission
+cannot approve an upload.
 
 ## Privacy and safety
 
@@ -85,8 +109,10 @@ where any exist.
 ## Replacement workflow
 
 A replacement must complete source-membership, provenance, same-event, integrity, privacy, safety,
-rights and human-editorial review. Update the registry, the 50-record audit and visible credit
-together. Changing media does not change event facts, sources or evidence classifications.
+rights and human-editorial review. The new public object is written before the previous approved
+item is withdrawn. The previous metadata and public path are retained in private review history
+until the new approval succeeds, after which the obsolete controlled object is removed. Changing
+media does not change event facts, sources or evidence classifications.
 
 ## Media review template
 

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArchiveShell } from "@/app/events/components/ArchiveShell";
+import { getPublicContactEmail } from "@/lib/site";
 
 export const metadata = {
   title: "Privacy | India Observed",
@@ -7,6 +8,7 @@ export const metadata = {
 };
 
 export default function PrivacyPage() {
+  const contactEmail = getPublicContactEmail();
   return (
     <ArchiveShell authReturnTo="/privacy">
       <article className="privacy-page page-shell">
@@ -68,6 +70,20 @@ export default function PrivacyPage() {
             Production following remains disabled until that channel and its handling process are
             approved and published.
           </p>
+        </section>
+
+        <section>
+          <h2>Privacy contact</h2>
+          {contactEmail ? (
+            <p>
+              Email: <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
+            </p>
+          ) : (
+            <p>
+              The public privacy contact is not yet configured. Production launch remains blocked
+              when contact configuration is required.
+            </p>
+          )}
         </section>
 
         <p className="privacy-back-link">

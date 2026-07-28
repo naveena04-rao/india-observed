@@ -18,10 +18,8 @@ import type { ReviewedEventPreview } from "../lib/events/types";
  * 2 corrections
  * 12 safety incidents
  *
- * Media review decisions live in event-media-registry.ts. Only exact-event media from an event's
- * approved source set may be displayed. One approved NDTV video and three approved-source social
- * embeds remain click-to-load; every other record uses an honest text fallback. No contextual or
- * substitute imagery is reproduced.
+ * The static snapshot contains only truthful media fallbacks. Approved exact-event media is loaded
+ * server-side from the protected media library and never changes these reviewed event facts.
  */
 
 const reviewedEventRecords = [
@@ -1061,7 +1059,6 @@ const reviewedEventRecords = [
   | "safety"
   | "safetyIncidents"
   | "visual"
-  | "detailMedia"
 >[];
 
 const primaryTopicByInternalId = {

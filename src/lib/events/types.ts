@@ -29,6 +29,7 @@ export type MediaEvidenceClass = "verified_event_media" | "no_approved_event_med
 
 export type MediaRightsBasis =
   | "explicit_permission"
+  | "official_reuse_terms"
   | "official_embed"
   | "cc_by"
   | "cc_by_sa"
@@ -36,12 +37,36 @@ export type MediaRightsBasis =
   | "public_domain"
   | "owned_original";
 
-export type MediaRightsMetadata = {
-  evidenceClass: MediaEvidenceClass;
+export type ApprovedMediaType =
+  "uploaded_event_image" | "publisher_video_embed" | "official_social_embed";
+
+type ApprovedEventMediaBase = {
+  eventSlug: string;
+  mediaType: ApprovedMediaType;
+  sourceUrl: string;
+  publisher: string | null;
+  creator: string | null;
+  rightsHolder: string | null;
+  creditLine: string;
   rightsBasis: MediaRightsBasis;
-  credit: string;
-  rightsReviewedAt: string;
+  licenceName: string | null;
+  licenceUrl: string | null;
+  altText: string;
+  focalPosition: string;
+  approvedAt: string;
 };
+
+export type ApprovedUploadedEventImage = ApprovedEventMediaBase & {
+  mediaType: "uploaded_event_image";
+  publicUrl: string;
+};
+
+export type ApprovedEventEmbed = ApprovedEventMediaBase & {
+  mediaType: "publisher_video_embed" | "official_social_embed";
+  embedUrl: string;
+};
+
+export type ApprovedEventMedia = ApprovedUploadedEventImage | ApprovedEventEmbed;
 
 export type NoApprovedEventMediaVisual = {
   kind: "no_approved_event_media";
@@ -53,41 +78,7 @@ export type NoApprovedEventMediaVisual = {
   sourceHref: string;
 };
 
-export type PublisherVideoVisual = MediaRightsMetadata & {
-  kind: "publisher_video";
-  evidenceClass: "verified_event_media";
-  rightsBasis: "official_embed" | "explicit_permission";
-  publisher: string;
-  sourceUrl: string;
-  approvedSourceUrl: string;
-  embedUrl: string;
-  alt: string;
-  duration?: string;
-  sameEventVerified: true;
-  privacyReview: string;
-  safetyReview: string;
-  identifiablePeopleAssessment: string;
-};
-
-export type EventVisual = PublisherVideoVisual | NoApprovedEventMediaVisual;
-
-export type EventDetailMedia = MediaRightsMetadata & {
-  kind: "social_embed";
-  evidenceClass: "verified_event_media";
-  rightsBasis: "official_embed";
-  sameEventVerified: true;
-  platform: "Instagram" | "Facebook";
-  publisher: string;
-  sourceUrl: string;
-  approvedSourceUrl: string;
-  embedUrl: string;
-  alt: string;
-  credit: string;
-  privacyReview: string;
-  safetyReview: string;
-  identifiablePeopleAssessment: string;
-  previewOnly?: true;
-};
+export type EventVisual = NoApprovedEventMediaVisual;
 
 export type EventSourceRole =
   | "Lead"
@@ -160,7 +151,7 @@ export type ReviewedEventPreview = {
   safetyIncidents: readonly EventSafetyIncident[];
   latestOfficialResponse?: string;
   visual: EventVisual;
-  detailMedia?: EventDetailMedia;
+  approvedMedia?: ApprovedEventMedia;
 };
 
 export type ArchiveSort = "latest" | "reviewed" | "oldest";

@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { ReviewedEventPreview } from "./types";
+import { loadApprovedEventMedia } from "@/lib/media/public";
 
 export function isCandidatePreviewEnabled() {
   const showCandidateRecords =
@@ -20,5 +21,11 @@ export function selectVisibleEvents(
 
 export async function getReviewedEvents(): Promise<readonly ReviewedEventPreview[]> {
   const { reviewedEventsPreview } = await import("../../data/reviewed-events-preview");
-  return selectVisibleEvents(reviewedEventsPreview, isCandidatePreviewEnabled());
+  const visibleEvents = selectVisibleEvents(reviewedEventsPreview, isCandidatePreviewEnabled());
+  const approvedMedia = await loadApprovedEventMedia(visibleEvents);
+
+  return visibleEvents.map((event) => ({
+    ...event,
+    ...(approvedMedia.has(event.slug) ? { approvedMedia: approvedMedia.get(event.slug) } : {}),
+  }));
 }

@@ -39,6 +39,7 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   const page = read("src/app/page.tsx");
   const carousel = read("src/app/components/FeaturedRecordCarousel.tsx");
   const styles = read("src/app/globals.css");
+  const mediaMigration = read("supabase/migrations/20260728000100_add_event_media_library.sql");
   const featuredBlock = page.match(/const featuredRecords = \[([\s\S]*?)\] as const;/)?.[1];
   const latestBlock = page.match(/const latestRecords = \[([\s\S]*?)\] as const;/)?.[1];
   const onRecordBlock = page.match(
@@ -73,9 +74,9 @@ test("homepage keeps the public archive safety boundaries visible", () => {
 
   const expectedNavigation = [
     ["#home", "Home"],
-    ["#about", "About"],
+    ["/about", "About"],
     ["/events", "Events"],
-    ["#methodology", "Methodology"],
+    ["/methodology", "Methodology"],
     ["#lead", "Submit a lead"],
   ];
   const navigationLinks = (markup) =>
@@ -136,8 +137,9 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   ]) {
     assert.doesNotMatch(carousel, new RegExp(removedCopy, "i"));
   }
-  assert.match(page, /reviewedEventsPreview\.map\(\(\{ internalId, slug, visual \}\)/);
-  assert.match(page, /getHomepageVisual\(record\.id\)/);
+  assert.match(page, /const reviewedEvents = await getReviewedEvents\(\)/);
+  assert.match(page, /events\.map\(\(\{ approvedMedia, internalId, slug, visual \}\)/);
+  assert.match(page, /getHomepageVisual\(homepageVisualsByInternalId, record\.id\)/);
   assert.doesNotMatch(page, /https?:\/\//);
   assert.doesNotMatch(featuredBlock, /publicationStatus: "published_source_embed"/);
   assert.doesNotMatch(featuredBlock, /rightsStatus: "permission_requested"/);
@@ -215,7 +217,8 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.match(carousel, /onClick=\{\(\) => setLoadedMediaId\(activeRecord\.id\)\}/);
   assert.doesNotMatch(carousel, /autoPlay/);
   assert.doesNotMatch(featuredBlock, /thumbnailUrl|embedUrl|sourceUrl|thumbnailAlt|sourceName/);
-  assert.match(carousel, /Auto-publication remains disabled/);
+  assert.match(mediaMigration, /status public\.media_review_status not null default 'draft'/);
+  assert.match(mediaMigration, /create function public\.approve_event_media\s*\(/);
   for (const controlledStatus of [
     "candidate",
     "provenance_confirmed",
@@ -312,6 +315,7 @@ test("all nine homepage records use the central reviewed visual treatments", () 
   const carousel = read("src/app/components/FeaturedRecordCarousel.tsx");
   const eventVisual = read("src/app/events/components/EventVisual.tsx");
   const mediaRegistry = read("src/data/event-media-registry.ts");
+  const publicMediaLoader = read("src/lib/media/public.ts");
   const dataset = read("src/data/reviewed-events-preview.ts");
   const styles = read("src/app/globals.css");
 
@@ -328,23 +332,20 @@ test("all nine homepage records use the central reviewed visual treatments", () 
   assert.equal(new Set([...featuredIds, ...latestIds, ...onRecordIds]).size, 9);
   for (const id of [...featuredIds, ...latestIds, ...onRecordIds]) datasetBlock(id);
   assert.doesNotMatch(dataset, /visual: (?:recordCover|publisherVideo)/);
-  assert.equal((mediaRegistry.match(/kind: "publisher_video"/g) ?? []).length, 1);
+  assert.equal((mediaRegistry.match(/kind: "publisher_video"/g) ?? []).length, 0);
   assert.match(mediaRegistry, /createNoApprovedMediaVisual\(event\)/);
 
-  assert.match(
-    page,
-    /import \{ reviewedEventsPreview \} from "\.\.\/data\/reviewed-events-preview"/,
-  );
-  assert.match(page, /const homepageVisualsByInternalId = new Map</);
-  assert.equal((page.match(/getHomepageVisual\(record\.id\)/g) ?? []).length, 3);
+  assert.match(page, /import \{ getReviewedEvents \} from "\.\.\/lib\/events\/getReviewedEvents"/);
+  assert.match(page, /createHomepageVisualMap\(reviewedEvents\)/);
+  assert.equal((page.match(/getHomepageVisual\(/g) ?? []).length >= 4, true);
   assert.doesNotMatch(page, /thumbnailUrl:|embedUrl:|sourceUrl:|https?:\/\//);
-  assert.doesNotMatch(carousel, /https?:\/\//);
+  assert.match(publicMediaLoader, /get_public_event_media/);
 
   assert.match(carousel, /variant="homepage-featured"/);
   assert.match(carousel, /variant="homepage-latest"/);
   assert.match(page, /variant="homepage-on-record"/);
-  assert.match(carousel, /activeVisual\.kind === "publisher_video"/);
-  assert.match(carousel, /src=\{activeVisual\.embedUrl\}/);
+  assert.match(carousel, /approvedMedia\.mediaType !== "uploaded_event_image"/);
+  assert.match(carousel, /src=\{approvedMedia\.embedUrl\}/);
   assert.match(carousel, /useState<string \| null>\(null\)/);
   assert.match(
     carousel,
@@ -362,8 +363,8 @@ test("all nine homepage records use the central reviewed visual treatments", () 
 
   assert.doesNotMatch(eventVisual, /EventEditorialIllustration|<svg/);
   assert.match(eventVisual, /MediaClassificationLabel/);
-  assert.match(eventVisual, /visual\.credit/);
-  assert.doesNotMatch(eventVisual, /ExternalMediaImage|<img/);
+  assert.match(eventVisual, /approvedMedia\.creditLine/);
+  assert.doesNotMatch(eventVisual, /ExternalMediaImage/);
 
   assert.match(styles, /\.featured-carousel \.featured-slide[\s\S]*?height: 30rem;/);
   assert.match(
@@ -599,7 +600,8 @@ test("homepage uses the refined section hierarchy and editorial footer", () => {
   assert.doesNotMatch(page, /Recent corrections and clarifications|Changes remain visible/);
   assert.doesNotMatch(page, /No recent record changes have been published/);
   assert.doesNotMatch(styles, /\.correction-stream|\.correction-empty-state/);
-  assert.doesNotMatch(footer, /Corrections|href="#corrections"/i);
+  assert.match(footer, /href="\/corrections">Corrections/);
+  assert.doesNotMatch(footer, /href="#corrections"/i);
 
   assert.match(page, /<h2 id="on-record-title">ON RECORD<\/h2>/);
   assert.match(
@@ -679,9 +681,16 @@ test("homepage uses the refined section hierarchy and editorial footer", () => {
     [
       ["#home", "Home"],
       ["/events", "Events"],
-      ["#methodology", "Methodology"],
+      ["/methodology", "Methodology"],
       ["#coverage", "Coverage"],
+      ["/editorial-policy", "Editorial policy"],
+      ["/sources-verification", "Sources & verification"],
+      ["/corrections", "Corrections"],
+      ["/media-policy", "Media policy"],
       ["/privacy", "Privacy"],
+      ["/terms", "Terms"],
+      ["/contact", "Contact"],
+      ["/copyright", "Copyright & takedown"],
       ["#lead", "Submit a lead"],
     ],
   );

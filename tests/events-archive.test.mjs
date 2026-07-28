@@ -6,6 +6,8 @@ const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf
 
 const dataset = read("src/data/reviewed-events-preview.ts").replaceAll("\r\n", "\n");
 const mediaRegistry = read("src/data/event-media-registry.ts").replaceAll("\r\n", "\n");
+const publicMediaLoader = read("src/lib/media/public.ts");
+const mediaMigration = read("supabase/migrations/20260728000100_add_event_media_library.sql");
 const evidenceDataset = read("src/data/reviewed-event-evidence-preview.ts");
 const archivePage = read("src/app/events/page.tsx");
 const detailPage = read("src/app/events/[slug]/page.tsx");
@@ -103,7 +105,7 @@ test("reviewed Events routes and the canonical public-safe snapshot exist", () =
   }
 });
 
-test("Preview snapshot has 50 unique readable slugs and one filled visual per event", () => {
+test("snapshot has 50 unique readable slugs and one truthful fallback per event", () => {
   const ids = [...dataset.matchAll(/internalId: "([^"]+)"/g)].map((match) => match[1]);
   const slugs = [...dataset.matchAll(/slug: "([^"]+)"/g)].map((match) => match[1]);
   const states = [...dataset.matchAll(/stateOrUnionTerritory: "([^"]+)"/g)].map(
@@ -117,7 +119,7 @@ test("Preview snapshot has 50 unique readable slugs and one filled visual per ev
   assert.equal(new Set(ids).size, 50);
   assert.equal(slugs.length, 50);
   assert.equal(new Set(slugs).size, 50);
-  assert.equal((mediaRegistry.match(/kind: "publisher_video"/g) ?? []).length, 1);
+  assert.equal((mediaRegistry.match(/kind: "publisher_video"/g) ?? []).length, 0);
   assert.match(mediaRegistry, /createEventMediaRegistry[\s\S]*?events\.map\(\(event\)/);
   assert.match(
     dataset,
@@ -140,7 +142,7 @@ test("Preview snapshot has 50 unique readable slugs and one filled visual per ev
     slugs.every((slug) => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)),
     true,
   );
-  assert.match(dataset, /No contextual or[\s\S]*?substitute imagery is reproduced/);
+  assert.match(dataset, /static snapshot contains only truthful media fallbacks/i);
   assert.match(classificationLabel, /Verified event media/);
   assert.match(classificationLabel, /No approved event image available/);
   assert.doesNotMatch(dataset, /stock|unsplash|pexels|pixabay/i);
@@ -194,17 +196,10 @@ test("all public-safe records are complete and resolve media through the registr
   }
 
   assert.match(mediaRegistry, /kind: "no_approved_event_media"/);
-  assert.equal(
-    (mediaRegistry.match(/https:\/\/www\.ndtv\.com\/videos\/embed-player/g) ?? []).length,
-    1,
-  );
-  assert.match(
-    mediaRegistry,
-    /saveSgnpInstagramSource = "https:\/\/www\.instagram\.com\/reel\/DacYWWktqjL\/"/,
-  );
-  assert.match(mediaRegistry, /embedUrl: instagramEmbed\(saveSgnpInstagramSource\)/);
-  assert.equal((mediaRegistry.match(/embedUrl:\s*"https:\/\//g) ?? []).length, 1);
-  assert.equal((mediaRegistry.match(/kind: "social_embed"/g) ?? []).length, 3);
+  assert.doesNotMatch(mediaRegistry, /https?:\/\//);
+  assert.match(publicMediaLoader, /get_public_event_media/);
+  assert.match(publicMediaLoader, /event-media-public/);
+  assert.doesNotMatch(publicMediaLoader, /event-media-staging/);
   assert.doesNotMatch(mediaRegistry, /(?:imageUrl|thumbnailUrl):\s*"(?:\/|\.\.\/|\.\/)/);
 });
 
@@ -331,9 +326,14 @@ test("all events have qualified safety summaries and only attributed incident de
 
 test("only controlled visual types are allowed and the archive never loads video iframes", () => {
   const types = read("src/lib/events/types.ts");
-  for (const kind of ["publisher_video", "no_approved_event_media", "social_embed"]) {
-    assert.match(types, new RegExp(`kind: "${kind}"`));
+  for (const mediaType of [
+    "uploaded_event_image",
+    "publisher_video_embed",
+    "official_social_embed",
+  ]) {
+    assert.match(types, new RegExp(`"${mediaType}"`));
   }
+  assert.match(types, /kind: "no_approved_event_media"/);
   assert.doesNotMatch(
     types,
     /kind: "(?:record_cover|publisher_image|open_licensed_image|document_preview)"/,
@@ -346,34 +346,24 @@ test("only controlled visual types are allowed and the archive never loads video
   assert.match(archiveRow, /eventHref=\{href\}/);
 });
 
-test("only the approved Jamia NDTV video remains in the source-only registry", () => {
-  assert.equal((mediaRegistry.match(/kind: "publisher_video"/g) ?? []).length, 1);
-  assert.match(mediaRegistry, /"jamia-yuva-kumbh-campus-protest": \{/);
-  assert.match(
-    mediaRegistry,
-    /approvedSourceUrl:[\s\S]*?jamia-students-protest-rss-yuva-kumbh-event-on-campus/,
-  );
-  assert.match(mediaRegistry, /1091649/);
-  assert.match(mediaRegistry, /credit: "Video: NDTV"/);
-  assert.doesNotMatch(mediaRegistry, /1120270|1109578|1098156|1102287|thumbnailUrl/);
+test("previous exact-event embeds are migrated as private drafts, not public static media", () => {
+  assert.equal((mediaRegistry.match(/kind: "publisher_video"/g) ?? []).length, 0);
+  assert.match(mediaMigration, /'jamia-yuva-kumbh-campus-protest'/);
+  assert.match(mediaMigration, /jamia-students-protest-rss-yuva-kumbh-event-on-campus/);
+  assert.match(mediaMigration, /1091649/);
+  assert.match(mediaMigration, /four previously reviewed embeds are migrated as drafts/i);
+  assert.equal((mediaMigration.match(/'draft'/g) ?? []).length >= 4, true);
 });
 
-test("detail embeds require activation and Instagram remains outside Production", () => {
+test("database-approved detail embeds require explicit activation", () => {
   assert.match(detailMedia, /useState<"idle" \| "loaded" \| "failed">\("idle"\)/);
   assert.match(detailMedia, /onClick=\{\(\) => setEmbedState\("loaded"\)\}/);
   assert.match(detailMedia, /embedState === "loaded" \? \(/);
   assert.match(detailMedia, /<iframe/);
-  assert.match(detailMedia, /Loading connects to \$\{publisher\}'s official embed\./);
-  assert.match(detailMedia, /View original on \{publisher\}/);
-  assert.match(mediaRegistry, /https:\/\/www\.instagram\.com\/reel\/DacYWWktqjL\//);
-  assert.match(mediaRegistry, /embedUrl: instagramEmbed\(saveSgnpInstagramSource\)/);
-  assert.match(mediaRegistry, /previewOnly: true/);
-  assert.match(mediaRegistry, /"save-sgnp-human-chain-thane": \{/);
-  assert.match(
-    detailPage,
-    /candidatePreviewEnabled \|\| !event\.detailMedia\?\.previewOnly \? event\.detailMedia : undefined/,
-  );
-  assert.match(detailPage, /detailMedia=\{detailMedia\}/);
+  assert.match(detailMedia, /publisher&apos;s official embed/);
+  assert.match(detailMedia, /View original/);
+  assert.match(detailPage, /approvedMedia=\{event\.approvedMedia\}/);
+  assert.match(publicMediaLoader, /row\.media_type !== "uploaded_event_image"/);
   assert.doesNotMatch(archivePage, /iframe/i);
   assert.doesNotMatch(archiveRow, /iframe/i);
 });
@@ -390,7 +380,8 @@ test("excluded media candidates remain disabled with truthful filled fallbacks",
       new RegExp(`"${slug}": \\{[\\s\\S]*?(?:publisher_video|social_embed)`),
     );
   }
-  assert.match(mediaRegistry, /publisherVideo \?\? createNoApprovedMediaVisual\(event\)/);
+  assert.match(mediaRegistry, /visual: createNoApprovedMediaVisual\(event\)/);
+  assert.match(publicMediaLoader, /event\.sources\.some/);
 });
 
 test("publication-aware server gate exposes published records and protects future candidates", () => {
@@ -612,7 +603,7 @@ test("archive controls use the compact title and spacing without changing grid, 
     styles,
     /@media \(max-width: 700px\)[\s\S]*?\.events-archive \{[\s\S]*?padding-top: 0\.5rem[\s\S]*?\.event-filters input,[\s\S]*?min-height: 2\.75rem/,
   );
-  assert.equal((mediaRegistry.match(/kind: "publisher_video"/g) ?? []).length, 1);
+  assert.equal((mediaRegistry.match(/kind: "publisher_video"/g) ?? []).length, 0);
   assert.match(mediaRegistry, /createNoApprovedMediaVisual\(event\)/);
 });
 

@@ -243,8 +243,8 @@ test("all nine homepage definitions resolve to published slugs and render compac
   assert.equal(new Set(homepageIds).size, 9);
   for (const id of homepageIds)
     assert.ok(reviewedSlugs.has(id), `missing published slug for ${id}`);
-  assert.match(homepage, /\{ eventHref: `\/events\/\$\{slug\}`, slug, visual \}/);
-  assert.match(homepage, /getHomepageVisual\(record\.id\)[\s\S]*?slug=\{slug\}/);
+  assert.match(homepage, /\{ approvedMedia, eventHref: `\/events\/\$\{slug\}`, slug, visual \}/);
+  assert.match(homepage, /getHomepageVisual\([\s\S]*?record\.id[\s\S]*?slug=\{slug\}/);
   assert.equal((carousel.match(/<EventFollowControl/g) ?? []).length, 2);
   assert.equal((homepage.match(/<EventFollowControl/g) ?? []).length, 1);
   assert.match(carousel, /key=\{activeRecord\.slug\}[\s\S]*?slug=\{activeRecord\.slug\}/);
@@ -271,7 +271,7 @@ test("homepage and archive navigation share gated Login or Logout controls", () 
   assert.equal((homepage.match(/returnTo="\/"/g) ?? []).length, 2);
   assert.match(
     homepage,
-    /href="#methodology">Methodology<\/a>[\s\S]*?<HeaderAuthControl[\s\S]*?className="nav-action"/,
+    /href="\/methodology">Methodology<\/Link>[\s\S]*?<HeaderAuthControl[\s\S]*?className="nav-action"/,
   );
   assert.equal((homepage.match(/following\.enabled \? \(/g) ?? []).length, 2);
 
@@ -286,7 +286,7 @@ test("homepage and archive navigation share gated Login or Logout controls", () 
   assert.equal((archiveShell.match(/returnTo=\{authReturnTo\}/g) ?? []).length, 2);
   assert.match(
     archiveShell,
-    /href="\/#methodology">Methodology<\/Link>[\s\S]*?<HeaderAuthControl[\s\S]*?className="nav-action"/,
+    /href="\/methodology">Methodology<\/Link>[\s\S]*?<HeaderAuthControl[\s\S]*?className="nav-action"/,
   );
   assert.doesNotMatch(
     homepage + archiveShell,

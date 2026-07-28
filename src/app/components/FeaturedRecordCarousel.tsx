@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { EventVisual as EventVisualData } from "../../lib/events/types";
+import type { ApprovedEventMedia, EventVisual as EventVisualData } from "../../lib/events/types";
 import { EventFollowControl } from "../events/components/EventFollowControl";
 import { MediaClassificationLabel } from "../events/components/MediaClassificationLabel";
 import { EventVisual } from "../events/components/EventVisual";
@@ -74,6 +74,7 @@ export type FeaturedRecord = {
   reviewed: string;
   media: FeaturedRecordMedia;
   visual: EventVisualData;
+  approvedMedia?: ApprovedEventMedia;
   eventHref: string;
   slug: string;
 };
@@ -88,6 +89,7 @@ type LatestRecord = Pick<
   | "topic"
   | "reviewed"
   | "visual"
+  | "approvedMedia"
   | "eventHref"
   | "slug"
 >;
@@ -140,15 +142,9 @@ export function FeaturedRecordCarousel({
   const activeRecord = records[activeIndex]!;
   const activeMedia = activeRecord.media;
   const activeVisual = activeRecord.visual;
-  // Rights approval controls reuse, but can never override authenticity, event-match,
-  // integrity, privacy, safety or human-editorial gates. Auto-publication remains disabled.
+  const approvedMedia = activeRecord.approvedMedia;
   const mayDisplaySourceEmbed =
-    activeVisual.kind === "publisher_video" &&
-    "publicationStatus" in activeMedia &&
-    activeMedia.publicationStatus === "published_source_embed" &&
-    activeMedia.reviewStatus !== "candidate" &&
-    activeMedia.reviewStatus !== "rejected" &&
-    Object.values(activeMedia.gates).every(Boolean);
+    approvedMedia !== undefined && approvedMedia.mediaType !== "uploaded_event_image";
 
   const mediaStatusGrid = (
     <dl className="media-status-grid">
@@ -247,8 +243,8 @@ export function FeaturedRecordCarousel({
                     {loadedMediaId === activeRecord.id ? (
                       <div className="publisher-video">
                         <iframe
-                          src={activeVisual.embedUrl}
-                          title={`${activeVisual.publisher} video for ${activeRecord.title}`}
+                          src={approvedMedia.embedUrl}
+                          title={`${approvedMedia.publisher ?? "Publisher"} media for ${activeRecord.title}`}
                           allow="fullscreen; picture-in-picture"
                           allowFullScreen
                           referrerPolicy="strict-origin-when-cross-origin"
@@ -260,7 +256,7 @@ export function FeaturedRecordCarousel({
                         <strong>{activeRecord.title}</strong>
                         <p>{activeRecord.place}</p>
                         <button type="button" onClick={() => setLoadedMediaId(activeRecord.id)}>
-                          Load video from {activeVisual.publisher}
+                          Load media from {approvedMedia.publisher ?? "the approved publisher"}
                         </button>
                         <small>
                           Loading connects to the publisher&apos;s official embed. No third-party
@@ -271,8 +267,8 @@ export function FeaturedRecordCarousel({
                   </div>
                   {loadedMediaId === activeRecord.id ? (
                     <figcaption className="featured-record-caption">
-                      {activeMedia.caption} Credit: {activeVisual.publisher}.{" "}
-                      <a href={activeVisual.sourceUrl} target="_blank" rel="noreferrer">
+                      {approvedMedia.creditLine}.{" "}
+                      <a href={approvedMedia.sourceUrl} target="_blank" rel="noreferrer">
                         View the original publisher page
                       </a>
                       .
@@ -282,6 +278,7 @@ export function FeaturedRecordCarousel({
               ) : (
                 <div className="featured-record-video-frame">
                   <EventVisual
+                    approvedMedia={approvedMedia}
                     visual={activeVisual}
                     eventHref={activeRecord.eventHref}
                     variant="homepage-featured"
@@ -317,6 +314,7 @@ export function FeaturedRecordCarousel({
                   </div>
                 </div>
                 <EventVisual
+                  approvedMedia={record.approvedMedia}
                   visual={record.visual}
                   eventHref={record.eventHref}
                   variant="homepage-latest"

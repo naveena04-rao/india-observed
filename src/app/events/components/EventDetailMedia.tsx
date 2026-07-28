@@ -1,55 +1,79 @@
 "use client";
 
 import { useState } from "react";
-import type {
-  EventDetailMedia as DetailMedia,
-  EventVisual as EventVisualData,
-} from "../../../lib/events/types";
+import type { ApprovedEventMedia, EventVisual as EventVisualData } from "../../../lib/events/types";
 import { EventVisual } from "./EventVisual";
 import { MediaClassificationLabel } from "./MediaClassificationLabel";
 
 type EventDetailMediaProps = {
   visual: EventVisualData;
-  detailMedia?: DetailMedia;
+  approvedMedia?: ApprovedEventMedia;
 };
 
-export function EventDetailMedia({ visual, detailMedia }: EventDetailMediaProps) {
+export function EventDetailMedia({ visual, approvedMedia }: EventDetailMediaProps) {
   const [embedState, setEmbedState] = useState<"idle" | "loaded" | "failed">("idle");
-  const publisherVideo = visual.kind === "publisher_video" ? visual : undefined;
-  const embed = publisherVideo ?? detailMedia;
 
-  if (!embed) {
+  if (!approvedMedia) {
     return (
       <div className="event-detail-media">
-        <MediaClassificationLabel evidenceClass={visual.evidenceClass} />
         <EventVisual visual={visual} showClassification={false} />
       </div>
     );
   }
 
-  const isSocial = embed.kind === "social_embed";
-  const publisher = isSocial ? embed.platform : embed.publisher;
+  if (approvedMedia.mediaType === "uploaded_event_image") {
+    const creator = approvedMedia.creator ?? approvedMedia.rightsHolder ?? "Rights holder";
+    const publisher = approvedMedia.publisher ?? "Approved source";
+
+    return (
+      <figure className="event-detail-media event-detail-approved-image">
+        <MediaClassificationLabel evidenceClass="verified_event_media" />
+        {/* Dynamic URLs are limited to the configured Supabase public-media bucket. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          alt={approvedMedia.altText}
+          src={approvedMedia.publicUrl}
+          style={{ objectPosition: approvedMedia.focalPosition }}
+        />
+        <figcaption className="event-detail-media-controls">
+          <p>
+            Photo: {creator} ·{" "}
+            <a href={approvedMedia.sourceUrl} rel="noreferrer">
+              Source: {publisher}
+            </a>
+          </p>
+          <p>Full credit: {approvedMedia.creditLine}</p>
+          <p>
+            Rights: {approvedMedia.licenceName ?? approvedMedia.rightsBasis.replaceAll("_", " ")}
+          </p>
+          <p>Reviewed {new Date(approvedMedia.approvedAt).toLocaleDateString("en-IN")}</p>
+          {approvedMedia.licenceUrl ? (
+            <a href={approvedMedia.licenceUrl} rel="noreferrer">
+              View licence →
+            </a>
+          ) : null}
+        </figcaption>
+      </figure>
+    );
+  }
+
+  const publisher = approvedMedia.publisher ?? "approved publisher";
   const actionLabel =
-    publisher === "Instagram"
-      ? "Load Instagram post"
-      : publisher === "Facebook"
-        ? "Load Facebook video"
-        : `Load video from ${publisher}`;
-  const connectionNotice = `Loading connects to ${publisher}'s official embed.`;
-  const eventTitle =
-    visual.kind === "no_approved_event_media" ? visual.title : "Verified publisher video";
-  const eventLocation =
-    visual.kind === "no_approved_event_media" ? visual.location : embed.publisher;
+    approvedMedia.mediaType === "official_social_embed"
+      ? `Load official post from ${publisher}`
+      : `Load video from ${publisher}`;
+  const eventTitle = visual.title;
+  const eventLocation = visual.location;
 
   return (
     <div className="event-detail-media">
-      <MediaClassificationLabel evidenceClass={embed.evidenceClass} />
+      <MediaClassificationLabel evidenceClass="verified_event_media" />
 
       {embedState === "loaded" ? (
-        <div className={`event-detail-embed event-detail-embed--${embed.kind}`}>
+        <div className={`event-detail-embed event-detail-embed--${approvedMedia.mediaType}`}>
           <iframe
-            src={embed.embedUrl}
-            title={embed.alt}
+            src={approvedMedia.embedUrl}
+            title={approvedMedia.altText}
             loading="lazy"
             allow="encrypted-media; picture-in-picture; fullscreen"
             allowFullScreen
@@ -62,7 +86,7 @@ export function EventDetailMedia({ visual, detailMedia }: EventDetailMediaProps)
           <strong>Event media unavailable</strong>
           <p>{eventTitle}</p>
           <p>{eventLocation}</p>
-          <a href={embed.sourceUrl} rel="noreferrer">
+          <a href={approvedMedia.sourceUrl} rel="noreferrer">
             Open original source
           </a>
         </div>
@@ -74,17 +98,19 @@ export function EventDetailMedia({ visual, detailMedia }: EventDetailMediaProps)
           <button type="button" onClick={() => setEmbedState("loaded")}>
             {actionLabel}
           </button>
-          <small>{connectionNotice} No third-party frame loads before activation.</small>
+          <small>
+            Loading connects to the publisher&apos;s official embed. No third-party frame loads
+            before activation.
+          </small>
         </div>
       )}
 
       <div className="event-detail-media-controls">
-        <p>Verified event media · {embed.credit} · Official embed · Same-event match verified</p>
-        <p>{embed.identifiablePeopleAssessment}</p>
-        <p>{embed.privacyReview}</p>
-        <p>{embed.safetyReview}</p>
-        <a href={embed.sourceUrl} rel="noreferrer">
-          View original on {publisher} →
+        <p>Video/Post: {publisher} · View original</p>
+        <p>{approvedMedia.creditLine}</p>
+        <p>Reviewed {new Date(approvedMedia.approvedAt).toLocaleDateString("en-IN")}</p>
+        <a href={approvedMedia.sourceUrl} rel="noreferrer">
+          View original →
         </a>
       </div>
     </div>

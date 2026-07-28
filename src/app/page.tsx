@@ -8,25 +8,36 @@ import { EventFollowControl } from "./events/components/EventFollowControl";
 import { EventVisual } from "./events/components/EventVisual";
 import type { EventStatus } from "./eventStatuses";
 import { eventTypes, type EventType } from "./eventTypes";
-import { reviewedEventsPreview } from "../data/reviewed-events-preview";
 import { getEventFollowingAvailability } from "../lib/events/following";
-import type { EventVisual as EventVisualData } from "../lib/events/types";
+import { getReviewedEvents } from "../lib/events/getReviewedEvents";
+import type { ApprovedEventMedia, EventVisual as EventVisualData } from "../lib/events/types";
 import { createSessionSupabaseClient } from "../lib/supabase/server";
 
-const homepageVisualsByInternalId = new Map<
-  string,
-  { eventHref: string; slug: string; visual: EventVisualData }
->(
-  reviewedEventsPreview.map(({ internalId, slug, visual }) => [
-    internalId,
-    { eventHref: `/events/${slug}`, slug, visual },
-  ]),
-);
+type HomepageVisual = {
+  approvedMedia?: ApprovedEventMedia;
+  eventHref: string;
+  slug: string;
+  visual: EventVisualData;
+};
 
-function getHomepageVisual(internalId: string) {
+function getHomepageVisual(
+  homepageVisualsByInternalId: ReadonlyMap<string, HomepageVisual>,
+  internalId: string,
+) {
   const homepageVisual = homepageVisualsByInternalId.get(internalId);
   if (!homepageVisual) throw new Error(`Missing reviewed visual for homepage record ${internalId}`);
   return homepageVisual;
+}
+
+function createHomepageVisualMap(
+  events: Awaited<ReturnType<typeof getReviewedEvents>>,
+): Map<string, HomepageVisual> {
+  return new Map(
+    events.map(({ approvedMedia, internalId, slug, visual }) => [
+      internalId,
+      { approvedMedia, eventHref: `/events/${slug}`, slug, visual },
+    ]),
+  );
 }
 
 const featuredRecords = [
@@ -92,11 +103,6 @@ const featuredRecords = [
   },
 ] as const;
 
-const featuredRecordsWithVisuals = featuredRecords.map((record) => ({
-  ...record,
-  ...getHomepageVisual(record.id),
-}));
-
 const latestRecords = [
   {
     id: "IO-CM-MP-0001",
@@ -128,10 +134,6 @@ const latestRecords = [
   },
 ] as const;
 
-const latestRecordsWithVisuals = latestRecords.map((record) => ({
-  ...record,
-  ...getHomepageVisual(record.id),
-}));
 type OnRecord = {
   id: string;
   eventType: EventType;
@@ -193,6 +195,16 @@ const processSteps = [
 ] as const;
 
 export default async function HomePage() {
+  const reviewedEvents = await getReviewedEvents();
+  const homepageVisualsByInternalId = createHomepageVisualMap(reviewedEvents);
+  const featuredRecordsWithVisuals = featuredRecords.map((record) => ({
+    ...record,
+    ...getHomepageVisual(homepageVisualsByInternalId, record.id),
+  }));
+  const latestRecordsWithVisuals = latestRecords.map((record) => ({
+    ...record,
+    ...getHomepageVisual(homepageVisualsByInternalId, record.id),
+  }));
   const following = getEventFollowingAvailability();
   const supabase = following.enabled ? await createSessionSupabaseClient() : null;
   const {
@@ -217,9 +229,9 @@ export default async function HomePage() {
 
           <nav className="desktop-nav" aria-label="Primary navigation">
             <a href="#home">Home</a>
-            <a href="#about">About</a>
+            <Link href="/about">About</Link>
             <Link href="/events">Events</Link>
-            <a href="#methodology">Methodology</a>
+            <Link href="/methodology">Methodology</Link>
             {following.enabled ? (
               <HeaderAuthControl signedIn={initiallySignedIn} returnTo="/" />
             ) : null}
@@ -232,9 +244,9 @@ export default async function HomePage() {
             <summary>Menu</summary>
             <nav aria-label="Mobile navigation">
               <a href="#home">Home</a>
-              <a href="#about">About</a>
+              <Link href="/about">About</Link>
               <Link href="/events">Events</Link>
-              <a href="#methodology">Methodology</a>
+              <Link href="/methodology">Methodology</Link>
               {following.enabled ? (
                 <HeaderAuthControl signedIn={initiallySignedIn} returnTo="/" />
               ) : null}
@@ -265,7 +277,10 @@ export default async function HomePage() {
 
           <div className="on-record-list">
             {onRecords.map((record) => {
-              const { eventHref, slug, visual } = getHomepageVisual(record.id);
+              const { approvedMedia, eventHref, slug, visual } = getHomepageVisual(
+                homepageVisualsByInternalId,
+                record.id,
+              );
 
               return (
                 <article className="on-record-context" key={record.id}>
@@ -291,7 +306,12 @@ export default async function HomePage() {
                       />
                     </div>
                   </div>
-                  <EventVisual visual={visual} eventHref={eventHref} variant="homepage-on-record" />
+                  <EventVisual
+                    approvedMedia={approvedMedia}
+                    visual={visual}
+                    eventHref={eventHref}
+                    variant="homepage-on-record"
+                  />
                 </article>
               );
             })}
@@ -392,9 +412,16 @@ export default async function HomePage() {
               <nav aria-label="Footer navigation">
                 <a href="#home">Home</a>
                 <Link href="/events">Events</Link>
-                <a href="#methodology">Methodology</a>
+                <Link href="/methodology">Methodology</Link>
                 <a href="#coverage">Coverage</a>
+                <Link href="/editorial-policy">Editorial policy</Link>
+                <Link href="/sources-verification">Sources & verification</Link>
+                <Link href="/corrections">Corrections</Link>
+                <Link href="/media-policy">Media policy</Link>
                 <Link href="/privacy">Privacy</Link>
+                <Link href="/terms">Terms</Link>
+                <Link href="/contact">Contact</Link>
+                <Link href="/copyright">Copyright & takedown</Link>
                 <a href="#lead">Submit a lead</a>
               </nav>
             </div>
