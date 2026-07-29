@@ -21,10 +21,14 @@ export function selectVisibleEvents(
 
 export async function getReviewedEvents(): Promise<readonly ReviewedEventPreview[]> {
   const { reviewedEventsPreview } = await import("../../data/reviewed-events-preview");
-  const visibleEvents = selectVisibleEvents(reviewedEventsPreview, isCandidatePreviewEnabled());
-  const approvedMedia = await loadApprovedEventMedia(visibleEvents);
+  const includeCandidates = isCandidatePreviewEnabled();
+  const publicationVisibleEvents = selectVisibleEvents(reviewedEventsPreview, includeCandidates);
+  const approvedMedia = await loadApprovedEventMedia(publicationVisibleEvents);
+  const mediaReadyEvents = includeCandidates
+    ? publicationVisibleEvents
+    : publicationVisibleEvents.filter((event) => approvedMedia.has(event.slug));
 
-  return visibleEvents.map((event) => ({
+  return mediaReadyEvents.map((event) => ({
     ...event,
     ...(approvedMedia.has(event.slug) ? { approvedMedia: approvedMedia.get(event.slug) } : {}),
   }));

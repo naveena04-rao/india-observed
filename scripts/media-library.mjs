@@ -54,3 +54,26 @@ export async function approvedMediaBySlug() {
   if (!Array.isArray(rows)) throw new Error("Public media RPC returned an invalid response.");
   return new Map(rows.map((row) => [row.event_slug, row]));
 }
+
+export async function mediaReviewCounts() {
+  const { anonKey, url } = mediaEnvironment();
+  const endpoint = new URL("/rest/v1/rpc/get_public_event_media_coverage", url);
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      apikey: anonKey,
+      Authorization: `Bearer ${anonKey}`,
+      "Content-Type": "application/json",
+    },
+    body: "{}",
+  });
+  if (!response.ok) throw new Error(`Media coverage RPC returned HTTP ${response.status}.`);
+  const rows = await response.json();
+  const row = Array.isArray(rows) ? rows[0] : rows;
+  if (!row) throw new Error("Media coverage RPC returned an invalid response.");
+  return {
+    approved: Number(row.approved_media),
+    rejected: Number(row.rejected_media),
+    draft: Number(row.draft_media),
+  };
+}

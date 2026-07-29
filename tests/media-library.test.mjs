@@ -4,6 +4,7 @@ import test from "node:test";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const migration = read("supabase/migrations/20260728000100_add_event_media_library.sql");
+const reviewedImport = read("supabase/migrations/20260728000200_import_reviewed_event_media.sql");
 const dbTest = read("supabase/tests/database/0004_event_media.test.sql");
 const validation = read("src/lib/media/validation.ts");
 const adminApi = read("src/app/api/admin/media/route.ts");
@@ -20,6 +21,9 @@ const robots = read("src/app/robots.ts");
 const nextConfig = read("next.config.ts");
 const packageJson = JSON.parse(read("package.json"));
 const launchExceptions = JSON.parse(read("data/media-launch-exceptions.json"));
+const visibilityGate = read("src/lib/events/getReviewedEvents.ts");
+const contactSheet = read("docs/MEDIA_READY_CONTACT_SHEET.md");
+const unresolvedSheet = read("docs/MEDIA_UNRESOLVED_EVENTS.md");
 
 test("migration registers exactly 50 published events and 165 approved sources", () => {
   const eventSeed = migration.match(
@@ -32,6 +36,31 @@ test("migration registers exactly 50 published events and 165 approved sources",
   assert.ok(sourceSeed);
   assert.equal((eventSeed.match(/\('[a-z0-9-]+'\)/g) ?? []).length, 50);
   assert.equal((sourceSeed.match(/\('[a-z0-9-]+', 'https:\/\//g) ?? []).length, 165);
+});
+
+test("reviewed import approves only three exact-event official embeds", () => {
+  for (const [slug, publisher] of [
+    ["jamia-yuva-kumbh-campus-protest", "NDTV"],
+    ["dasiya-villagers-ethanol-plant", "Live Times"],
+    ["indore-dewas-ring-road-compensation", "NDTV MPCG"],
+  ]) {
+    assert.match(reviewedImport + contactSheet, new RegExp(slug));
+    assert.match(contactSheet, new RegExp(publisher));
+  }
+  assert.match(reviewedImport, /1130365&mute=1&autostart=0/);
+  assert.match(reviewedImport, /status = 'rejected'[\s\S]*?000000000003/);
+  assert.match(reviewedImport, /status = 'rejected'[\s\S]*?000000000002/);
+  assert.doesNotMatch(reviewedImport, /direct image|\.m3u8|\.mp4/i);
+  assert.equal([...unresolvedSheet.matchAll(/\| `[^`]+`\s+\|/g)].length, 47);
+});
+
+test("Production visibility and sitemap are gated by approved media", () => {
+  assert.match(
+    visibilityGate,
+    /includeCandidates[\s\S]*?publicationVisibleEvents\.filter\(\(event\) => approvedMedia\.has\(event\.slug\)\)/,
+  );
+  assert.match(sitemap, /const events = await getReviewedEvents\(\)/);
+  assert.doesNotMatch(sitemap, /reviewedEventsPreview/);
 });
 
 test("media administrator authorization is a UUID allow-list with fixed search path", () => {
@@ -198,7 +227,8 @@ test("canonical URL, sitemap and robots use NEXT_PUBLIC_SITE_URL", () => {
   assert.match(siteConfig, /NEXT_PUBLIC_SITE_URL/);
   assert.match(layout, /metadataBase: getPublicSiteUrl\(\)/);
   assert.match(sitemap, /getPublicSiteUrl/);
-  assert.match(sitemap, /reviewedEventsPreview/);
+  assert.match(sitemap, /getReviewedEvents/);
+  assert.match(sitemap, /events\.map/);
   assert.match(robots, /new URL\("\/sitemap\.xml", site\)/);
   assert.doesNotMatch(siteConfig + layout + sitemap + robots, /india-observed\.vercel\.app/);
 });
@@ -238,7 +268,10 @@ test("media coverage and launch verification are explicit package commands", () 
   assert.equal(packageJson.scripts["media:coverage"], "node scripts/media-coverage.mjs");
   assert.equal(packageJson.scripts["media:verify-launch"], "node scripts/media-verify-launch.mjs");
   assert.deepEqual(launchExceptions, []);
-  assert.match(read("scripts/media-verify-launch.mjs"), /ownerApproval/);
-  assert.match(read("scripts/media-verify-launch.mjs"), /expiryDate/);
-  assert.match(read("scripts/media-verify-launch.mjs"), /Launch blocked/);
+  const verifier = read("scripts/media-verify-launch.mjs");
+  assert.match(verifier, /NEXT_PUBLIC_SITE_URL/);
+  assert.match(verifier, /PUBLIC_CONTACT_EMAIL/);
+  assert.match(verifier, /productionVisible\.length === 0/);
+  assert.match(verifier, /no fallback is public/);
+  assert.match(verifier, /Launch blocked/);
 });

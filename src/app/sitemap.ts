@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
-import { reviewedEventsPreview } from "@/data/reviewed-events-preview";
+import { getReviewedEvents } from "@/lib/events/getReviewedEvents";
 import { getPublicSiteUrl } from "@/lib/site";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const site = getPublicSiteUrl();
+  const events = await getReviewedEvents();
   const routes = [
     "",
     "/events",
@@ -24,12 +25,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: new URL(route || "/", site).toString(),
       changeFrequency: route === "/events" ? ("daily" as const) : ("monthly" as const),
     })),
-    ...reviewedEventsPreview
-      .filter((event) => event.publicationStatus === "published")
-      .map((event) => ({
-        url: new URL(`/events/${event.slug}`, site).toString(),
-        lastModified: event.lastReviewed,
-        changeFrequency: "weekly" as const,
-      })),
+    ...events.map((event) => ({
+      url: new URL(`/events/${event.slug}`, site).toString(),
+      lastModified: event.lastReviewed,
+      changeFrequency: "weekly" as const,
+    })),
   ];
 }

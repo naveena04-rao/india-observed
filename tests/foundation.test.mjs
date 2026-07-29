@@ -291,12 +291,17 @@ test("homepage keeps the public archive safety boundaries visible", () => {
 
   assert.match(page, /<h2 className="coverage-heading">COVERAGE<\/h2>/);
   assert.match(page, /<p className="coverage-subheading">Across India, event by event\.<\/p>/);
-  for (const [count, label] of [
-    ["20", "states and Union Territories represented"],
-    ["50", "reviewed event records"],
-    ["165", "source records linked to reviewed events"],
+  for (const [countExpression, label] of [
+    ["coverageStates", "states and Union Territories represented"],
+    ["reviewedEvents.length", "reviewed event records"],
+    ["coverageSources", "source records linked to reviewed events"],
   ]) {
-    assert.match(page, new RegExp(`<strong>${count}<\\/strong>[\\s\\S]*?${label}`));
+    assert.match(
+      page,
+      new RegExp(
+        `<strong>\\{${countExpression.replace(".", "\\.")}\\}<\\/strong>[\\s\\S]*?${label}`,
+      ),
+    );
   }
   assert.doesNotMatch(page, /live locations or participant directories published/i);
   assert.match(styles, /\.coverage-heading\s*\{[\s\S]*?font-size: clamp\(2rem, 3\.2vw, 2\.9rem\)/);
@@ -335,9 +340,12 @@ test("all nine homepage records use the central reviewed visual treatments", () 
   assert.equal((mediaRegistry.match(/kind: "publisher_video"/g) ?? []).length, 0);
   assert.match(mediaRegistry, /createNoApprovedMediaVisual\(event\)/);
 
-  assert.match(page, /import \{ getReviewedEvents \} from "\.\.\/lib\/events\/getReviewedEvents"/);
+  assert.match(
+    page,
+    /import \{ getReviewedEvents, isCandidatePreviewEnabled \} from "\.\.\/lib\/events\/getReviewedEvents"/,
+  );
   assert.match(page, /createHomepageVisualMap\(reviewedEvents\)/);
-  assert.equal((page.match(/getHomepageVisual\(/g) ?? []).length >= 4, true);
+  assert.equal((page.match(/getHomepageVisual\(/g) ?? []).length >= 3, true);
   assert.doesNotMatch(page, /thumbnailUrl:|embedUrl:|sourceUrl:|https?:\/\//);
   assert.match(publicMediaLoader, /get_public_event_media/);
 
@@ -635,12 +643,17 @@ test("homepage uses the refined section hierarchy and editorial footer", () => {
       maxClampValue(".coverage-grid > div:first-child .coverage-description"),
   );
 
-  for (const [count, label] of [
-    ["20", "states and Union Territories represented"],
-    ["50", "reviewed event records"],
-    ["165", "source records linked to reviewed events"],
+  for (const [countExpression, label] of [
+    ["coverageStates", "states and Union Territories represented"],
+    ["reviewedEvents.length", "reviewed event records"],
+    ["coverageSources", "source records linked to reviewed events"],
   ]) {
-    assert.match(page, new RegExp(`<strong>${count}<\\/strong>[\\s\\S]*?${label}`));
+    assert.match(
+      page,
+      new RegExp(
+        `<strong>\\{${countExpression.replace(".", "\\.")}\\}<\\/strong>[\\s\\S]*?${label}`,
+      ),
+    );
   }
 
   assert.match(

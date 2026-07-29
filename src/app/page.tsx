@@ -2,15 +2,19 @@ import Link from "next/link";
 import { EventStatusTag } from "./components/EventStatusTag";
 import { EventTypeTag } from "./components/EventTypeTag";
 import { FooterSocialPlaceholders } from "./components/FooterSocialPlaceholders";
-import { FeaturedRecordCarousel } from "./components/FeaturedRecordCarousel";
+import { FeaturedRecordCarousel, type FeaturedRecord } from "./components/FeaturedRecordCarousel";
 import { HeaderAuthControl } from "./components/HeaderAuthControl";
 import { EventFollowControl } from "./events/components/EventFollowControl";
 import { EventVisual } from "./events/components/EventVisual";
 import type { EventStatus } from "./eventStatuses";
 import { eventTypes, type EventType } from "./eventTypes";
 import { getEventFollowingAvailability } from "../lib/events/following";
-import { getReviewedEvents } from "../lib/events/getReviewedEvents";
-import type { ApprovedEventMedia, EventVisual as EventVisualData } from "../lib/events/types";
+import { getReviewedEvents, isCandidatePreviewEnabled } from "../lib/events/getReviewedEvents";
+import type {
+  ApprovedEventMedia,
+  EventVisual as EventVisualData,
+  ReviewedEventPreview,
+} from "../lib/events/types";
 import { createSessionSupabaseClient } from "../lib/supabase/server";
 
 type HomepageVisual = {
@@ -38,6 +42,66 @@ function createHomepageVisualMap(
       { approvedMedia, eventHref: `/events/${slug}`, slug, visual },
     ]),
   );
+}
+
+const homepageEventTypes: Record<ReviewedEventPreview["eventType"], EventType> = {
+  "Multi-form civic protest": "protest",
+  Demonstration: "demonstration",
+  March: "march",
+  "Civic campaign": "protest",
+  Strike: "strike",
+  "Sit-in / Dharna": "dharna",
+  "Sit-in": "sit_in",
+  Shutdown: "shutdown",
+  Rally: "rally",
+  "Hunger strike": "hunger_strike",
+};
+
+const homepageEventStatuses: Record<ReviewedEventPreview["eventStatus"], EventStatus> = {
+  Ongoing: "ongoing",
+  Concluded: "concluded",
+  "Outcome pending": "outcome_pending",
+};
+
+function formatHomepageDate(value: string) {
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${value}T00:00:00Z`));
+}
+
+function createMediaReadyFeaturedRecord(event: ReviewedEventPreview): FeaturedRecord {
+  if (!event.approvedMedia) throw new Error(`Missing approved media for ${event.slug}`);
+  return {
+    id: event.internalId,
+    eventType: homepageEventTypes[event.eventType],
+    eventStatus: homepageEventStatuses[event.eventStatus],
+    directedAt: event.directedAt,
+    title: event.title,
+    place: event.publicLocation.includes(event.stateOrUnionTerritory)
+      ? event.publicLocation
+      : `${event.publicLocation}, ${event.stateOrUnionTerritory}`,
+    topic: event.primaryTopic,
+    description: event.summary,
+    verification: event.eventVerification,
+    note: "Exact-event media approved",
+    reviewed: formatHomepageDate(event.lastReviewed),
+    media: {
+      format:
+        event.approvedMedia.mediaType === "publisher_video_embed"
+          ? "Publisher-hosted video"
+          : "Official source-linked post",
+      sourceProvenance: event.approvedMedia.publisher ?? "Approved source",
+      eventVerification: "Exact event verified",
+      publicationRightsStatus: "Official source embed",
+    },
+    visual: event.visual,
+    approvedMedia: event.approvedMedia,
+    eventHref: `/events/${event.slug}`,
+    slug: event.slug,
+  };
 }
 
 const featuredRecords = [
@@ -196,15 +260,30 @@ const processSteps = [
 
 export default async function HomePage() {
   const reviewedEvents = await getReviewedEvents();
+  const candidatePreviewEnabled = isCandidatePreviewEnabled();
+  const mediaReadyEvents = reviewedEvents.filter((event) => event.approvedMedia);
   const homepageVisualsByInternalId = createHomepageVisualMap(reviewedEvents);
-  const featuredRecordsWithVisuals = featuredRecords.map((record) => ({
-    ...record,
-    ...getHomepageVisual(homepageVisualsByInternalId, record.id),
-  }));
-  const latestRecordsWithVisuals = latestRecords.map((record) => ({
-    ...record,
-    ...getHomepageVisual(homepageVisualsByInternalId, record.id),
-  }));
+  const featuredRecordsWithVisuals = candidatePreviewEnabled
+    ? featuredRecords.map((record) => ({
+        ...record,
+        ...getHomepageVisual(homepageVisualsByInternalId, record.id),
+      }))
+    : mediaReadyEvents.slice(0, 1).map(createMediaReadyFeaturedRecord);
+  const featuredSlugs = new Set(featuredRecordsWithVisuals.map((record) => record.slug));
+  const latestRecordsWithVisuals = candidatePreviewEnabled
+    ? latestRecords.map((record) => ({
+        ...record,
+        ...getHomepageVisual(homepageVisualsByInternalId, record.id),
+      }))
+    : mediaReadyEvents
+        .filter((event) => !featuredSlugs.has(event.slug))
+        .slice(0, 3)
+        .map(createMediaReadyFeaturedRecord);
+  const coverageStates = new Set(reviewedEvents.map((event) => event.stateOrUnionTerritory)).size;
+  const coverageSources = reviewedEvents.reduce(
+    (total, event) => total + event.approvedSourceCount,
+    0,
+  );
   const following = getEventFollowingAvailability();
   const supabase = following.enabled ? await createSessionSupabaseClient() : null;
   const {
@@ -276,11 +355,10 @@ export default async function HomePage() {
           <h2 id="on-record-title">ON RECORD</h2>
 
           <div className="on-record-list">
-            {onRecords.map((record) => {
-              const { approvedMedia, eventHref, slug, visual } = getHomepageVisual(
-                homepageVisualsByInternalId,
-                record.id,
-              );
+            {onRecords.flatMap((record) => {
+              const homepageVisual = homepageVisualsByInternalId.get(record.id);
+              if (!homepageVisual) return [];
+              const { approvedMedia, eventHref, slug, visual } = homepageVisual;
 
               return (
                 <article className="on-record-context" key={record.id}>
@@ -290,7 +368,6 @@ export default async function HomePage() {
                         <EventTypeTag eventType={record.eventType} />
                         <EventStatusTag eventStatus={record.eventStatus} />
                       </div>
-                      <span>{record.id}</span>
                       <span>{record.topic}</span>
                       <span>{record.place}</span>
                     </div>
@@ -361,21 +438,22 @@ export default async function HomePage() {
             <h2 className="coverage-heading">COVERAGE</h2>
             <p className="coverage-subheading">Across India, event by event.</p>
             <p className="coverage-description">
-              The reviewed repository currently contains event records from 20 states and Union
-              Territories, supported by source-linked documentation.
+              The public media-ready repository currently contains event records from{" "}
+              {coverageStates} states and Union Territories, supported by source-linked
+              documentation.
             </p>
           </div>
           <div className="coverage-ledger" aria-label="Coverage notes">
             <div>
-              <strong>20</strong>
+              <strong>{coverageStates}</strong>
               <span>states and Union Territories represented</span>
             </div>
             <div>
-              <strong>50</strong>
+              <strong>{reviewedEvents.length}</strong>
               <span>reviewed event records</span>
             </div>
             <div>
-              <strong>165</strong>
+              <strong>{coverageSources}</strong>
               <span>source records linked to reviewed events</span>
             </div>
           </div>

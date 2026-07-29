@@ -641,12 +641,17 @@ test("detail pages show full public-safe records and disabled launch actions", (
 
 test("homepage navigation and coverage totals are synchronized with the canonical workbook", () => {
   assert.equal((homepage.match(/<Link href="\/events">Events<\/Link>/g) ?? []).length, 3);
-  for (const [count, label] of [
-    ["20", "states and Union Territories represented"],
-    ["50", "reviewed event records"],
-    ["165", "source records linked to reviewed events"],
+  for (const [countExpression, label] of [
+    ["coverageStates", "states and Union Territories represented"],
+    ["reviewedEvents.length", "reviewed event records"],
+    ["coverageSources", "source records linked to reviewed events"],
   ]) {
-    assert.match(homepage, new RegExp(`<strong>${count}<\\/strong>[\\s\\S]*?${label}`));
+    assert.match(
+      homepage,
+      new RegExp(
+        `<strong>\\{${countExpression.replace(".", "\\.")}\\}<\\/strong>[\\s\\S]*?${label}`,
+      ),
+    );
   }
   assert.equal((shell.match(/href="\/events"/g) ?? []).length, 3);
   assert.doesNotMatch(homepage, /Open questions|Documentation still needed|Documentation gap/);

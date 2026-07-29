@@ -45,13 +45,13 @@ select is(
 );
 select is(
   (select count(*)::integer from public.event_media where status = 'draft'),
-  4,
-  'four previously reviewed embeds are migrated as drafts'
+  0,
+  'reviewed import leaves no incomplete draft media'
 );
 select is(
   (select count(*)::integer from public.event_media where status = 'approved'),
-  0,
-  'no media is automatically approved'
+  3,
+  'reviewed import approves exactly three exact-event official embeds'
 );
 select is(
   (
@@ -147,8 +147,8 @@ select is(
 );
 select is(
   (select count(*)::integer from public.get_public_event_media(null)),
-  0,
-  'draft media is never publicly returned'
+  3,
+  'only the three reviewed approved media rows are publicly returned'
 );
 
 select throws_ok(
@@ -353,9 +353,43 @@ select throws_ok(
 
 select set_config('request.jwt.claim.sub', '33333333-3333-4333-8333-333333333333', true);
 select is(public.is_media_admin(), true, 'UUID allow-listed user is a media admin');
+insert into public.event_media (
+  id,
+  event_slug,
+  media_type,
+  status,
+  source_url,
+  media_url,
+  publisher,
+  credit_line,
+  rights_basis,
+  alt_text,
+  same_event_verified,
+  privacy_reviewed,
+  safety_reviewed,
+  integrity_reviewed,
+  approved_source_verified
+)
+values (
+  '14000000-0000-4000-8000-000000000020',
+  'bidadi-farmers-land-acquisition',
+  'publisher_video_embed',
+  'draft',
+  'https://m.economictimes.com/news/politics-and-nation/karnataka-cm-responds-to-farmer-protests-review-of-controversial-ai-township-project-announced/articleshow/132412974.cms',
+  'https://www.ndtv.com/videos/embed-player/?id=990',
+  'NDTV',
+  'Video/Post: NDTV · View original',
+  'official_embed',
+  'Test exact-event video awaiting a privacy gate',
+  true,
+  false,
+  true,
+  true,
+  true
+);
 select throws_ok(
   $$select * from public.approve_event_media(
-    '14000000-0000-4000-8000-000000000002',
+    '14000000-0000-4000-8000-000000000020',
     null
   )$$,
   '23514',

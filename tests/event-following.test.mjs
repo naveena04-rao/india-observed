@@ -249,7 +249,7 @@ test("all nine homepage definitions resolve to published slugs and render compac
   assert.equal((homepage.match(/<EventFollowControl/g) ?? []).length, 1);
   assert.match(carousel, /key=\{activeRecord\.slug\}[\s\S]*?slug=\{activeRecord\.slug\}/);
   assert.match(carousel, /latestRecords\.map[\s\S]*?slug=\{record\.slug\}/);
-  assert.match(homepage, /onRecords\.map[\s\S]*?className="on-record-footer"/);
+  assert.match(homepage, /onRecords\.flatMap[\s\S]*?className="on-record-footer"/);
 });
 
 test("shared header authentication uses safe return paths and secure sign-out", () => {
