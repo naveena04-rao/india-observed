@@ -24,11 +24,11 @@
     "secrets:check": "node scripts/secret-scan.mjs"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.7.0",
+    "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.57.0",
-    "next": "16.2.10",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "next": "16.2.12",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "zod": "^4.1.0"
   },
   "devDependencies": {
