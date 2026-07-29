@@ -66,7 +66,10 @@ export function EventVisual({
         </div>
         {showClassification ? (
           <figcaption>
-            <span>{approvedMedia.creditLine}</span>
+            <span>{approvedMedia.creditLine} · </span>
+            <a href={approvedMedia.sourceUrl} rel="noreferrer">
+              Original source
+            </a>
           </figcaption>
         ) : null}
       </figure>

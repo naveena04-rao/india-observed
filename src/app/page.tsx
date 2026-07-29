@@ -104,6 +104,27 @@ function createMediaReadyFeaturedRecord(event: ReviewedEventPreview): FeaturedRe
   };
 }
 
+function getApprovedHomepageMediaDisclosure(
+  approvedMedia: ApprovedEventMedia | undefined,
+  fallback: FeaturedRecord["media"],
+): FeaturedRecord["media"] {
+  if (!approvedMedia) return fallback;
+  return {
+    format:
+      approvedMedia.mediaType === "uploaded_event_image"
+        ? "Exact-event source photograph"
+        : approvedMedia.mediaType === "publisher_video_embed"
+          ? "Publisher-hosted video"
+          : "Official source-linked post",
+    sourceProvenance: approvedMedia.publisher ?? "Approved source",
+    eventVerification: "Exact event verified",
+    publicationRightsStatus:
+      approvedMedia.rightsBasis === "official_embed"
+        ? "Official source embed"
+        : "Reviewed editorial current-events display",
+  };
+}
+
 const featuredRecords = [
   {
     id: "IO-CM-KA-0002",
@@ -264,10 +285,14 @@ export default async function HomePage() {
   const mediaReadyEvents = reviewedEvents.filter((event) => event.approvedMedia);
   const homepageVisualsByInternalId = createHomepageVisualMap(reviewedEvents);
   const featuredRecordsWithVisuals = candidatePreviewEnabled
-    ? featuredRecords.map((record) => ({
-        ...record,
-        ...getHomepageVisual(homepageVisualsByInternalId, record.id),
-      }))
+    ? featuredRecords.map((record) => {
+        const homepageVisual = getHomepageVisual(homepageVisualsByInternalId, record.id);
+        return {
+          ...record,
+          ...homepageVisual,
+          media: getApprovedHomepageMediaDisclosure(homepageVisual.approvedMedia, record.media),
+        };
+      })
     : mediaReadyEvents.slice(0, 1).map(createMediaReadyFeaturedRecord);
   const featuredSlugs = new Set(featuredRecordsWithVisuals.map((record) => record.slug));
   const latestRecordsWithVisuals = candidatePreviewEnabled

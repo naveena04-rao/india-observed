@@ -3119,7 +3119,7 @@ h3 {
 .event-visual--homepage-latest {
   align-self: start;
   grid-row: 1;
-  height: auto;
+  height: clamp(10rem, 13vw, 12rem);
   min-height: 0;
   width: min(100%, 21.333rem);
 }
@@ -3555,6 +3555,7 @@ main .lead-panel {
   }
 
   .event-visual--homepage-latest {
+    height: clamp(9rem, 44vw, 11rem);
     width: min(100%, 19.555rem);
   }
 }
@@ -3663,7 +3664,7 @@ main .lead-panel {
 
 .event-record-visual,
 .event-detail-media {
-  max-width: 70rem;
+  max-width: 68.75rem;
 }
 
 .event-detail-approved-image {
@@ -3909,6 +3910,135 @@ main .lead-panel {
   gap: 0.5rem;
 }
 
+.homepage-media-review {
+  padding-block: clamp(1.5rem, 4vw, 4rem);
+}
+
+.homepage-media-review > header {
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+}
+
+.homepage-media-review > header h1 {
+  font-size: clamp(2.5rem, 6vw, 5rem);
+}
+
+.homepage-media-review nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+}
+
+.homepage-media-review > section {
+  border-bottom: 2px solid var(--ink);
+  padding-block: 1.5rem 2.5rem;
+}
+
+.homepage-media-review > section > h2 {
+  font-size: clamp(1.8rem, 3.5vw, 3rem);
+  margin-bottom: 1rem;
+}
+
+.homepage-media-review-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.homepage-media-review-card {
+  border: 1px solid var(--line);
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.8rem;
+}
+
+.homepage-media-review-card figure {
+  margin: 0;
+}
+
+.homepage-media-review-card figure > img,
+.homepage-media-review-card figure > iframe,
+.homepage-review-embed-gate {
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--ink);
+  display: block;
+  height: auto;
+  object-fit: cover;
+  width: 100%;
+}
+
+.homepage-media-review-card figure > iframe {
+  background: #151616;
+}
+
+.homepage-review-embed-gate {
+  align-content: center;
+  background: #151616;
+  color: #ffffff;
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+  padding: 1rem;
+  text-align: center;
+}
+
+.homepage-review-embed-gate button {
+  background: var(--terracotta);
+  border: 1px solid #ffffff;
+  color: #ffffff;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.8rem;
+}
+
+.homepage-media-review-card figcaption,
+.homepage-media-review-card p,
+.homepage-media-review-card dd {
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.homepage-media-review-card figcaption {
+  margin-top: 0.4rem;
+}
+
+.homepage-media-review-card h3 {
+  font-size: 1.35rem;
+  margin: 0;
+}
+
+.homepage-review-slug {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.homepage-media-review-card dl {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding-top: 0.6rem;
+}
+
+.homepage-media-review-card dl div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.homepage-media-review-card dt {
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.homepage-media-review-card dd {
+  margin: 0;
+}
+
+.homepage-media-review-card.is-missing {
+  border-color: var(--terracotta);
+}
+
 @media (max-width: 900px) {
   .admin-media-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3919,6 +4049,10 @@ main .lead-panel {
   }
 
   .admin-media-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .homepage-media-review-grid {
     grid-template-columns: 1fr;
   }
 

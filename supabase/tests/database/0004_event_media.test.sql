@@ -40,8 +40,8 @@ select is(
 );
 select is(
   (select count(*)::integer from public.media_event_sources),
-  165,
-  'media registry contains all 165 approved event sources'
+  167,
+  'media registry contains 165 factual sources and two media-only source relationships'
 );
 select is(
   (select count(*)::integer from public.event_media where status = 'draft'),
@@ -50,8 +50,8 @@ select is(
 );
 select is(
   (select count(*)::integer from public.event_media where status = 'approved'),
-  3,
-  'reviewed import approves exactly three exact-event official embeds'
+  11,
+  'reviewed imports approve three prior items and nine homepage items with one overlap'
 );
 select is(
   (
@@ -131,7 +131,8 @@ select is(
     'staging_path',
     'previous_public_storage_path',
     'created_at',
-    'updated_at'
+    'updated_at',
+    'crop_resize_disclosure'
   ]::text[],
   'permission evidence and reviewer notes remain in a separate private table'
 );
@@ -147,8 +148,8 @@ select is(
 );
 select is(
   (select count(*)::integer from public.get_public_event_media(null)),
-  3,
-  'only the three reviewed approved media rows are publicly returned'
+  11,
+  'only the eleven reviewed approved media rows are publicly returned'
 );
 
 select throws_ok(
@@ -175,7 +176,7 @@ select throws_ok(
       event_slug, media_type, source_url, creator, rights_holder, credit_line, rights_basis,
       alt_text
     ) values (
-      'bidadi-farmers-land-acquisition', 'uploaded_event_image',
+      'karapur-sarvan-luxury-township-protest', 'uploaded_event_image',
       'https://example.com/source', 'Creator', 'Rights holder',
       'Photo: Creator · Source: Example', 'owned_original',
       'Exact event image with descriptive alternative text'
@@ -191,8 +192,8 @@ select throws_ok(
       event_slug, media_type, storage_path, source_url, creator, rights_holder, credit_line,
       rights_basis, alt_text
     ) values (
-      'bidadi-farmers-land-acquisition', 'uploaded_event_image',
-      'bidadi-farmers-land-acquisition/00000000-0000-4000-8000-000000000100/upload.webp',
+      'karapur-sarvan-luxury-township-protest', 'uploaded_event_image',
+      'karapur-sarvan-luxury-township-protest/00000000-0000-4000-8000-000000000100/upload.webp',
       'https://example.com/source', 'Creator', 'Rights holder',
       'Photo: Creator · Source: Example', 'official_embed',
       'Exact event image with descriptive alternative text'
@@ -208,7 +209,7 @@ select throws_ok(
       event_slug, media_type, source_url, media_url, publisher, credit_line, rights_basis,
       alt_text
     ) values (
-      'bidadi-farmers-land-acquisition', 'publisher_video_embed',
+      'karapur-sarvan-luxury-township-protest', 'publisher_video_embed',
       'https://example.com/source', 'https://arbitrary.example/embed', 'Example',
       'Video/Post: Example · View original', 'official_embed',
       'Exact event video with descriptive alternative text'
@@ -224,8 +225,8 @@ select throws_ok(
       event_slug, media_type, storage_path, source_url, creator, rights_holder, credit_line,
       rights_basis, alt_text
     ) values (
-      'bidadi-farmers-land-acquisition', 'uploaded_event_image',
-      'bidadi-farmers-land-acquisition/00000000-0000-4000-8000-000000000101/upload.webp',
+      'karapur-sarvan-luxury-township-protest', 'uploaded_event_image',
+      'karapur-sarvan-luxury-township-protest/00000000-0000-4000-8000-000000000101/upload.webp',
       'https://example.com/source', 'Creator', 'Rights holder',
       'Photo: Creator · Source: Example', 'official_embed',
       'Exact event image with descriptive alternative text'
@@ -243,8 +244,8 @@ select throws_ok(
       privacy_reviewed, safety_reviewed, integrity_reviewed, approved_source_verified,
       reviewed_by, approved_at
     ) values (
-      'bidadi-farmers-land-acquisition', 'uploaded_event_image', 'approved',
-      'bidadi-farmers-land-acquisition/00000000-0000-4000-8000-000000000102/primary.webp',
+      'karapur-sarvan-luxury-township-protest', 'uploaded_event_image', 'approved',
+      'karapur-sarvan-luxury-township-protest/00000000-0000-4000-8000-000000000102/primary.webp',
       'https://m.economictimes.com/news/politics-and-nation/karnataka-cm-responds-to-farmer-protests-review-of-controversial-ai-township-project-announced/articleshow/132412974.cms',
       'Economic Times', 'Creator', 'Rights holder',
       'Photo: Creator · Source: Economic Times', 'explicit_permission',
@@ -263,7 +264,7 @@ select throws_ok(
       alt_text, same_event_verified, privacy_reviewed, safety_reviewed, integrity_reviewed,
       approved_source_verified, reviewed_by, approved_at
     ) values (
-      'bidadi-farmers-land-acquisition', 'publisher_video_embed', 'approved',
+      'karapur-sarvan-luxury-township-protest', 'publisher_video_embed', 'approved',
       'https://m.economictimes.com/news/politics-and-nation/karnataka-cm-responds-to-farmer-protests-review-of-controversial-ai-township-project-announced/articleshow/132412974.cms',
       'https://www.ndtv.com/videos/embed-player/?id=998',
       'Video/Post: NDTV · View original', 'official_embed',
@@ -372,7 +373,7 @@ insert into public.event_media (
 )
 values (
   '14000000-0000-4000-8000-000000000020',
-  'bidadi-farmers-land-acquisition',
+  'karapur-sarvan-luxury-township-protest',
   'publisher_video_embed',
   'draft',
   'https://m.economictimes.com/news/politics-and-nation/karnataka-cm-responds-to-farmer-protests-review-of-controversial-ai-township-project-announced/articleshow/132412974.cms',
@@ -416,7 +417,7 @@ insert into public.event_media (
 )
 values (
   '14000000-0000-4000-8000-000000000010',
-  'bidadi-farmers-land-acquisition',
+  'karapur-sarvan-luxury-township-protest',
   'publisher_video_embed',
   'draft',
   'https://example.com/not-an-approved-source',
@@ -476,10 +477,10 @@ insert into public.event_media (
 )
 values (
   '14000000-0000-4000-8000-000000000011',
-  'bidadi-farmers-land-acquisition',
+  'karapur-sarvan-luxury-township-protest',
   'publisher_video_embed',
   'draft',
-  'https://m.economictimes.com/news/politics-and-nation/karnataka-cm-responds-to-farmer-protests-review-of-controversial-ai-township-project-announced/articleshow/132412974.cms',
+  'https://www.thegoan.net/goa-news/%C3%A2%E2%82%AC%CB%9Csave-karapur%C3%A2%E2%82%AC%E2%84%A2-protest-reaches-panaji-agitators-threaten-indefinite-sitin/149594.html',
   'https://www.ndtv.com/videos/embed-player/?id=992',
   'NDTV',
   'Video/Post: NDTV · View original',
@@ -535,7 +536,7 @@ select is(
 select is(
   (
     select count(*)::integer
-    from public.get_public_event_media('bidadi-farmers-land-acquisition')
+    from public.get_public_event_media('karapur-sarvan-luxury-township-protest')
   ),
   1,
   'only approved media is publicly returned'
@@ -573,10 +574,10 @@ insert into public.event_media (
 )
 values (
   '14000000-0000-4000-8000-000000000012',
-  'bidadi-farmers-land-acquisition',
+  'karapur-sarvan-luxury-township-protest',
   'publisher_video_embed',
   'draft',
-  'https://www.newindianexpress.com/states/karnataka/2026/Jul/15/attempt-to-murder-case-filed-after-farmers-clash-with-officials-during-gbit-land-survey-in-karnataka',
+  'https://timesofindia.indiatimes.com/city/goa/karapur-sarvan-villagers-detained-while-marching-to-azad-maidan-over-hsg-project/articleshow/131861422.cms',
   'https://www.ndtv.com/videos/embed-player/?id=993',
   'NDTV',
   'Video/Post: NDTV · View original',
@@ -626,7 +627,7 @@ select is(
   (
     select count(*)::integer
     from public.event_media
-    where event_slug = 'bidadi-farmers-land-acquisition'
+    where event_slug = 'karapur-sarvan-luxury-township-protest'
       and status = 'approved'
   ),
   1,
@@ -642,7 +643,7 @@ select lives_ok(
 select is(
   (
     select count(*)::integer
-    from public.get_public_event_media('bidadi-farmers-land-acquisition')
+    from public.get_public_event_media('karapur-sarvan-luxury-township-protest')
   ),
   0,
   'withdrawn media immediately falls back by disappearing from the public RPC'
@@ -663,10 +664,10 @@ insert into public.event_media (
 )
 values (
   '14000000-0000-4000-8000-000000000013',
-  'bidadi-farmers-land-acquisition',
+  'karapur-sarvan-luxury-township-protest',
   'uploaded_event_image',
   'draft',
-  'bidadi-farmers-land-acquisition/14000000-0000-4000-8000-000000000013/upload.webp',
+  'karapur-sarvan-luxury-township-protest/14000000-0000-4000-8000-000000000013/upload.webp',
   'https://m.economictimes.com/news/politics-and-nation/karnataka-cm-responds-to-farmer-protests-review-of-controversial-ai-township-project-announced/articleshow/132412974.cms',
   'Creator',
   'Rights holder',

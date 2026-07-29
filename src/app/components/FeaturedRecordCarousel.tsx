@@ -265,15 +265,13 @@ export function FeaturedRecordCarousel({
                       </div>
                     )}
                   </div>
-                  {loadedMediaId === activeRecord.id ? (
-                    <figcaption className="featured-record-caption">
-                      {approvedMedia.creditLine}.{" "}
-                      <a href={approvedMedia.sourceUrl} target="_blank" rel="noreferrer">
-                        View the original publisher page
-                      </a>
-                      .
-                    </figcaption>
-                  ) : null}
+                  <figcaption className="featured-record-caption">
+                    {approvedMedia.creditLine}.{" "}
+                    <a href={approvedMedia.sourceUrl} target="_blank" rel="noreferrer">
+                      View the original publisher page
+                    </a>
+                    .
+                  </figcaption>
                 </>
               ) : (
                 <div className="featured-record-video-frame">

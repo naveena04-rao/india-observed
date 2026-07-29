@@ -168,7 +168,7 @@ test("staging is private and public storage accepts only reviewed WebP derivativ
 
 test("browser processing decodes, resizes, re-encodes and hashes the original", () => {
   assert.match(adminForm, /createImageBitmap\(file\)/);
-  assert.match(adminForm, /Math\.min\(1, 2000 \/ longestSide\)/);
+  assert.match(adminForm, /Math\.min\(1, 1600 \/ longestSide\)/);
   assert.match(adminForm, /canvas\.toBlob/);
   assert.match(adminForm, /"image\/webp"/);
   assert.match(adminForm, /crypto\.subtle\.digest\("SHA-256"/);
@@ -266,6 +266,10 @@ test("security policy restricts frames, images, objects, forms and embedding", (
 
 test("media coverage and launch verification are explicit package commands", () => {
   assert.equal(packageJson.scripts["media:coverage"], "node scripts/media-coverage.mjs");
+  assert.equal(
+    packageJson.scripts["media:verify-homepage"],
+    "node scripts/media-verify-homepage.mjs",
+  );
   assert.equal(packageJson.scripts["media:verify-launch"], "node scripts/media-verify-launch.mjs");
   assert.deepEqual(launchExceptions, []);
   const verifier = read("scripts/media-verify-launch.mjs");

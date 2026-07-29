@@ -86,6 +86,14 @@ export async function POST(request: Request) {
     uploaded_by: user.id,
     replaces_media_id: draft.replacesMediaId ?? null,
     replacement_reason: draft.replacementReason ?? null,
+    source_page_verified: draft.sourcePageVerified,
+    reporting_purpose_confirmed: draft.reportingPurposeConfirmed,
+    reduced_resolution_confirmed: draft.reducedResolutionConfirmed,
+    no_gallery_reuse_confirmed: draft.noGalleryReuseConfirmed,
+    no_unrelated_commercial_reuse_confirmed: draft.noUnrelatedCommercialReuseConfirmed,
+    takedown_process_confirmed: draft.takedownProcessConfirmed,
+    owner_acceptance: draft.ownerAcceptance,
+    rights_reviewed_at: draft.rightsReviewedAt ?? null,
   });
   if (mediaError) {
     const duplicate =
@@ -108,6 +116,7 @@ export async function POST(request: Request) {
     original_sha256: draft.originalSha256 ?? null,
     original_media_url: draft.originalMediaUrl ?? null,
     staging_path: stagingPath,
+    crop_resize_disclosure: draft.cropResizeDisclosure ?? null,
   });
   if (reviewError) {
     await supabase.rpc("reject_event_media", {

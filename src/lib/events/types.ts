@@ -35,7 +35,8 @@ export type MediaRightsBasis =
   | "cc_by_sa"
   | "cc0"
   | "public_domain"
-  | "owned_original";
+  | "owned_original"
+  | "editorial_fair_dealing_current_events";
 
 export type ApprovedMediaType =
   "uploaded_event_image" | "publisher_video_embed" | "official_social_embed";

@@ -33,6 +33,17 @@ type ProcessedImage = {
   originalSize: number;
   originalType: string;
   previewUrl: string;
+  cropResizeDisclosure: string;
+};
+
+type SourceCandidate = {
+  kind: string;
+  url: string;
+  caption: string | null;
+  creator: string | null;
+  publisher: string | null;
+  width: number | null;
+  height: number | null;
 };
 
 async function sha256Hex(file: File) {
@@ -49,10 +60,12 @@ async function processImage(file: File): Promise<ProcessedImage> {
   }
 
   const image = await createImageBitmap(file);
-  const longestSide = Math.max(image.width, image.height);
-  const scale = Math.min(1, 2000 / longestSide);
-  const width = Math.max(1, Math.round(image.width * scale));
-  const height = Math.max(1, Math.round(image.height * scale));
+  const originalWidth = image.width;
+  const originalHeight = image.height;
+  const longestSide = Math.max(originalWidth, originalHeight);
+  const scale = Math.min(1, 1600 / longestSide);
+  const width = Math.max(1, Math.round(originalWidth * scale));
+  const height = Math.max(1, Math.round(originalHeight * scale));
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
@@ -65,7 +78,7 @@ async function processImage(file: File): Promise<ProcessedImage> {
     canvas.toBlob(
       (result) => (result ? resolve(result) : reject(new Error("WebP conversion failed."))),
       "image/webp",
-      0.9,
+      0.84,
     ),
   );
   if (blob.size > uploadLimitBytes) throw new Error("Processed WebP exceeds 10 MB.");
@@ -77,6 +90,7 @@ async function processImage(file: File): Promise<ProcessedImage> {
     originalSize: file.size,
     originalType: file.type,
     previewUrl: URL.createObjectURL(blob),
+    cropResizeDisclosure: `Aspect ratio preserved; resized from ${originalWidth}×${originalHeight} to ${width}×${height}; re-encoded as metadata-free WebP at 84% quality.`,
   };
 }
 
@@ -88,6 +102,12 @@ export function AdminMediaForm({ eventSlug, sources, approvedOptions }: AdminMed
   const [processedImage, setProcessedImage] = useState<ProcessedImage | null>(null);
   const [status, setStatus] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [sourceUrl, setSourceUrl] = useState("");
+  const [sourceCandidates, setSourceCandidates] = useState<SourceCandidate[]>([]);
+  const [extractingCandidates, setExtractingCandidates] = useState(false);
+  const [publisher, setPublisher] = useState("");
+  const [creator, setCreator] = useState("");
+  const [originalMediaUrl, setOriginalMediaUrl] = useState("");
 
   useEffect(
     () => () => {
@@ -158,6 +178,16 @@ export function AdminMediaForm({ eventSlug, sources, approvedOptions }: AdminMed
       originalSize: processedImage?.originalSize,
       originalType: processedImage?.originalType,
       originalMediaUrl: String(formData.get("originalMediaUrl") ?? "") || undefined,
+      cropResizeDisclosure: processedImage?.cropResizeDisclosure,
+      sourcePageVerified: formData.get("sourcePageVerified") === "on",
+      reportingPurposeConfirmed: formData.get("reportingPurposeConfirmed") === "on",
+      reducedResolutionConfirmed: formData.get("reducedResolutionConfirmed") === "on",
+      noGalleryReuseConfirmed: formData.get("noGalleryReuseConfirmed") === "on",
+      noUnrelatedCommercialReuseConfirmed:
+        formData.get("noUnrelatedCommercialReuseConfirmed") === "on",
+      takedownProcessConfirmed: formData.get("takedownProcessConfirmed") === "on",
+      ownerAcceptance: formData.get("ownerAcceptance") === "on",
+      rightsReviewedAt: String(formData.get("rightsReviewedAt") ?? "") || undefined,
       replacesMediaId: String(formData.get("replacesMediaId") ?? "") || undefined,
       replacementReason: String(formData.get("replacementReason") ?? "") || undefined,
     };
@@ -190,6 +220,11 @@ export function AdminMediaForm({ eventSlug, sources, approvedOptions }: AdminMed
 
       form.reset();
       setProcessedImage(null);
+      setSourceCandidates([]);
+      setSourceUrl("");
+      setPublisher("");
+      setCreator("");
+      setOriginalMediaUrl("");
       setStatus("Draft created. A separate administrator approval is still required.");
       router.refresh();
     } catch (error) {
@@ -201,6 +236,38 @@ export function AdminMediaForm({ eventSlug, sources, approvedOptions }: AdminMed
 
   const rightsOptions =
     mediaType === "uploaded_event_image" ? redistributableRightsBases : ["official_embed"];
+
+  async function extractCandidates() {
+    if (!sourceUrl) {
+      setStatus("Select an approved source before extracting candidates.");
+      return;
+    }
+    setExtractingCandidates(true);
+    setStatus("");
+    setSourceCandidates([]);
+    try {
+      const response = await fetch("/api/admin/media/candidates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventSlug, sourceUrl }),
+      });
+      const result = (await response.json()) as {
+        error?: string;
+        candidates?: SourceCandidate[];
+      };
+      if (!response.ok) throw new Error(result.error ?? "Source metadata could not be read.");
+      setSourceCandidates(result.candidates ?? []);
+      setStatus(
+        result.candidates?.length
+          ? "Candidates extracted. Inspect the source page and image before selecting one."
+          : "No candidate metadata was found. Review the source page manually.",
+      );
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Source metadata could not be read.");
+    } finally {
+      setExtractingCandidates(false);
+    }
+  }
 
   return (
     <form className="admin-media-form" onSubmit={submit}>
@@ -222,7 +289,15 @@ export function AdminMediaForm({ eventSlug, sources, approvedOptions }: AdminMed
 
         <label>
           Approved source
-          <select name="sourceUrl" required>
+          <select
+            name="sourceUrl"
+            required
+            value={sourceUrl}
+            onChange={(event) => {
+              setSourceUrl(event.target.value);
+              setSourceCandidates([]);
+            }}
+          >
             <option value="">Select a reviewed source</option>
             {sources.map((source) => (
               <option key={source.url} value={source.url}>
@@ -231,6 +306,56 @@ export function AdminMediaForm({ eventSlug, sources, approvedOptions }: AdminMed
             ))}
           </select>
         </label>
+        <div className="admin-source-candidate-tool">
+          <button
+            disabled={extractingCandidates || !sourceUrl}
+            type="button"
+            onClick={() => void extractCandidates()}
+          >
+            {extractingCandidates ? "Inspecting source…" : "Extract source-image candidates"}
+          </button>
+          <p>
+            Metadata extraction is a review aid only. It never approves or publishes media. Reject
+            ads, logos, recommended stories, generic graphics, file photographs and unrelated
+            archive media.
+          </p>
+          {sourceCandidates.length > 0 ? (
+            <ul>
+              {sourceCandidates.map((candidate) => (
+                <li key={`${candidate.kind}-${candidate.url}`}>
+                  {/* Candidate URLs are private admin-only source metadata. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img alt="" src={candidate.url} />
+                  <div>
+                    <strong>{candidate.kind.replaceAll("_", " ")}</strong>
+                    <p>{candidate.caption ?? "No source caption exposed."}</p>
+                    <small>
+                      {candidate.width && candidate.height
+                        ? `${candidate.width}×${candidate.height}`
+                        : "Dimensions not declared"}
+                    </small>
+                    <a href={candidate.url} rel="noreferrer" target="_blank">
+                      Inspect candidate
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOriginalMediaUrl(candidate.url);
+                        if (candidate.publisher) setPublisher(candidate.publisher);
+                        if (candidate.creator) setCreator(candidate.creator);
+                        setStatus(
+                          "Candidate selected for manual review. Download and upload only after confirming the exact event and all review gates.",
+                        );
+                      }}
+                    >
+                      Select for review
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
 
         {mediaType === "uploaded_event_image" ? (
           <label>
@@ -242,7 +367,10 @@ export function AdminMediaForm({ eventSlug, sources, approvedOptions }: AdminMed
               required
               onChange={(event) => void handleFile(event.target.files?.[0])}
             />
-            <small>JPEG, PNG or WebP; maximum 10 MB. Re-encoded to metadata-free WebP.</small>
+            <small>
+              JPEG, PNG or WebP; maximum 10 MB. Long edge is limited to 1,600px and re-encoded to
+              metadata-free WebP.
+            </small>
           </label>
         ) : (
           <>
@@ -269,11 +397,20 @@ export function AdminMediaForm({ eventSlug, sources, approvedOptions }: AdminMed
         <div className="admin-media-form-grid">
           <label>
             Publisher/platform
-            <input name="publisher" required={mediaType !== "uploaded_event_image"} />
+            <input
+              name="publisher"
+              required
+              value={publisher}
+              onChange={(event) => setPublisher(event.target.value)}
+            />
           </label>
           <label>
             Creator
-            <input name="creator" required={mediaType === "uploaded_event_image"} />
+            <input
+              name="creator"
+              value={creator}
+              onChange={(event) => setCreator(event.target.value)}
+            />
           </label>
           <label>
             Rights holder
@@ -315,6 +452,50 @@ export function AdminMediaForm({ eventSlug, sources, approvedOptions }: AdminMed
           Permission or licence reference
           <textarea name="permissionReference" />
         </label>
+        <label>
+          Original source image or post URL
+          <input
+            name="originalMediaUrl"
+            type="url"
+            value={originalMediaUrl}
+            onChange={(event) => setOriginalMediaUrl(event.target.value)}
+          />
+        </label>
+        <fieldset className="admin-fair-dealing-review">
+          <legend>Editorial fair-dealing review</legend>
+          <p>
+            This is an editorial fair-dealing assessment for current-events reporting. It is not
+            permission, a licence or an assertion that India Observed owns the image.
+          </p>
+          <label>
+            <input name="sourcePageVerified" type="checkbox" /> Exact source page verified
+          </label>
+          <label>
+            <input name="reportingPurposeConfirmed" type="checkbox" /> Reporting purpose confirmed
+          </label>
+          <label>
+            <input name="reducedResolutionConfirmed" type="checkbox" /> Reduced-resolution
+            derivative confirmed
+          </label>
+          <label>
+            <input name="noGalleryReuseConfirmed" type="checkbox" /> No standalone gallery use
+          </label>
+          <label>
+            <input name="noUnrelatedCommercialReuseConfirmed" type="checkbox" /> No unrelated
+            commercial reuse
+          </label>
+          <label>
+            <input name="takedownProcessConfirmed" type="checkbox" /> Takedown process confirmed
+          </label>
+          <label>
+            <input name="ownerAcceptance" type="checkbox" /> Owner accepted this individual
+            editorial-use decision
+          </label>
+          <label>
+            Rights review date
+            <input name="rightsReviewedAt" type="date" />
+          </label>
+        </fieldset>
         <label>
           Private permission evidence
           <textarea name="permissionEvidence" />

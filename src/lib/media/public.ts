@@ -20,6 +20,11 @@ type PublicMediaRow = {
   alt_text: string;
   focal_position: string | null;
   approved_at: string;
+  same_event_verified: boolean;
+  privacy_reviewed: boolean;
+  safety_reviewed: boolean;
+  integrity_reviewed: boolean;
+  approved_source_verified: boolean;
 };
 
 const loadPublicMediaRows = unstable_cache(
@@ -54,7 +59,15 @@ export async function loadApprovedEventMedia(
   for (const row of rows) {
     const event = eventBySlug.get(row.event_slug);
     if (!event || event.publicationStatus !== "published") continue;
-    if (!event.sources.some((source) => source.url === row.source_url)) continue;
+    if (
+      !row.same_event_verified ||
+      !row.privacy_reviewed ||
+      !row.safety_reviewed ||
+      !row.integrity_reviewed ||
+      !row.approved_source_verified
+    ) {
+      continue;
+    }
     if (approved.has(row.event_slug)) continue;
 
     const common = {

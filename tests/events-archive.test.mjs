@@ -381,7 +381,7 @@ test("excluded media candidates remain disabled with truthful filled fallbacks",
     );
   }
   assert.match(mediaRegistry, /visual: createNoApprovedMediaVisual\(event\)/);
-  assert.match(publicMediaLoader, /event\.sources\.some/);
+  assert.match(publicMediaLoader, /row\.approved_source_verified/);
 });
 
 test("publication-aware server gate exposes published records and protects future candidates", () => {

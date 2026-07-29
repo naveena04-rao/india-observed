@@ -16,6 +16,7 @@ export const mediaRightsBases = [
   "public_domain",
   "cc_by",
   "cc_by_sa",
+  "editorial_fair_dealing_current_events",
 ] as const;
 
 export const redistributableRightsBases = mediaRightsBases.filter(
@@ -60,6 +61,15 @@ export const mediaDraftSchema = z
     originalMediaUrl: z.string().url().optional(),
     replacesMediaId: z.string().uuid().optional(),
     replacementReason: z.string().trim().min(8).max(1000).optional(),
+    cropResizeDisclosure: z.string().trim().min(12).max(1000).optional(),
+    sourcePageVerified: z.boolean().default(false),
+    reportingPurposeConfirmed: z.boolean().default(false),
+    reducedResolutionConfirmed: z.boolean().default(false),
+    noGalleryReuseConfirmed: z.boolean().default(false),
+    noUnrelatedCommercialReuseConfirmed: z.boolean().default(false),
+    takedownProcessConfirmed: z.boolean().default(false),
+    ownerAcceptance: z.boolean().default(false),
+    rightsReviewedAt: z.iso.date().optional(),
   })
   .superRefine((draft, context) => {
     const isUpload = draft.mediaType === "uploaded_event_image";
@@ -136,6 +146,40 @@ export const mediaDraftSchema = z
         message: "Replacing approved media requires a reason.",
         path: ["replacementReason"],
       });
+    }
+    if (draft.rightsBasis === "editorial_fair_dealing_current_events") {
+      const requiredChecks = [
+        ["sourcePageVerified", draft.sourcePageVerified],
+        ["reportingPurposeConfirmed", draft.reportingPurposeConfirmed],
+        ["reducedResolutionConfirmed", draft.reducedResolutionConfirmed],
+        ["noGalleryReuseConfirmed", draft.noGalleryReuseConfirmed],
+        ["noUnrelatedCommercialReuseConfirmed", draft.noUnrelatedCommercialReuseConfirmed],
+        ["takedownProcessConfirmed", draft.takedownProcessConfirmed],
+        ["ownerAcceptance", draft.ownerAcceptance],
+      ] as const;
+      for (const [path, passed] of requiredChecks) {
+        if (!passed) {
+          context.addIssue({
+            code: "custom",
+            message: "Every editorial fair-dealing control requires individual confirmation.",
+            path: [path],
+          });
+        }
+      }
+      if (!draft.rightsReviewedAt) {
+        context.addIssue({
+          code: "custom",
+          message: "Editorial fair-dealing decisions require a review date.",
+          path: ["rightsReviewedAt"],
+        });
+      }
+      if (!draft.originalMediaUrl || !draft.cropResizeDisclosure) {
+        context.addIssue({
+          code: "custom",
+          message: "Source-image provenance and processing disclosure are required.",
+          path: ["originalMediaUrl"],
+        });
+      }
     }
   });
 

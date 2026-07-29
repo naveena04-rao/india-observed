@@ -20,6 +20,9 @@ const homepage = read("src/app/page.tsx");
 const styles = read("src/app/globals.css");
 const policy = read("docs/MEDIA_POLICY.md");
 const audit = read("docs/EVENT_MEDIA_AUDIT.md");
+const homepageMediaImport = read(
+  "supabase/migrations/20260729000300_import_homepage_event_media.sql",
+);
 
 const publishedSlugs = [...dataset.matchAll(/slug: "([^"]+)"/g)].map((match) => match[1]);
 const auditRows = audit.split(/\r?\n/).filter((line) => line.startsWith("| `"));
@@ -66,13 +69,14 @@ test("the public model supports only approved images, publisher videos and offic
   }
 });
 
-test("approved public media is loaded server-side and rechecked against published sources", () => {
+test("approved public media is loaded server-side and rechecked against the media-source registry", () => {
   assert.match(publicLoader, /import "server-only"/);
   assert.match(publicLoader, /rpc\("get_public_event_media"/);
   assert.match(publicLoader, /event\.publicationStatus !== "published"/);
+  assert.match(publicLoader, /row\.approved_source_verified/);
   assert.match(
-    publicLoader,
-    /event\.sources\.some\(\(source\) => source\.url === row\.source_url\)/,
+    homepageMediaImport,
+    /exists \([\s\S]*?from public\.media_event_sources mes[\s\S]*?mes\.source_url = em\.source_url/,
   );
   assert.match(publicLoader, /event-media-public/);
   assert.doesNotMatch(publicLoader, /event-media-staging/);
@@ -111,7 +115,7 @@ test("uploaded media has visible credit, source, licence and focal-position hand
 });
 
 test("approved-media dimensions are substantial while fallbacks may remain compact", () => {
-  assert.match(styles, /\.event-record-visual,[\s\S]*?max-width: 70rem/);
+  assert.match(styles, /\.event-record-visual,[\s\S]*?max-width: 68\.75rem/);
   assert.match(styles, /\.event-approved-image \{[\s\S]*?aspect-ratio: 16 \/ 9/);
   assert.match(
     styles,
