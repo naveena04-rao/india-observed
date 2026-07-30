@@ -238,7 +238,7 @@ export function FeaturedRecordCarousel({
             <figure className="featured-record-media">
               {mayDisplaySourceEmbed ? (
                 <>
-                  <MediaClassificationLabel evidenceClass={activeVisual.evidenceClass} compact />
+                  <MediaClassificationLabel evidenceClass="verified_event_media" compact />
                   <div className="featured-record-video-frame">
                     {loadedMediaId === activeRecord.id ? (
                       <div className="publisher-video">

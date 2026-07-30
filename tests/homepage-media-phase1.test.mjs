@@ -91,6 +91,7 @@ test("homepage groups and detail pages share one approved media object with visi
   assert.match(homepage, /createHomepageVisualMap\(reviewedEvents\)/);
   assert.match(carousel, /variant="homepage-featured"/);
   assert.match(carousel, /variant="homepage-latest"/);
+  assert.match(carousel, /MediaClassificationLabel evidenceClass="verified_event_media" compact/);
   assert.match(homepage, /variant="homepage-on-record"/);
   assert.match(eventVisual, /approvedMedia\.creditLine/);
   assert.match(eventVisual, /href=\{approvedMedia\.sourceUrl\}/);
@@ -109,6 +110,14 @@ test("homepage media is large enough in Featured, Latest and ON RECORD without c
     /\.on-record-context \{[\s\S]*?grid-template-columns: minmax\(0, 58fr\) minmax\(0, 42fr\)/,
   );
   assert.match(styles, /\.event-detail-media \{[\s\S]*?max-width: 68\.75rem/);
+  assert.match(
+    styles,
+    /@media \(max-width: 700px\)[\s\S]*?\.event-detail-media > \.event-media-activation \{[\s\S]*?grid-template-rows: auto auto auto/,
+  );
+  assert.match(
+    styles,
+    /\.event-detail-media > \.event-media-activation > strong,[\s\S]*?display: none/,
+  );
 });
 
 test("the homepage contact sheet is authenticated, Preview-only and grouped three by three", () => {

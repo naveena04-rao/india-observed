@@ -4069,6 +4069,18 @@ main .lead-panel {
     grid-template-columns: 1fr;
   }
 
+  .event-detail-media > .event-media-activation {
+    align-content: center;
+    gap: 0.75rem;
+    grid-template-rows: auto auto auto;
+    padding: 1rem;
+  }
+
+  .event-detail-media > .event-media-activation > strong,
+  .event-detail-media > .event-media-activation > p {
+    display: none;
+  }
+
   .event-detail-media > .event-no-media {
     min-height: 11rem;
   }
