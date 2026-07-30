@@ -9,6 +9,7 @@ const safeguards = read("supabase/migrations/20260729000200_enforce_editorial_me
 const homepage = read("src/app/page.tsx");
 const carousel = read("src/app/components/FeaturedRecordCarousel.tsx");
 const eventVisual = read("src/app/events/components/EventVisual.tsx");
+const homepageEventEmbed = read("src/app/events/components/HomepageEventEmbed.tsx");
 const detailMedia = read("src/app/events/components/EventDetailMedia.tsx");
 const reviewPage = read("src/app/admin/media/homepage-review/page.tsx");
 const reviewMedia = read("src/app/admin/media/homepage-review/HomepageReviewMedia.tsx");
@@ -85,6 +86,12 @@ test("official embeds are click-to-load with no preactivation third-party frame"
     reviewMedia,
     /if \(!loaded\)[\s\S]*?Load official embed[\s\S]*?return \([\s\S]*?<iframe/,
   );
+  assert.match(
+    homepageEventEmbed,
+    /\{loaded \? \([\s\S]*?<iframe[\s\S]*?onClick=\{\(\) => setLoaded\(true\)\}/,
+  );
+  assert.match(homepageEventEmbed, /No third-party frame loads before activation/);
+  assert.match(eventVisual, /variant !== "archive"[\s\S]*?<HomepageEventEmbed/);
 });
 
 test("homepage groups and detail pages share one approved media object with visible credit and source", () => {

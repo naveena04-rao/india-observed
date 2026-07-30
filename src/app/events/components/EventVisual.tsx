@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ApprovedEventMedia, EventVisual as EventVisualData } from "../../../lib/events/types";
+import { HomepageEventEmbed } from "./HomepageEventEmbed";
 import { MediaClassificationLabel } from "./MediaClassificationLabel";
 
 type EventVisualVariant =
@@ -49,6 +50,12 @@ export function EventVisual({
   }
 
   if (approvedMedia) {
+    if (variant !== "archive") {
+      return (
+        <HomepageEventEmbed approvedMedia={approvedMedia} variantClassName={variantClassName} />
+      );
+    }
+
     return (
       <figure className={`event-source-media-cover ${variantClassName}`}>
         <div className="event-source-media-cover__body">

@@ -3641,6 +3641,89 @@ main .lead-panel {
   flex: none;
 }
 
+.event-approved-embed {
+  aspect-ratio: 16 / 9;
+  background: #151616;
+  border: 1px solid var(--ink);
+  box-sizing: border-box;
+  margin: 0;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.event-approved-embed > .media-classification-label {
+  background: rgb(21 22 22 / 88%);
+  color: #ffffff;
+  left: 0;
+  padding: 0.45rem 0.65rem;
+  position: absolute;
+  top: 0;
+  z-index: 2;
+}
+
+.event-approved-embed__frame,
+.event-approved-embed__frame iframe {
+  border: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.event-approved-embed__gate {
+  align-content: center;
+  color: #ffffff;
+  display: grid;
+  gap: 0.55rem;
+  height: 100%;
+  padding: 2.2rem 1rem 2.8rem;
+}
+
+.event-approved-embed__gate span,
+.event-approved-embed__gate small {
+  font-size: 0.65rem;
+  line-height: 1.35;
+}
+
+.event-approved-embed__gate strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.1rem, 2vw, 1.55rem);
+}
+
+.event-approved-embed__gate button {
+  background: #ffffff;
+  border: 1px solid #ffffff;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 800;
+  justify-self: start;
+  min-height: 2.5rem;
+  padding: 0.55rem 0.8rem;
+}
+
+.event-approved-embed__gate button:hover,
+.event-approved-embed__gate button:focus-visible {
+  background: var(--terracotta);
+  border-color: var(--terracotta);
+  color: #ffffff;
+}
+
+.event-approved-embed figcaption {
+  background: rgb(21 22 22 / 88%);
+  bottom: 0;
+  color: #ffffff;
+  font-size: 0.65rem;
+  left: 0;
+  padding: 0.5rem 0.65rem;
+  position: absolute;
+  right: 0;
+  z-index: 2;
+}
+
+.event-approved-embed figcaption a {
+  color: #ffffff;
+}
+
 .event-no-media__label {
   color: var(--terracotta);
   font-size: 0.62rem;
