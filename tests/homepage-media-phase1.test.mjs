@@ -13,6 +13,7 @@ const homepageEventEmbed = read("src/app/events/components/HomepageEventEmbed.ts
 const detailMedia = read("src/app/events/components/EventDetailMedia.tsx");
 const reviewPage = read("src/app/admin/media/homepage-review/page.tsx");
 const reviewMedia = read("src/app/admin/media/homepage-review/HomepageReviewMedia.tsx");
+const publicPresentation = read("src/lib/media/presentation.ts");
 const styles = read("src/app/globals.css");
 const verifier = read("scripts/media-verify-homepage.mjs");
 const reviewedData = read("src/data/reviewed-events-preview.ts");
@@ -98,12 +99,21 @@ test("homepage groups and detail pages share one approved media object with visi
   assert.match(homepage, /createHomepageVisualMap\(reviewedEvents\)/);
   assert.match(carousel, /variant="homepage-featured"/);
   assert.match(carousel, /variant="homepage-latest"/);
-  assert.match(carousel, /MediaClassificationLabel evidenceClass="verified_event_media" compact/);
   assert.match(homepage, /variant="homepage-on-record"/);
-  assert.match(eventVisual, /approvedMedia\.creditLine/);
+  assert.doesNotMatch(carousel, /Verified event media|MediaClassificationLabel/);
+  assert.doesNotMatch(eventVisual, /Verified event media|MediaClassificationLabel/);
+  assert.doesNotMatch(homepageEventEmbed, /Verified event media|MediaClassificationLabel/);
+  assert.doesNotMatch(detailMedia, /Verified event media|MediaClassificationLabel/);
+  assert.match(eventVisual, /getPublicMediaCaption\(approvedMedia\)/);
   assert.match(eventVisual, /href=\{approvedMedia\.sourceUrl\}/);
-  assert.match(detailMedia, /approvedMedia\.creditLine/);
+  assert.match(detailMedia, /getPublicMediaCaption\(approvedMedia\)/);
   assert.match(detailMedia, /href=\{approvedMedia\.sourceUrl\}/);
+  for (const publicKind of ["Photo", "Video", "Post"]) {
+    assert.match(publicPresentation, new RegExp(`"${publicKind}"`));
+  }
+  assert.match(publicPresentation, /View original source/);
+  assert.match(publicPresentation, /View original/);
+  assert.match(reviewMedia, /Verified event media/);
 });
 
 test("homepage media is large enough in Featured, Latest and ON RECORD without changing order", () => {

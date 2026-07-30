@@ -17,8 +17,8 @@ const archiveRow = read("src/app/events/components/EventArchiveRow.tsx");
 const filters = read("src/app/events/components/EventFilters.tsx");
 const pagination = read("src/app/events/components/EventPagination.tsx");
 const visual = read("src/app/events/components/EventVisual.tsx");
-const classificationLabel = read("src/app/events/components/MediaClassificationLabel.tsx");
 const detailMedia = read("src/app/events/components/EventDetailMedia.tsx");
+const publicMediaPresentation = read("src/lib/media/presentation.ts");
 const eventSafety = read("src/app/events/components/EventSafety.tsx");
 const eventSources = read("src/app/events/components/EventSources.tsx");
 const shell = read("src/app/events/components/ArchiveShell.tsx");
@@ -143,8 +143,8 @@ test("snapshot has 50 unique readable slugs and one truthful fallback per event"
     true,
   );
   assert.match(dataset, /static snapshot contains only truthful media fallbacks/i);
-  assert.match(classificationLabel, /Verified event media/);
-  assert.match(classificationLabel, /No approved event image available/);
+  assert.doesNotMatch(visual, /Verified event media|MediaClassificationLabel/);
+  assert.match(visual, /No approved event image available/);
   assert.doesNotMatch(dataset, /stock|unsplash|pexels|pixabay/i);
 });
 
@@ -361,7 +361,8 @@ test("database-approved detail embeds require explicit activation", () => {
   assert.match(detailMedia, /embedState === "loaded" \? \(/);
   assert.match(detailMedia, /<iframe/);
   assert.match(detailMedia, /publisher&apos;s official embed/);
-  assert.match(detailMedia, /View original/);
+  assert.match(detailMedia, /getPublicSourceLinkLabel\(approvedMedia\)/);
+  assert.match(publicMediaPresentation, /View original/);
   assert.match(detailPage, /approvedMedia=\{event\.approvedMedia\}/);
   assert.match(publicMediaLoader, /row\.media_type !== "uploaded_event_image"/);
   assert.doesNotMatch(archivePage, /iframe/i);

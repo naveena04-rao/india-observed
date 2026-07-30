@@ -2,8 +2,12 @@
 
 import { useEffect, useState } from "react";
 import type { ApprovedEventMedia, EventVisual as EventVisualData } from "../../lib/events/types";
+import {
+  getPublicMediaCaption,
+  getPublicMediaKind,
+  getPublicSourceLinkLabel,
+} from "../../lib/media/presentation";
 import { EventFollowControl } from "../events/components/EventFollowControl";
-import { MediaClassificationLabel } from "../events/components/MediaClassificationLabel";
 import { EventVisual } from "../events/components/EventVisual";
 import { EventStatusTag } from "./EventStatusTag";
 import { EventTypeTag } from "./EventTypeTag";
@@ -238,7 +242,6 @@ export function FeaturedRecordCarousel({
             <figure className="featured-record-media">
               {mayDisplaySourceEmbed ? (
                 <>
-                  <MediaClassificationLabel evidenceClass="verified_event_media" compact />
                   <div className="featured-record-video-frame">
                     {loadedMediaId === activeRecord.id ? (
                       <div className="publisher-video">
@@ -252,7 +255,11 @@ export function FeaturedRecordCarousel({
                       </div>
                     ) : (
                       <div className="publisher-video-gate event-media-activation">
-                        <span>Verified event media</span>
+                        <span>
+                          {getPublicMediaKind(approvedMedia) === "Video"
+                            ? "Publisher-hosted video"
+                            : "Official social post"}
+                        </span>
                         <strong>{activeRecord.title}</strong>
                         <p>{activeRecord.place}</p>
                         <button type="button" onClick={() => setLoadedMediaId(activeRecord.id)}>
@@ -266,11 +273,10 @@ export function FeaturedRecordCarousel({
                     )}
                   </div>
                   <figcaption className="featured-record-caption">
-                    {approvedMedia.creditLine}.{" "}
+                    {getPublicMediaCaption(approvedMedia)} ·{" "}
                     <a href={approvedMedia.sourceUrl} target="_blank" rel="noreferrer">
-                      View the original publisher page
+                      {getPublicSourceLinkLabel(approvedMedia)}
                     </a>
-                    .
                   </figcaption>
                 </>
               ) : (

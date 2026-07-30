@@ -2,8 +2,13 @@
 
 import { useState } from "react";
 import type { ApprovedEventMedia, EventVisual as EventVisualData } from "../../../lib/events/types";
+import {
+  getPublicDisplayBasis,
+  getPublicMediaCaption,
+  getPublicMediaKind,
+  getPublicSourceLinkLabel,
+} from "../../../lib/media/presentation";
 import { EventVisual } from "./EventVisual";
-import { MediaClassificationLabel } from "./MediaClassificationLabel";
 
 type EventDetailMediaProps = {
   visual: EventVisualData;
@@ -22,12 +27,8 @@ export function EventDetailMedia({ visual, approvedMedia }: EventDetailMediaProp
   }
 
   if (approvedMedia.mediaType === "uploaded_event_image") {
-    const creator = approvedMedia.creator ?? approvedMedia.rightsHolder ?? "Rights holder";
-    const publisher = approvedMedia.publisher ?? "Approved source";
-
     return (
       <figure className="event-detail-media event-detail-approved-image">
-        <MediaClassificationLabel evidenceClass="verified_event_media" />
         {/* Dynamic URLs are limited to the configured Supabase public-media bucket. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -37,16 +38,14 @@ export function EventDetailMedia({ visual, approvedMedia }: EventDetailMediaProp
         />
         <figcaption className="event-detail-media-controls">
           <p>
-            Photo: {creator} ·{" "}
+            {getPublicMediaCaption(approvedMedia)} ·{" "}
             <a href={approvedMedia.sourceUrl} rel="noreferrer">
-              Source: {publisher}
+              {getPublicSourceLinkLabel(approvedMedia)}
             </a>
           </p>
-          <p>Full credit: {approvedMedia.creditLine}</p>
-          <p>
-            Rights: {approvedMedia.licenceName ?? approvedMedia.rightsBasis.replaceAll("_", " ")}
-          </p>
+          <p>{getPublicDisplayBasis(approvedMedia)}</p>
           <p>Reviewed {new Date(approvedMedia.approvedAt).toLocaleDateString("en-IN")}</p>
+          <p>Rights remain with the credited creator or publisher.</p>
           {approvedMedia.licenceUrl ? (
             <a href={approvedMedia.licenceUrl} rel="noreferrer">
               View licence →
@@ -58,6 +57,7 @@ export function EventDetailMedia({ visual, approvedMedia }: EventDetailMediaProp
   }
 
   const publisher = approvedMedia.publisher ?? "approved publisher";
+  const mediaKind = getPublicMediaKind(approvedMedia);
   const actionLabel =
     approvedMedia.mediaType === "official_social_embed"
       ? `Load official post from ${publisher}`
@@ -67,8 +67,6 @@ export function EventDetailMedia({ visual, approvedMedia }: EventDetailMediaProp
 
   return (
     <div className="event-detail-media">
-      <MediaClassificationLabel evidenceClass="verified_event_media" />
-
       {embedState === "loaded" ? (
         <div className={`event-detail-embed event-detail-embed--${approvedMedia.mediaType}`}>
           <iframe
@@ -92,7 +90,7 @@ export function EventDetailMedia({ visual, approvedMedia }: EventDetailMediaProp
         </div>
       ) : (
         <div className="event-media-activation">
-          <span>Verified event media</span>
+          <span>{mediaKind === "Video" ? "Publisher-hosted video" : "Official social post"}</span>
           <strong>{eventTitle}</strong>
           <p>{eventLocation}</p>
           <button type="button" onClick={() => setEmbedState("loaded")}>
@@ -106,12 +104,15 @@ export function EventDetailMedia({ visual, approvedMedia }: EventDetailMediaProp
       )}
 
       <div className="event-detail-media-controls">
-        <p>Video/Post: {publisher} · View original</p>
-        <p>{approvedMedia.creditLine}</p>
+        <p>
+          {getPublicMediaCaption(approvedMedia)} ·{" "}
+          <a href={approvedMedia.sourceUrl} rel="noreferrer">
+            {getPublicSourceLinkLabel(approvedMedia)}
+          </a>
+        </p>
+        <p>{getPublicDisplayBasis(approvedMedia)}</p>
         <p>Reviewed {new Date(approvedMedia.approvedAt).toLocaleDateString("en-IN")}</p>
-        <a href={approvedMedia.sourceUrl} rel="noreferrer">
-          View original →
-        </a>
+        <p>Rights remain with the credited creator or publisher.</p>
       </div>
     </div>
   );

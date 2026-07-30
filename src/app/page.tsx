@@ -86,7 +86,7 @@ function createMediaReadyFeaturedRecord(event: ReviewedEventPreview): FeaturedRe
     topic: event.primaryTopic,
     description: event.summary,
     verification: event.eventVerification,
-    note: "Exact-event media approved",
+    note: "Publisher media documents this event",
     reviewed: formatHomepageDate(event.lastReviewed),
     media: {
       format:
@@ -94,8 +94,8 @@ function createMediaReadyFeaturedRecord(event: ReviewedEventPreview): FeaturedRe
           ? "Publisher-hosted video"
           : "Official source-linked post",
       sourceProvenance: event.approvedMedia.publisher ?? "Approved source",
-      eventVerification: "Exact event verified",
-      publicationRightsStatus: "Official source embed",
+      eventVerification: "Source documents this event",
+      publicationRightsStatus: "Official publisher embed",
     },
     visual: event.visual,
     approvedMedia: event.approvedMedia,
@@ -117,11 +117,11 @@ function getApprovedHomepageMediaDisclosure(
           ? "Publisher-hosted video"
           : "Official source-linked post",
     sourceProvenance: approvedMedia.publisher ?? "Approved source",
-    eventVerification: "Exact event verified",
+    eventVerification: "Source documents this event",
     publicationRightsStatus:
       approvedMedia.rightsBasis === "official_embed"
-        ? "Official source embed"
-        : "Reviewed editorial current-events display",
+        ? "Official publisher embed"
+        : "Publisher credited · Original source linked",
   };
 }
 

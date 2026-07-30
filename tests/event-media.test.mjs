@@ -12,8 +12,15 @@ const fallbackRegistry = read("src/data/event-media-registry.ts");
 const publicLoader = read("src/lib/media/public.ts");
 const mediaTypes = read("src/lib/events/types.ts");
 const eventVisual = read("src/app/events/components/EventVisual.tsx");
+const classificationLabel = read("src/app/events/components/MediaClassificationLabel.tsx");
+const homepageEventEmbed = read("src/app/events/components/HomepageEventEmbed.tsx");
 const detailMedia = read("src/app/events/components/EventDetailMedia.tsx");
 const detailPage = read("src/app/events/[slug]/page.tsx");
+const homepageCarousel = read("src/app/components/FeaturedRecordCarousel.tsx");
+const homepagePage = read("src/app/page.tsx");
+const rootLayout = read("src/app/layout.tsx");
+const publicPresentation = read("src/lib/media/presentation.ts");
+const adminReviewMedia = read("src/app/admin/media/homepage-review/HomepageReviewMedia.tsx");
 const archivePage = read("src/app/events/page.tsx");
 const archiveRow = read("src/app/events/components/EventArchiveRow.tsx");
 const homepage = read("src/app/page.tsx");
@@ -105,13 +112,71 @@ test("official embeds remain click-to-load and never enter archive rendering", (
 });
 
 test("uploaded media has visible credit, source, licence and focal-position handling", () => {
-  assert.match(eventVisual, /approvedMedia\.creditLine/);
+  assert.match(eventVisual, /getPublicMediaCaption\(approvedMedia\)/);
   assert.match(eventVisual, /href=\{approvedMedia\.sourceUrl\}/);
   assert.match(eventVisual, /objectPosition: approvedMedia\.focalPosition/);
-  assert.match(detailMedia, /approvedMedia\.licenceName/);
+  assert.match(detailMedia, /getPublicDisplayBasis\(approvedMedia\)/);
   assert.match(detailMedia, /approvedMedia\.licenceUrl/);
   assert.match(detailMedia, /Reviewed \{new Date\(approvedMedia\.approvedAt\)/);
+  assert.match(detailMedia, /Rights remain with the credited creator or publisher\./);
   assert.match(detailPage, /approvedMedia=\{event\.approvedMedia\}/);
+});
+
+test("public routes omit internal media-verification labels while retaining useful credits", () => {
+  const publicRouteSources = [
+    homepagePage,
+    homepageCarousel,
+    homepageEventEmbed,
+    archivePage,
+    archiveRow,
+    eventVisual,
+    detailPage,
+    detailMedia,
+    rootLayout,
+  ].join("\n");
+
+  assert.doesNotMatch(publicRouteSources, /Verified event media/i);
+  assert.doesNotMatch(publicRouteSources, /Same-event verified/i);
+  assert.doesNotMatch(publicRouteSources, /Editorial current-events display/i);
+  assert.doesNotMatch(publicRouteSources, /rightsBasis\.replaceAll/);
+  assert.match(classificationLabel, /if \(evidenceClass === "verified_event_media"\) return null/);
+  assert.match(publicPresentation, /return `\$\{getPublicMediaKind\(media\)\}: /);
+  assert.match(publicPresentation, /"Photo" \| "Video" \| "Post"/);
+  assert.match(publicPresentation, /`Source: \$\{media\.publisher\}`/);
+  assert.match(publicPresentation, /View original source/);
+  assert.match(publicPresentation, /View original/);
+  assert.match(adminReviewMedia, /Verified event media/);
+});
+
+test("internal approval gates remain mandatory and are not exposed as public display text", () => {
+  for (const field of [
+    "same_event_verified",
+    "privacy_reviewed",
+    "safety_reviewed",
+    "integrity_reviewed",
+    "approved_source_verified",
+  ]) {
+    assert.match(publicLoader, new RegExp(field));
+  }
+  assert.match(
+    publicLoader,
+    /!row\.same_event_verified[\s\S]*?!row\.privacy_reviewed[\s\S]*?!row\.safety_reviewed[\s\S]*?!row\.integrity_reviewed[\s\S]*?!row\.approved_source_verified[\s\S]*?continue/,
+  );
+  assert.match(publicLoader, /event\.publicationStatus !== "published"\) continue/);
+});
+
+test("source-document previews retain their public distinction whenever one is configured", () => {
+  const publicMediaSources = [eventVisual, homepageEventEmbed, detailMedia].join("\n");
+  const usesSourceDocumentPreview = /Source document preview/i.test(publicMediaSources);
+
+  if (usesSourceDocumentPreview) {
+    assert.match(publicMediaSources, /Source document preview — not an event photograph/);
+  } else {
+    assert.match(
+      audit,
+      /`kolli-hills-land-patta-protest`[\s\S]*?No displayable exact-event candidate approved/,
+    );
+  }
 });
 
 test("approved-media dimensions are substantial while fallbacks may remain compact", () => {

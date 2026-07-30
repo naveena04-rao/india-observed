@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { ApprovedEventMedia } from "../../../lib/events/types";
-import { MediaClassificationLabel } from "./MediaClassificationLabel";
+import { getPublicMediaCaption, getPublicSourceLinkLabel } from "../../../lib/media/presentation";
 
 export function HomepageEventEmbed({
   approvedMedia,
@@ -19,7 +19,6 @@ export function HomepageEventEmbed({
 
   return (
     <figure className={`event-approved-embed ${variantClassName}`}>
-      <MediaClassificationLabel evidenceClass="verified_event_media" compact />
       <div className="event-approved-embed__frame">
         {loaded ? (
           <iframe
@@ -45,9 +44,9 @@ export function HomepageEventEmbed({
         )}
       </div>
       <figcaption>
-        <span>{approvedMedia.creditLine} · </span>
+        <span>{getPublicMediaCaption(approvedMedia)} · </span>
         <a href={approvedMedia.sourceUrl} rel="noreferrer">
-          Original source
+          {getPublicSourceLinkLabel(approvedMedia)}
         </a>
       </figcaption>
     </figure>

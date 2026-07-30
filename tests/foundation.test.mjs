@@ -370,8 +370,9 @@ test("all nine homepage records use the central reviewed visual treatments", () 
   assert.doesNotMatch(page, /<iframe/);
 
   assert.doesNotMatch(eventVisual, /EventEditorialIllustration|<svg/);
-  assert.match(eventVisual, /MediaClassificationLabel/);
-  assert.match(eventVisual, /approvedMedia\.creditLine/);
+  assert.doesNotMatch(eventVisual, /Verified event media|MediaClassificationLabel/);
+  assert.match(eventVisual, /getPublicMediaCaption\(approvedMedia\)/);
+  assert.match(eventVisual, /getPublicSourceLinkLabel\(approvedMedia\)/);
   assert.doesNotMatch(eventVisual, /ExternalMediaImage/);
 
   assert.match(styles, /\.featured-carousel \.featured-slide[\s\S]*?height: 30rem;/);

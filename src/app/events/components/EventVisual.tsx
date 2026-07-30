@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ApprovedEventMedia, EventVisual as EventVisualData } from "../../../lib/events/types";
+import { getPublicMediaCaption, getPublicSourceLinkLabel } from "../../../lib/media/presentation";
 import { HomepageEventEmbed } from "./HomepageEventEmbed";
-import { MediaClassificationLabel } from "./MediaClassificationLabel";
 
 type EventVisualVariant =
   "archive" | "homepage-latest" | "homepage-on-record" | "homepage-featured";
@@ -22,14 +22,8 @@ export function EventVisual({
   const variantClassName = `event-visual--${variant}`;
 
   if (approvedMedia?.mediaType === "uploaded_event_image") {
-    const creator = approvedMedia.creator ?? approvedMedia.rightsHolder ?? "Rights holder";
-    const publisher = approvedMedia.publisher ?? "Approved source";
-
     return (
       <figure className={`event-approved-image ${variantClassName}`}>
-        {showClassification ? (
-          <MediaClassificationLabel evidenceClass="verified_event_media" compact />
-        ) : null}
         {/* Dynamic URLs are limited to the configured Supabase public-media bucket. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -39,9 +33,9 @@ export function EventVisual({
         />
         {showClassification ? (
           <figcaption>
-            <span>Photo: {creator} · </span>
+            <span>{getPublicMediaCaption(approvedMedia)} · </span>
             <a href={approvedMedia.sourceUrl} rel="noreferrer">
-              Source: {publisher}
+              {getPublicSourceLinkLabel(approvedMedia)}
             </a>
           </figcaption>
         ) : null}
@@ -59,9 +53,6 @@ export function EventVisual({
     return (
       <figure className={`event-source-media-cover ${variantClassName}`}>
         <div className="event-source-media-cover__body">
-          {showClassification ? (
-            <MediaClassificationLabel evidenceClass="verified_event_media" compact />
-          ) : null}
           <span>
             {approvedMedia.mediaType === "publisher_video_embed"
               ? "Publisher-hosted video"
@@ -73,9 +64,9 @@ export function EventVisual({
         </div>
         {showClassification ? (
           <figcaption>
-            <span>{approvedMedia.creditLine} · </span>
+            <span>{getPublicMediaCaption(approvedMedia)} · </span>
             <a href={approvedMedia.sourceUrl} rel="noreferrer">
-              Original source
+              {getPublicSourceLinkLabel(approvedMedia)}
             </a>
           </figcaption>
         ) : null}
