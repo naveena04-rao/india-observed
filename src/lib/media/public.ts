@@ -25,28 +25,45 @@ type PublicMediaRow = {
   safety_reviewed: boolean;
   integrity_reviewed: boolean;
   approved_source_verified: boolean;
+  preview_storage_path: string | null;
+  preview_alt_text: string | null;
+  preview_focal_position: string | null;
+  preview_same_event_verified: boolean;
+  preview_privacy_reviewed: boolean;
+  preview_safety_reviewed: boolean;
+  preview_integrity_reviewed: boolean;
+  preview_approved_source_verified: boolean;
 };
 
-const loadPublicMediaRows = unstable_cache(
-  async (): Promise<PublicMediaRow[]> => {
-    const availability = assertMediaLibraryReady();
-    if (!availability.enabled) return [];
-
+const loadPublicMediaRowsFromEnabledLibrary = unstable_cache(
+  async (projectRef: string): Promise<PublicMediaRow[]> => {
+    if (!projectRef) throw new Error("Approved event media project reference is missing.");
     const supabase = createAnonymousSupabaseClient();
-    if (!supabase) return [];
+    if (!supabase) throw new Error("Approved event media client could not be created.");
     const { data, error } = await supabase.rpc("get_public_event_media", {
       p_event_slug: null,
     });
 
     if (error) {
-      if (availability.required) throw new Error("Approved event media could not be loaded.");
-      return [];
+      throw new Error("Approved event media could not be loaded.");
     }
     return (data ?? []) as PublicMediaRow[];
   },
-  ["approved-event-media-v1"],
+  ["approved-event-media-v3"],
   { revalidate: 300, tags: ["event-media"] },
 );
+
+async function loadPublicMediaRows(): Promise<PublicMediaRow[]> {
+  const availability = assertMediaLibraryReady();
+  if (!availability.enabled) return [];
+
+  try {
+    return await loadPublicMediaRowsFromEnabledLibrary(availability.projectRef);
+  } catch (error) {
+    if (availability.required) throw error;
+    return [];
+  }
+}
 
 export async function loadApprovedEventMedia(
   events: readonly ReviewedEventPreview[],
@@ -94,12 +111,38 @@ export async function loadApprovedEventMedia(
         publicUrl: data.publicUrl,
       });
     } else if (row.media_type !== "uploaded_event_image" && row.media_url?.startsWith("https://")) {
+      const previewReady = Boolean(
+        row.preview_storage_path &&
+        row.preview_alt_text &&
+        row.preview_same_event_verified &&
+        row.preview_privacy_reviewed &&
+        row.preview_safety_reviewed &&
+        row.preview_integrity_reviewed &&
+        row.preview_approved_source_verified,
+      );
+      const previewStoragePath = previewReady ? (row.preview_storage_path ?? undefined) : undefined;
+      const previewAltText = previewReady ? (row.preview_alt_text ?? undefined) : undefined;
+      const previewImageUrl =
+        previewStoragePath && supabase
+          ? supabase.storage.from("event-media-public").getPublicUrl(previewStoragePath).data
+              .publicUrl
+          : undefined;
       approved.set(row.event_slug, {
         ...common,
         mediaType: row.media_type,
         embedUrl: row.media_url,
+        previewImageUrl,
+        previewImageStoragePath: previewStoragePath,
+        previewAltText,
+        previewFocalPosition: previewReady ? (row.preview_focal_position ?? "50% 50%") : undefined,
       });
     }
+  }
+
+  if (process.env.VERCEL_ENV !== "production" && process.env.NODE_ENV !== "test") {
+    console.info(`Published records loaded: ${events.length}`);
+    console.info(`Approved media records loaded: ${rows.length}`);
+    console.info(`Archive rows receiving approved media: ${approved.size}`);
   }
 
   return approved;

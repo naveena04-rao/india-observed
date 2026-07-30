@@ -17,6 +17,7 @@ const archiveRow = read("src/app/events/components/EventArchiveRow.tsx");
 const filters = read("src/app/events/components/EventFilters.tsx");
 const pagination = read("src/app/events/components/EventPagination.tsx");
 const visual = read("src/app/events/components/EventVisual.tsx");
+const archiveMediaPreview = read("src/app/events/components/ArchiveMediaPreview.tsx");
 const detailMedia = read("src/app/events/components/EventDetailMedia.tsx");
 const publicMediaPresentation = read("src/lib/media/presentation.ts");
 const eventSafety = read("src/app/events/components/EventSafety.tsx");
@@ -341,8 +342,11 @@ test("only controlled visual types are allowed and the archive never loads video
   assert.doesNotMatch(archivePage, /iframe/i);
   assert.doesNotMatch(archiveRow, /iframe/i);
   assert.doesNotMatch(visual, /iframe/i);
+  assert.doesNotMatch(archiveMediaPreview, /iframe/i);
   assert.match(visual, /View event sources/);
-  assert.match(visual, /View event media/);
+  assert.match(visual, /ArchiveMediaPreview/);
+  assert.match(archiveMediaPreview, /previewImageUrl/);
+  assert.match(archiveMediaPreview, /Event media unavailable/);
   assert.match(archiveRow, /eventHref=\{href\}/);
 });
 

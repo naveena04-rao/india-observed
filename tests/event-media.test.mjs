@@ -12,6 +12,7 @@ const fallbackRegistry = read("src/data/event-media-registry.ts");
 const publicLoader = read("src/lib/media/public.ts");
 const mediaTypes = read("src/lib/events/types.ts");
 const eventVisual = read("src/app/events/components/EventVisual.tsx");
+const archiveMediaPreview = read("src/app/events/components/ArchiveMediaPreview.tsx");
 const classificationLabel = read("src/app/events/components/MediaClassificationLabel.tsx");
 const homepageEventEmbed = read("src/app/events/components/HomepageEventEmbed.tsx");
 const detailMedia = read("src/app/events/components/EventDetailMedia.tsx");
@@ -30,6 +31,10 @@ const audit = read("docs/EVENT_MEDIA_AUDIT.md");
 const homepageMediaImport = read(
   "supabase/migrations/20260729000300_import_homepage_event_media.sql",
 );
+const archivePreviewMigration = read(
+  "supabase/migrations/20260730000100_add_archive_embed_previews.sql",
+);
+const archivePreviewPreparation = read("scripts/media-prepare-archive-previews.mjs");
 
 const publishedSlugs = [...dataset.matchAll(/slug: "([^"]+)"/g)].map((match) => match[1]);
 const auditRows = audit.split(/\r?\n/).filter((line) => line.startsWith("| `"));
@@ -100,15 +105,65 @@ test("contextual assets and obsolete external image infrastructure remain absent
   assert.doesNotMatch(fallbackRegistry, /Wikimedia Commons|thumbnailUrl|publisher_image/);
 });
 
-test("official embeds remain click-to-load and never enter archive rendering", () => {
+test("official embeds remain click-to-load while archive rows use approved preview images", () => {
   assert.match(detailMedia, /useState<"idle" \| "loaded" \| "failed">\("idle"\)/);
   assert.match(detailMedia, /embedState === "loaded" \? \([\s\S]*?<iframe/);
   assert.match(detailMedia, /onClick=\{\(\) => setEmbedState\("loaded"\)\}/);
   assert.match(detailMedia, /No third-party frame loads[\s\S]*?before activation/);
   assert.match(detailMedia, /Event media unavailable/);
+  assert.match(eventVisual, /<ArchiveMediaPreview/);
+  assert.doesNotMatch(eventVisual, /event-source-media-cover/);
+  assert.match(archiveMediaPreview, /approvedMedia\.previewImageUrl/);
+  assert.match(archiveMediaPreview, /approvedMedia\.previewAltText/);
+  assert.match(archiveMediaPreview, /href=\{eventHref\}/);
+  assert.match(archiveMediaPreview, /onError=\{\(\) => setUnavailable\(true\)\}/);
+  assert.match(archiveMediaPreview, /Event media unavailable/);
+  assert.match(archiveMediaPreview, /href=\{approvedMedia\.sourceUrl\}/);
   assert.doesNotMatch(archivePage, /iframe/i);
   assert.doesNotMatch(archiveRow, /iframe/i);
   assert.doesNotMatch(eventVisual, /iframe/i);
+  assert.doesNotMatch(archiveMediaPreview, /iframe/i);
+});
+
+test("embed archive previews have independent provenance and all five review gates", () => {
+  for (const field of [
+    "preview_storage_path",
+    "preview_same_event_verified",
+    "preview_privacy_reviewed",
+    "preview_safety_reviewed",
+    "preview_integrity_reviewed",
+    "preview_approved_source_verified",
+  ]) {
+    assert.match(archivePreviewMigration, new RegExp(field));
+    assert.match(publicLoader, new RegExp(field));
+  }
+  assert.match(archivePreviewMigration, /preview_original_media_url/);
+  assert.match(archivePreviewMigration, /preview_original_sha256/);
+  assert.match(archivePreviewMigration, /preview_derivative_sha256/);
+  assert.match(archivePreviewMigration, /event_media_approved_embed_preview_complete/);
+  assert.match(archivePreviewMigration, /\/preview\.webp/);
+  assert.match(publicLoader, /approved-event-media-v3/);
+  assert.match(
+    publicLoader,
+    /if \(!availability\.enabled\) return \[\];[\s\S]*?loadPublicMediaRowsFromEnabledLibrary\(availability\.projectRef\)/,
+  );
+});
+
+test("all four existing approved embeds receive matching archive preview derivatives", () => {
+  for (const [mediaId, slug] of [
+    ["14000000-0000-4000-8000-000000000001", "jamia-yuva-kumbh-campus-protest"],
+    ["14000000-0000-4000-8000-000000000004", "dasiya-villagers-ethanol-plant"],
+    ["14000000-0000-4000-8000-000000000005", "indore-dewas-ring-road-compensation"],
+    ["15000000-0000-4000-8000-000000000001", "bidadi-farmers-land-acquisition"],
+  ]) {
+    assert.match(archivePreviewMigration, new RegExp(mediaId.replaceAll("-", "\\-")));
+    assert.match(archivePreviewPreparation, new RegExp(slug));
+  }
+  assert.match(archivePreviewMigration, /event_slug \|\| '\/' \|\| id \|\| '\/preview\.webp'/);
+  assert.match(
+    archivePreviewMigration,
+    /Jamia[\s\S]*?unrelated article-level file photograph was rejected/,
+  );
 });
 
 test("uploaded media has visible credit, source, licence and focal-position handling", () => {

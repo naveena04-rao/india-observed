@@ -24,6 +24,8 @@
     "media:coverage": "node scripts/media-coverage.mjs",
     "media:verify-homepage": "node scripts/media-verify-homepage.mjs",
     "media:verify-launch": "node scripts/media-verify-launch.mjs",
+    "media:verify-phase2": "node scripts/media-verify-phase2.mjs",
+    "media:verify-archive": "node scripts/media-verify-archive.mjs",
     "secrets:check": "node scripts/secret-scan.mjs"
   },
   "dependencies": {

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ApprovedEventMedia, EventVisual as EventVisualData } from "../../../lib/events/types";
 import { getPublicMediaCaption, getPublicSourceLinkLabel } from "../../../lib/media/presentation";
+import { ArchiveMediaPreview } from "./ArchiveMediaPreview";
 import { HomepageEventEmbed } from "./HomepageEventEmbed";
 
 type EventVisualVariant =
@@ -51,26 +52,12 @@ export function EventVisual({
     }
 
     return (
-      <figure className={`event-source-media-cover ${variantClassName}`}>
-        <div className="event-source-media-cover__body">
-          <span>
-            {approvedMedia.mediaType === "publisher_video_embed"
-              ? "Publisher-hosted video"
-              : "Official source-linked post"}
-          </span>
-          <strong>{approvedMedia.publisher ?? "Approved source"}</strong>
-          <p>{approvedMedia.altText}</p>
-          {eventHref ? <Link href={eventHref}>View event media →</Link> : null}
-        </div>
-        {showClassification ? (
-          <figcaption>
-            <span>{getPublicMediaCaption(approvedMedia)} · </span>
-            <a href={approvedMedia.sourceUrl} rel="noreferrer">
-              {getPublicSourceLinkLabel(approvedMedia)}
-            </a>
-          </figcaption>
-        ) : null}
-      </figure>
+      <ArchiveMediaPreview
+        approvedMedia={approvedMedia}
+        eventHref={eventHref ?? `/events/${approvedMedia.eventSlug}`}
+        showCaption={showClassification}
+        variantClassName={variantClassName}
+      />
     );
   }
 

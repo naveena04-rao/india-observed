@@ -65,6 +65,10 @@ export type ApprovedUploadedEventImage = ApprovedEventMediaBase & {
 export type ApprovedEventEmbed = ApprovedEventMediaBase & {
   mediaType: "publisher_video_embed" | "official_social_embed";
   embedUrl: string;
+  previewImageUrl?: string;
+  previewImageStoragePath?: string;
+  previewAltText?: string;
+  previewFocalPosition?: string;
 };
 
 export type ApprovedEventMedia = ApprovedUploadedEventImage | ApprovedEventEmbed;

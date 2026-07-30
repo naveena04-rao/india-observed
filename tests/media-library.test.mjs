@@ -5,6 +5,9 @@ import test from "node:test";
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const migration = read("supabase/migrations/20260728000100_add_event_media_library.sql");
 const reviewedImport = read("supabase/migrations/20260728000200_import_reviewed_event_media.sql");
+const archivePreviewMigration = read(
+  "supabase/migrations/20260730000100_add_archive_embed_previews.sql",
+);
 const dbTest = read("supabase/tests/database/0004_event_media.test.sql");
 const validation = read("src/lib/media/validation.ts");
 const adminApi = read("src/app/api/admin/media/route.ts");
@@ -164,6 +167,31 @@ test("staging is private and public storage accepts only reviewed WebP derivativ
   assert.match(migration, /array\['image\/webp'\]/);
   assert.match(migration, /name = em\.event_slug \|\| '\/' \|\| em\.id \|\| '\/upload\.webp'/);
   assert.match(migration, /name = em\.event_slug \|\| '\/' \|\| em\.id \|\| '\/primary\.webp'/);
+  assert.match(
+    archivePreviewMigration,
+    /name = em\.event_slug \|\| '\/' \|\| em\.id \|\| '\/preview\.webp'/,
+  );
+});
+
+test("archive embed previews require separate provenance and review approval", () => {
+  assert.match(archivePreviewMigration, /event_media_approved_embed_preview_complete/);
+  assert.match(archivePreviewMigration, /preview_original_media_url/);
+  assert.match(archivePreviewMigration, /preview_original_sha256/);
+  assert.match(archivePreviewMigration, /preview_derivative_sha256/);
+  assert.match(
+    archivePreviewMigration,
+    /preview_same_event_verified[\s\S]*?preview_privacy_reviewed[\s\S]*?preview_safety_reviewed[\s\S]*?preview_integrity_reviewed[\s\S]*?preview_approved_source_verified/,
+  );
+  assert.match(
+    archivePreviewMigration,
+    /case[\s\S]*?then em\.preview_storage_path[\s\S]*?else null/,
+  );
+  assert.doesNotMatch(
+    archivePreviewMigration.match(
+      /create function public\.get_public_event_media[\s\S]*?\$\$;/,
+    )?.[0] ?? "",
+    /preview_original_media_url|preview_original_sha256|preview_review_notes/,
+  );
 });
 
 test("browser processing decodes, resizes, re-encodes and hashes the original", () => {
@@ -204,6 +232,20 @@ test("public loader returns only approved published media and never staging path
   assert.match(publicLoader, /event-media-public/);
   assert.doesNotMatch(publicLoader, /event-media-staging/);
   assert.match(migration, /where em\.status = 'approved'/);
+  assert.match(publicLoader, /approved-event-media-v3/);
+  assert.match(
+    publicLoader,
+    /if \(!availability\.enabled\) return \[\];[\s\S]*?loadPublicMediaRowsFromEnabledLibrary\(availability\.projectRef\)/,
+  );
+  assert.match(publicLoader, /previewImageUrl/);
+});
+
+test("archive and Phase 2 verification commands are registered", () => {
+  assert.equal(
+    packageJson.scripts["media:verify-archive"],
+    "node scripts/media-verify-archive.mjs",
+  );
+  assert.equal(packageJson.scripts["media:verify-phase2"], "node scripts/media-verify-phase2.mjs");
 });
 
 test("withdrawal removes public display and invalidates affected pages", () => {

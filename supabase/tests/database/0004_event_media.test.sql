@@ -132,7 +132,12 @@ select is(
     'previous_public_storage_path',
     'created_at',
     'updated_at',
-    'crop_resize_disclosure'
+    'crop_resize_disclosure',
+    'preview_original_media_url',
+    'preview_original_sha256',
+    'preview_derivative_sha256',
+    'preview_frame_timestamp_seconds',
+    'preview_review_notes'
   ]::text[],
   'permission evidence and reviewer notes remain in a separate private table'
 );
@@ -508,6 +513,21 @@ values (
   'Integrity review complete.',
   'https://www.ndtv.com/videos/embed-player/?id=992'
 );
+select public.configure_event_media_preview(
+  '14000000-0000-4000-8000-000000000011',
+  'karapur-sarvan-luxury-township-protest/14000000-0000-4000-8000-000000000011/preview.webp',
+  'Exact-event preview for the approval regression test.',
+  'https://www.ndtv.com/video/test-event-992',
+  repeat('a', 64),
+  repeat('b', 64),
+  'Exact-event preview provenance, privacy, safety and integrity review completed.',
+  true,
+  true,
+  true,
+  true,
+  true,
+  null
+);
 select lives_ok(
   $$select * from public.approve_event_media(
     '14000000-0000-4000-8000-000000000011',
@@ -606,6 +626,21 @@ values (
   'Safety review complete.',
   'Integrity review complete.',
   'https://www.ndtv.com/videos/embed-player/?id=993'
+);
+select public.configure_event_media_preview(
+  '14000000-0000-4000-8000-000000000012',
+  'karapur-sarvan-luxury-township-protest/14000000-0000-4000-8000-000000000012/preview.webp',
+  'Exact-event preview for the replacement regression test.',
+  'https://www.ndtv.com/video/test-event-993',
+  repeat('c', 64),
+  repeat('d', 64),
+  'Replacement preview provenance, privacy, safety and integrity review completed.',
+  true,
+  true,
+  true,
+  true,
+  true,
+  null
 );
 select lives_ok(
   $$select * from public.approve_event_media(
@@ -726,6 +761,7 @@ select is(
     where n.nspname = 'public'
       and p.proname in (
         'approve_event_media',
+        'configure_event_media_preview',
         'get_public_event_media',
         'is_media_admin',
         'reject_event_media',
@@ -734,7 +770,7 @@ select is(
       )
       and p.prosecdef
   ),
-  6,
+  7,
   'all authorization and public-return functions are SECURITY DEFINER'
 );
 select is(
@@ -745,6 +781,7 @@ select is(
     where n.nspname = 'public'
       and p.proname in (
         'approve_event_media',
+        'configure_event_media_preview',
         'get_public_event_media',
         'is_media_admin',
         'reject_event_media',
@@ -753,7 +790,7 @@ select is(
       )
       and p.proconfig is not null
   ),
-  6,
+  7,
   'all authorization and public-return functions use fixed search paths'
 );
 
