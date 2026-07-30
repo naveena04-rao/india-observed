@@ -63,6 +63,12 @@ export async function POST(request: Request) {
     id,
     event_slug: draft.eventSlug,
     media_type: draft.mediaType,
+    public_display_kind:
+      draft.mediaType === "uploaded_event_image"
+        ? "photograph"
+        : draft.mediaType === "publisher_video_embed"
+          ? "video"
+          : "post",
     status: "draft",
     storage_path: stagingPath,
     source_url: draft.sourceUrl,

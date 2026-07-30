@@ -27,8 +27,14 @@ export function EventDetailMedia({ visual, approvedMedia }: EventDetailMediaProp
   }
 
   if (approvedMedia.mediaType === "uploaded_event_image") {
+    const isSourceDocument = approvedMedia.publicDisplayKind === "source_document_preview";
     return (
       <figure className="event-detail-media event-detail-approved-image">
+        {isSourceDocument ? (
+          <span className="source-document-preview-label">
+            Source document preview — not an event photograph
+          </span>
+        ) : null}
         {/* Dynamic URLs are limited to the configured Supabase public-media bucket. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img

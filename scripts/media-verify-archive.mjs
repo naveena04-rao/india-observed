@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { approvedMediaBySlug, publishedEventSlugs } from "./media-library.mjs";
 
 try {
@@ -17,6 +18,10 @@ try {
   const missingCreditOrSource = [...approved.entries()]
     .filter(([, item]) => !item.credit_line || !item.source_url)
     .map(([slug]) => slug);
+  const [archivePreviewSource, eventVisualSource] = await Promise.all([
+    readFile("src/app/events/components/ArchiveMediaPreview.tsx", "utf8"),
+    readFile("src/app/events/components/EventVisual.tsx", "utf8"),
+  ]);
 
   if (approved.size !== 50 || missing.length) {
     throw new Error(`Archive media missing: ${missing.join(", ") || "unexpected row count"}.`);
@@ -30,8 +35,19 @@ try {
   if (missingCreditOrSource.length) {
     throw new Error(`Archive media lacks credit or source: ${missingCreditOrSource.join(", ")}.`);
   }
+  if (/<iframe\b/i.test(archivePreviewSource)) {
+    throw new Error("The archive preview component must not load an iframe.");
+  }
+  if (
+    !eventVisualSource.includes("<ArchiveMediaPreview") ||
+    !eventVisualSource.includes("approvedMedia.publicUrl")
+  ) {
+    throw new Error("Archive rows do not render approved static and embed-preview treatments.");
+  }
 
-  console.log("Archive media verification passed: 50 rows, 50 approved visual treatments.");
+  console.log(
+    "Archive media verification passed: 50 visible treatments, no fallback and no archive iframe.",
+  );
 } catch (error) {
   console.error(error instanceof Error ? error.message : "Archive media verification failed.");
   process.exitCode = 1;

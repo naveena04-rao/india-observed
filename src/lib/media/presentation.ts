@@ -13,7 +13,10 @@ const publicDisplayBasis: Record<MediaRightsBasis, string> = {
     "Displayed with source attribution for reporting on this event.",
 };
 
-export function getPublicMediaKind(media: ApprovedEventMedia): "Photo" | "Video" | "Post" {
+export function getPublicMediaKind(
+  media: ApprovedEventMedia,
+): "Photo" | "Video" | "Post" | "Source document" {
+  if (media.publicDisplayKind === "source_document_preview") return "Source document";
   if (media.mediaType === "uploaded_event_image") return "Photo";
   return media.mediaType === "publisher_video_embed" ? "Video" : "Post";
 }
@@ -32,6 +35,7 @@ export function getPublicMediaCaption(media: ApprovedEventMedia): string {
 
 export function getPublicSourceLinkLabel(media: ApprovedEventMedia): string {
   if (media.mediaType !== "uploaded_event_image") return "View original";
+  if (media.publicDisplayKind === "source_document_preview") return "View original source";
   if (media.creator && media.publisher && media.creator !== media.publisher) {
     return `Source: ${media.publisher}`;
   }

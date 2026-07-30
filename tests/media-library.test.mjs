@@ -232,7 +232,7 @@ test("public loader returns only approved published media and never staging path
   assert.match(publicLoader, /event-media-public/);
   assert.doesNotMatch(publicLoader, /event-media-staging/);
   assert.match(migration, /where em\.status = 'approved'/);
-  assert.match(publicLoader, /approved-event-media-v3/);
+  assert.match(publicLoader, /approved-event-media-v4/);
   assert.match(
     publicLoader,
     /if \(!availability\.enabled\) return \[\];[\s\S]*?loadPublicMediaRowsFromEnabledLibrary\(availability\.projectRef\)/,

@@ -142,7 +142,7 @@ test("embed archive previews have independent provenance and all five review gat
   assert.match(archivePreviewMigration, /preview_derivative_sha256/);
   assert.match(archivePreviewMigration, /event_media_approved_embed_preview_complete/);
   assert.match(archivePreviewMigration, /\/preview\.webp/);
-  assert.match(publicLoader, /approved-event-media-v3/);
+  assert.match(publicLoader, /approved-event-media-v4/);
   assert.match(
     publicLoader,
     /if \(!availability\.enabled\) return \[\];[\s\S]*?loadPublicMediaRowsFromEnabledLibrary\(availability\.projectRef\)/,

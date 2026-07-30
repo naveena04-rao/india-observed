@@ -26,6 +26,7 @@
     "media:verify-launch": "node scripts/media-verify-launch.mjs",
     "media:verify-phase2": "node scripts/media-verify-phase2.mjs",
     "media:verify-archive": "node scripts/media-verify-archive.mjs",
+    "media:populate-phase2": "node scripts/media-populate-phase2.mjs",
     "secrets:check": "node scripts/secret-scan.mjs"
   },
   "dependencies": {

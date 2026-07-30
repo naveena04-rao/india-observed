@@ -3609,6 +3609,21 @@ main .lead-panel {
   z-index: 1;
 }
 
+.source-document-preview-label {
+  background: rgb(21 22 22 / 92%);
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  left: 0;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+  padding: 0.45rem 0.65rem;
+  position: absolute;
+  text-transform: uppercase;
+  top: 0;
+  z-index: 1;
+}
+
 .event-approved-image img,
 .event-detail-approved-image > img {
   display: block;
@@ -3799,6 +3814,7 @@ main .lead-panel {
   aspect-ratio: auto;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
+  position: relative;
 }
 
 .event-detail-approved-image > img {

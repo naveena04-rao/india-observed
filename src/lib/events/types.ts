@@ -41,9 +41,12 @@ export type MediaRightsBasis =
 export type ApprovedMediaType =
   "uploaded_event_image" | "publisher_video_embed" | "official_social_embed";
 
+export type PublicMediaDisplayKind = "photograph" | "video" | "post" | "source_document_preview";
+
 type ApprovedEventMediaBase = {
   eventSlug: string;
   mediaType: ApprovedMediaType;
+  publicDisplayKind: PublicMediaDisplayKind;
   sourceUrl: string;
   publisher: string | null;
   creator: string | null;
@@ -59,11 +62,13 @@ type ApprovedEventMediaBase = {
 
 export type ApprovedUploadedEventImage = ApprovedEventMediaBase & {
   mediaType: "uploaded_event_image";
+  publicDisplayKind: "photograph" | "source_document_preview";
   publicUrl: string;
 };
 
 export type ApprovedEventEmbed = ApprovedEventMediaBase & {
   mediaType: "publisher_video_embed" | "official_social_embed";
+  publicDisplayKind: "video" | "post";
   embedUrl: string;
   previewImageUrl?: string;
   previewImageStoragePath?: string;

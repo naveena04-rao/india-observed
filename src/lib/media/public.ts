@@ -7,6 +7,7 @@ import { createAnonymousSupabaseClient } from "@/lib/supabase/server";
 type PublicMediaRow = {
   event_slug: string;
   media_type: ApprovedEventMedia["mediaType"];
+  public_display_kind: ApprovedEventMedia["publicDisplayKind"];
   storage_path: string | null;
   media_url: string | null;
   source_url: string;
@@ -49,7 +50,7 @@ const loadPublicMediaRowsFromEnabledLibrary = unstable_cache(
     }
     return (data ?? []) as PublicMediaRow[];
   },
-  ["approved-event-media-v3"],
+  ["approved-event-media-v4"],
   { revalidate: 300, tags: ["event-media"] },
 );
 
@@ -90,6 +91,7 @@ export async function loadApprovedEventMedia(
     const common = {
       eventSlug: row.event_slug,
       mediaType: row.media_type,
+      publicDisplayKind: row.public_display_kind,
       sourceUrl: row.source_url,
       publisher: row.publisher,
       creator: row.creator,
@@ -108,6 +110,10 @@ export async function loadApprovedEventMedia(
       approved.set(row.event_slug, {
         ...common,
         mediaType: "uploaded_event_image",
+        publicDisplayKind:
+          row.public_display_kind === "source_document_preview"
+            ? "source_document_preview"
+            : "photograph",
         publicUrl: data.publicUrl,
       });
     } else if (row.media_type !== "uploaded_event_image" && row.media_url?.startsWith("https://")) {
@@ -130,6 +136,7 @@ export async function loadApprovedEventMedia(
       approved.set(row.event_slug, {
         ...common,
         mediaType: row.media_type,
+        publicDisplayKind: row.media_type === "publisher_video_embed" ? "video" : "post",
         embedUrl: row.media_url,
         previewImageUrl,
         previewImageStoragePath: previewStoragePath,

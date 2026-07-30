@@ -40,8 +40,8 @@ select is(
 );
 select is(
   (select count(*)::integer from public.media_event_sources),
-  167,
-  'media registry contains 165 factual sources and two media-only source relationships'
+  171,
+  'media registry contains 165 factual sources and six reviewed media-only source relationships'
 );
 select is(
   (select count(*)::integer from public.event_media where status = 'draft'),
@@ -137,7 +137,12 @@ select is(
     'preview_original_sha256',
     'preview_derivative_sha256',
     'preview_frame_timestamp_seconds',
-    'preview_review_notes'
+    'preview_review_notes',
+    'derivative_sha256',
+    'original_width',
+    'original_height',
+    'derivative_width',
+    'derivative_height'
   ]::text[],
   'permission evidence and reviewer notes remain in a separate private table'
 );

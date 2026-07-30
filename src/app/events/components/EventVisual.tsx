@@ -23,8 +23,14 @@ export function EventVisual({
   const variantClassName = `event-visual--${variant}`;
 
   if (approvedMedia?.mediaType === "uploaded_event_image") {
+    const isSourceDocument = approvedMedia.publicDisplayKind === "source_document_preview";
     return (
       <figure className={`event-approved-image ${variantClassName}`}>
+        {isSourceDocument ? (
+          <span className="source-document-preview-label">
+            Source document preview — not an event photograph
+          </span>
+        ) : null}
         {/* Dynamic URLs are limited to the configured Supabase public-media bucket. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
