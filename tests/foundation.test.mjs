@@ -676,9 +676,10 @@ test("homepage uses the refined section hierarchy and editorial footer", () => {
 
   assert.match(
     styles,
-    /\.public-footer\s*\{[\s\S]*?background: #f3f1ec;[\s\S]*?border-top: 1px solid #d8d4cb;[\s\S]*?color: var\(--ink\);/,
+    /\.public-footer\s*\{[\s\S]*?background-color: #e8e3da;[\s\S]*?border-top: 1px solid #cbc3b7;[\s\S]*?color: var\(--ink\);/,
   );
-  assert.match(styles, /\.public-footer__primary\s*\{[\s\S]*?padding-block: 0\.5rem;/);
+  assert.match(styles, /\.public-footer__primary\s*\{[\s\S]*?padding-block: 1\.25rem;/);
+  assert.doesNotMatch(styles, /\.public-footer__(?:primary|secondary)\s*\{[^}]*background/);
   assert.match(footer, /<footer className="public-footer">/);
   assert.equal((footer.match(/<footer\b/g) ?? []).length, 1);
   for (const group of ["Explore", "About", "Standards"]) {
@@ -764,6 +765,6 @@ test("homepage preserves the approved black header and white page surfaces", () 
   )?.[0];
   assert.ok(whiteSurfaceRule);
   assert.doesNotMatch(whiteSurfaceRule, /#f5f2ea|#ebe6db|#fbfaf6|#f7f2e8|#fbf8f1/);
-  assert.match(styles, /\.public-footer\s*\{[\s\S]*?background: #f3f1ec;/);
+  assert.match(styles, /\.public-footer\s*\{[\s\S]*?background-color: #e8e3da;/);
   assert.doesNotMatch(read("src/app/page.tsx"), /Open questions/i);
 });
