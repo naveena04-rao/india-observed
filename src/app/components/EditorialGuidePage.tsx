@@ -36,16 +36,6 @@ export function StoryHero({
         <h1>{title}</h1>
         <p className="editorial-hero-introduction">{introduction}</p>
       </div>
-      <div className="story-source-motif" aria-hidden="true">
-        <span className="story-source-motif-label">PUBLIC RECORD</span>
-        <span className="story-source-motif-line story-source-motif-line--one" />
-        <span className="story-source-motif-line story-source-motif-line--two" />
-        <span className="story-source-motif-line story-source-motif-line--three" />
-        <span className="story-source-motif-node story-source-motif-node--one" />
-        <span className="story-source-motif-node story-source-motif-node--two" />
-        <span className="story-source-motif-node story-source-motif-node--three" />
-        <span className="story-source-motif-index">01 / SOURCE / REVIEW</span>
-      </div>
     </header>
   );
 }
@@ -99,12 +89,6 @@ export function StorySplitSection({
       <div className="story-split-copy">
         <h2 id={`${id}-title`}>{title}</h2>
         {children}
-      </div>
-      <div className="story-record-diagram" aria-hidden="true">
-        <span>REPORTING</span>
-        <span>STATEMENTS</span>
-        <span>DOCUMENTS</span>
-        <strong>PUBLIC RECORD</strong>
       </div>
     </section>
   );

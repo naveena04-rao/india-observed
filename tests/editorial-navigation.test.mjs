@@ -153,7 +153,7 @@ test("Methodology derives current verification labels and uses the four-stage st
   assert.doesNotMatch(methodology, /same_event_verified|approval status|reviewer|rights_basis/i);
 });
 
-test("editorial pages use modern scoped typography and remove the rejected boxed layout", () => {
+test("editorial pages use compact scoped typography without artificial About visuals", () => {
   for (const component of [
     "StoryPage",
     "StoryHero",
@@ -175,23 +175,35 @@ test("editorial pages use modern scoped typography and remove the rejected boxed
     css,
     /\.editorial-page\s*\{[\s\S]*?font-family: Arial, "Helvetica Neue", system-ui, sans-serif;/,
   );
-  assert.match(css, /\.editorial-page \.editorial-page-inner\s*\{[\s\S]*?max-width: 72rem;/);
-  assert.match(css, /\.editorial-page \.editorial-reading-column\s*\{[\s\S]*?max-width: 44rem;/);
+  assert.match(css, /\.editorial-page \.editorial-page-inner\s*\{[\s\S]*?max-width: 54rem;/);
+  assert.match(css, /\.editorial-page \.editorial-reading-column\s*\{[\s\S]*?max-width: 33rem;/);
   assert.match(
     css,
-    /\.editorial-page h1\s*\{[\s\S]*?font-size: clamp\(2\.75rem, 4\.2vw, 3\.75rem\);/,
+    /\.editorial-page h1\s*\{[\s\S]*?font-size: clamp\(2rem, 3\.2vw, 2\.8125rem\);[\s\S]*?line-height: 1\.08;/,
   );
-  assert.match(css, /\.editorial-page p,[\s\S]*?font-size: 1\.0625rem;[\s\S]*?line-height: 1\.65;/);
+  assert.match(
+    css,
+    /\.editorial-page \.editorial-hero-introduction\s*\{[\s\S]*?font-size: clamp\(1rem, 1\.25vw, 1\.125rem\);[\s\S]*?line-height: 1\.55;[\s\S]*?max-width: 34rem;/,
+  );
+  assert.match(css, /\.editorial-page p,[\s\S]*?font-size: 1rem;[\s\S]*?line-height: 1\.6;/);
+  assert.match(
+    css,
+    /\.editorial-page \.editorial-section h2,[\s\S]*?font-size: clamp\(1\.375rem, 2vw, 1\.75rem\);[\s\S]*?line-height: 1\.2;/,
+  );
   assert.match(
     css,
     /\.editorial-page \.story-principles-list\s*\{[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/,
   );
   assert.match(
     css,
-    /@media \(max-width: 600px\)[\s\S]*?\.editorial-page h1\s*\{[\s\S]*?font-size: clamp\(2\.35rem, 10vw, 3rem\);/,
+    /@media \(max-width: 600px\)[\s\S]*?\.editorial-page h1\s*\{[\s\S]*?font-size: clamp\(1\.8125rem, 7\.7vw, 2rem\);/,
   );
-  assert.match(css, /\.editorial-page \.story-source-motif\s*\{/);
+  assert.match(css, /\.editorial-page \.story-hero-copy\s*\{[\s\S]*?max-width: 34rem;/);
   assert.match(css, /\.editorial-page \.story-statement > p\s*\{/);
+  assert.doesNotMatch(
+    `${editorialLayout}\n${css}`,
+    /story-source-motif|story-record-diagram|PUBLIC RECORD|REPORTING|STATEMENTS|DOCUMENTS|01 \/ SOURCE \/ REVIEW/,
+  );
   assert.doesNotMatch(css, /\.editorial-page[\s\S]*?background: #151616;/);
 
   for (const path of [
