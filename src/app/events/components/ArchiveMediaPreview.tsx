@@ -8,11 +8,13 @@ import { getPublicMediaCaption, getPublicSourceLinkLabel } from "../../../lib/me
 export function ArchiveMediaPreview({
   approvedMedia,
   eventHref,
+  linkClassName,
   showCaption,
   variantClassName,
 }: {
   approvedMedia: ApprovedEventEmbed;
   eventHref: string;
+  linkClassName?: string;
   showCaption: boolean;
   variantClassName: string;
 }) {
@@ -33,7 +35,11 @@ export function ArchiveMediaPreview({
 
   return (
     <figure className={`event-approved-image event-approved-embed-preview ${variantClassName}`}>
-      <Link href={eventHref} aria-label={`View event: ${approvedMedia.previewAltText}`}>
+      <Link
+        className={linkClassName}
+        href={eventHref}
+        aria-label={`View full record: ${approvedMedia.previewAltText}`}
+      >
         {/* URLs are limited to independently reviewed WebP derivatives in the public bucket. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img

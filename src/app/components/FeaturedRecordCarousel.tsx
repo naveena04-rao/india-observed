@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { ApprovedEventMedia, EventVisual as EventVisualData } from "../../lib/events/types";
 import {
@@ -213,6 +214,9 @@ export function FeaturedRecordCarousel({
         key={activeRecord.slug}
         slug={activeRecord.slug}
       />
+      <Link className="featured-record-link" href={activeRecord.eventHref}>
+        View full record →
+      </Link>
       {includeIndicators ? carouselPosition : null}
     </div>
   );
@@ -306,7 +310,9 @@ export function FeaturedRecordCarousel({
                   </div>
                   <span className="record-topic">{record.topic}</span>
                   <span className="latest-location">{record.place}</span>
-                  <strong>{record.title}</strong>
+                  <h3 className="latest-entry-title">
+                    <Link href={record.eventHref}>{record.title}</Link>
+                  </h3>
                   <div className="latest-entry-footer">
                     <time dateTime="2026-07-15">Reviewed {record.reviewed}</time>
                     <EventFollowControl
@@ -316,11 +322,15 @@ export function FeaturedRecordCarousel({
                       slug={record.slug}
                     />
                   </div>
+                  <Link className="latest-entry-record-link" href={record.eventHref}>
+                    View full record →
+                  </Link>
                 </div>
                 <EventVisual
                   approvedMedia={record.approvedMedia}
                   visual={record.visual}
                   eventHref={record.eventHref}
+                  imageLinksToEvent
                   variant="homepage-latest"
                 />
               </article>

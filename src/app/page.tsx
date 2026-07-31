@@ -396,7 +396,9 @@ export default async function HomePage() {
                       <span>{record.topic}</span>
                       <span>{record.place}</span>
                     </div>
-                    <h3>{record.title}</h3>
+                    <h3>
+                      <Link href={eventHref}>{record.title}</Link>
+                    </h3>
                     <p>{record.context}</p>
                     <div className="on-record-footer">
                       <time dateTime="2026-07-15">Reviewed {record.reviewed}</time>
@@ -407,6 +409,9 @@ export default async function HomePage() {
                         slug={slug}
                       />
                     </div>
+                    <Link className="on-record-record-link" href={eventHref}>
+                      View full record →
+                    </Link>
                   </div>
                   <EventVisual
                     approvedMedia={approvedMedia}

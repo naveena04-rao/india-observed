@@ -11,12 +11,14 @@ export function EventVisual({
   visual,
   approvedMedia,
   eventHref,
+  imageLinksToEvent = false,
   showClassification = true,
   variant = "archive",
 }: {
   visual: EventVisualData;
   approvedMedia?: ApprovedEventMedia;
   eventHref?: string;
+  imageLinksToEvent?: boolean;
   showClassification?: boolean;
   variant?: EventVisualVariant;
 }) {
@@ -24,6 +26,15 @@ export function EventVisual({
 
   if (approvedMedia?.mediaType === "uploaded_event_image") {
     const isSourceDocument = approvedMedia.publicDisplayKind === "source_document_preview";
+    const image = (
+      // Dynamic URLs are limited to the configured Supabase public-media bucket.
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        alt={approvedMedia.altText}
+        src={approvedMedia.publicUrl}
+        style={{ objectPosition: approvedMedia.focalPosition }}
+      />
+    );
     return (
       <figure className={`event-approved-image ${variantClassName}`}>
         {isSourceDocument ? (
@@ -31,13 +42,17 @@ export function EventVisual({
             Source document preview — not an event photograph
           </span>
         ) : null}
-        {/* Dynamic URLs are limited to the configured Supabase public-media bucket. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          alt={approvedMedia.altText}
-          src={approvedMedia.publicUrl}
-          style={{ objectPosition: approvedMedia.focalPosition }}
-        />
+        {imageLinksToEvent && eventHref ? (
+          <Link
+            aria-label={`View full record: ${visual.title}`}
+            className="latest-entry-media-navigation"
+            href={eventHref}
+          >
+            {image}
+          </Link>
+        ) : (
+          image
+        )}
         {showClassification ? (
           <figcaption>
             <span>{getPublicMediaCaption(approvedMedia)} · </span>
@@ -51,6 +66,18 @@ export function EventVisual({
   }
 
   if (approvedMedia) {
+    if (imageLinksToEvent && eventHref) {
+      return (
+        <ArchiveMediaPreview
+          approvedMedia={approvedMedia}
+          eventHref={eventHref}
+          linkClassName="latest-entry-media-navigation"
+          showCaption={showClassification}
+          variantClassName={variantClassName}
+        />
+      );
+    }
+
     if (variant !== "archive") {
       return (
         <HomepageEventEmbed approvedMedia={approvedMedia} variantClassName={variantClassName} />
