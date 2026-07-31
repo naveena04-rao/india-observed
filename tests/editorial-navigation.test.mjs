@@ -91,55 +91,108 @@ test("record links have visible focus and linked media has an obvious stable int
   );
 });
 
-test("About uses the reader-facing editorial layout and approved concise content", () => {
-  assert.match(about, /<EditorialGuidePage/);
-  assert.doesNotMatch(about, /LaunchPolicyPage|Return to Events/);
+test("About uses the reference-inspired story system and approved narrative content", () => {
+  assert.match(about, /<StoryPage/);
+  assert.match(about, /<StoryStatement>/);
+  assert.match(about, /<StorySplitSection/);
+  assert.match(about, /<StoryPrinciples/);
+  assert.doesNotMatch(
+    about,
+    /LaunchPolicyPage|Return to Events|EditorialSummaryStrip|EditorialFeatureGrid/,
+  );
   for (const text of [
-    "A public record of civic action",
-    "Why this exists",
-    "What each record shows",
-    "What we do not publish",
-    "A record can change",
-    "See the record for yourself",
+    "Civic events, clearly documented.",
+    "Public events are often reported in fragments.",
+    "Why India Observed exists",
+    "Core principles",
+    "What a record contains",
+    "What stays private",
+    "A public record is not static",
+    "Explore the record",
   ]) {
     assert.match(about, new RegExp(text));
   }
   assert.match(about, /\{ href: "\/events", label: "Explore events" \}/);
-  assert.match(about, /\{ href: "\/methodology", label: "Read the methodology" \}/);
+  assert.match(about, /\{ href: "\/methodology", label: "How records are reviewed" \}/);
   assert.match(editorialLayout, /<ArchiveShell authReturnTo=\{path\}>/);
+  assert.match(about, /<StoryRows items=\{recordRows\}/);
+  assert.match(about, /tone="teal"/);
 });
 
-test("Methodology derives current verification labels and preserves four semantic stages", () => {
+test("Methodology derives current verification labels and uses the four-stage story process", () => {
   assert.match(methodology, /await getReviewedEvents\(\)/);
   assert.match(methodology, /reviewedEvents\.map\(\(event\) => event\.eventVerification\)/);
-  assert.match(methodology, /presentVerificationLabels\.has\(title\)/);
-  assert.equal((methodology.match(/<MethodologyStep /g) ?? []).length, 4);
+  assert.match(methodology, /presentVerificationLabels\.has\(label\)/);
+  assert.match(methodology, /<StoryProcess stages=\{methodologyStages\}/);
+  assert.equal((methodology.match(/number: "[1-4]"/g) ?? []).length, 4);
+  assert.deepEqual(
+    [...methodology.matchAll(/shortTitle: "(Find|Separate|Check|Review)"/g)].map(
+      (match) => match[1],
+    ),
+    ["Find", "Separate", "Check", "Review"],
+  );
+  assert.doesNotMatch(
+    methodology,
+    /EditorialSummaryStrip|EditorialFeatureGrid|MethodologyStep|EditorialCallout/,
+  );
   for (const heading of [
     "Find the event",
     "Separate the information",
     "Check the evidence",
     "Review before publication",
-    "What verification labels mean",
-    "How sources are used",
-    "Privacy, safety and media",
-    "Updates and corrections",
+    "How to read verification labels",
+    "A source count is not a reliability score",
+    "Not every available detail should be published",
+    "Records remain open to stronger evidence",
+    "See the methodology in practice",
   ]) {
     assert.match(methodology, new RegExp(heading));
   }
-  assert.match(methodology, /\{ href: "\/events", label: "Explore reviewed events" \}/);
-  assert.match(methodology, /\{ href: "\/editorial-policy", label: "Read the editorial policy" \}/);
+  assert.match(methodology, /\{ href: "\/events", label: "Explore events" \}/);
+  assert.match(methodology, /\{ href: "\/editorial-policy", label: "Editorial policy" \}/);
   assert.doesNotMatch(methodology, /same_event_verified|approval status|reviewer|rights_basis/i);
 });
 
-test("editorial pages have scoped readable widths without changing legal page presentation", () => {
-  assert.match(css, /\.editorial-guide-page\s*\{[\s\S]*?max-width: 68\.75rem;/);
-  assert.match(css, /\.editorial-guide-body\s*\{[\s\S]*?max-width: 45rem;/);
-  assert.match(css, /\.editorial-guide-page h1\s*\{[\s\S]*?max-width: 13ch;/);
+test("editorial pages use modern scoped typography and remove the rejected boxed layout", () => {
+  for (const component of [
+    "StoryPage",
+    "StoryHero",
+    "StoryStatement",
+    "StorySection",
+    "StorySplitSection",
+    "StoryPrinciples",
+    "StoryRows",
+    "StoryProcess",
+    "StoryClosing",
+  ]) {
+    assert.match(editorialLayout, new RegExp(`export function ${component}`));
+  }
+  assert.doesNotMatch(
+    `${editorialLayout}\n${css}`,
+    /editorial-summary-strip|editorial-feature-grid|editorial-methodology-step|editorial-callout/,
+  );
   assert.match(
     css,
-    /\.editorial-guide-page p,[\s\S]*?font-size: clamp\(1rem, 1\.4vw, 1\.125rem\);[\s\S]*?line-height: 1\.72;/,
+    /\.editorial-page\s*\{[\s\S]*?font-family: Arial, "Helvetica Neue", system-ui, sans-serif;/,
   );
-  assert.match(css, /@media \(max-width: 600px\)[\s\S]*?grid-template-columns: 1fr;/);
+  assert.match(css, /\.editorial-page \.editorial-page-inner\s*\{[\s\S]*?max-width: 72rem;/);
+  assert.match(css, /\.editorial-page \.editorial-reading-column\s*\{[\s\S]*?max-width: 44rem;/);
+  assert.match(
+    css,
+    /\.editorial-page h1\s*\{[\s\S]*?font-size: clamp\(2\.75rem, 4\.2vw, 3\.75rem\);/,
+  );
+  assert.match(css, /\.editorial-page p,[\s\S]*?font-size: 1\.0625rem;[\s\S]*?line-height: 1\.65;/);
+  assert.match(
+    css,
+    /\.editorial-page \.story-principles-list\s*\{[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/,
+  );
+  assert.match(
+    css,
+    /@media \(max-width: 600px\)[\s\S]*?\.editorial-page h1\s*\{[\s\S]*?font-size: clamp\(2\.35rem, 10vw, 3rem\);/,
+  );
+  assert.match(css, /\.editorial-page \.story-source-motif\s*\{/);
+  assert.match(css, /\.editorial-page \.story-statement > p\s*\{/);
+  assert.doesNotMatch(css, /\.editorial-page[\s\S]*?background: #151616;/);
 
   for (const path of [
     "src/app/editorial-policy/page.tsx",

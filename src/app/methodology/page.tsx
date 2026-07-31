@@ -1,9 +1,12 @@
 import {
-  EditorialCallout,
-  EditorialFeatureGrid,
-  EditorialGuidePage,
-  MethodologyStep,
-  type EditorialGuideItem,
+  StoryClosing,
+  StoryPage,
+  StoryPrinciples,
+  StoryProcess,
+  StoryRows,
+  StorySection,
+  type StoryProcessStage,
+  type StoryRow,
 } from "@/app/components/EditorialGuidePage";
 import { getReviewedEvents } from "@/lib/events/getReviewedEvents";
 
@@ -13,134 +16,139 @@ export const metadata = {
   alternates: { canonical: "/methodology" },
 };
 
-const summaryItems = [
+const methodologyStages: readonly StoryProcessStage[] = [
   {
-    title: "Find",
-    description: "Identify a publicly reported civic event.",
+    number: "1",
+    shortTitle: "Find",
+    title: "Find the event",
+    description: [
+      "We begin with public reporting, official information or a credible public lead.",
+      "There must be enough reliable information to establish that the event occurred.",
+    ],
   },
   {
-    title: "Separate",
-    description: "Distinguish facts, claims, responses and disputed details.",
+    number: "2",
+    shortTitle: "Separate",
+    title: "Separate the information",
+    description: [
+      "A report may mix confirmed details, participant claims, official responses and opinion.",
+      "We separate them so readers can see what is established, what is attributed and what remains disputed.",
+    ],
   },
   {
-    title: "Check",
-    description: "Compare sources and supporting evidence.",
+    number: "3",
+    shortTitle: "Check",
+    title: "Check the evidence",
+    description: [
+      "We compare sources and look for official notices, statements, photographs, videos and supporting documents.",
+      "Important or disputed claims require stronger evidence than the basic occurrence of an event.",
+    ],
   },
   {
-    title: "Review",
-    description: "Assess accuracy, privacy, safety and media use.",
+    number: "4",
+    shortTitle: "Review",
+    title: "Review before publication",
+    description: [
+      "The record is checked for accuracy, source quality, privacy, safety, media attribution and avoidable harm.",
+      "Automated tools may assist with organisation and checks, but publication remains a human editorial decision.",
+    ],
   },
 ] as const;
 
 const verificationDefinitions: Record<string, string> = {
+  "Occurrence verified": "Reliable evidence establishes that the event took place.",
+  "Outcome documented": "A reported response, decision or conclusion has supporting evidence.",
   "Occurrence verified — disputed details remain":
-    "Reliable evidence establishes that the event took place, while important claims or accounts remain contested or unresolved.",
+    "The event is established, but important claims or accounts are still contested.",
+  "Disputed details remain":
+    "The event is established, but important claims or accounts are still contested.",
 };
+
+const sourceCriteria = [
+  {
+    marker: "01",
+    title: "Relevance",
+    description: "The source directly addresses the event or claim under review.",
+  },
+  {
+    marker: "02",
+    title: "Direct knowledge",
+    description: "The source is close enough to the facts to offer meaningful evidence.",
+  },
+  {
+    marker: "03",
+    title: "Independence",
+    description: "The source relationship and possible interests are considered.",
+  },
+  {
+    marker: "04",
+    title: "Supporting evidence",
+    description: "Documents or corroborating material strengthen consequential claims.",
+  },
+] as const;
 
 export default async function MethodologyPage() {
   const reviewedEvents = await getReviewedEvents();
   const presentVerificationLabels = new Set(reviewedEvents.map((event) => event.eventVerification));
-  const verificationItems: EditorialGuideItem[] = Object.entries(verificationDefinitions).flatMap(
-    ([title, description]) =>
-      presentVerificationLabels.has(title) ? [{ title, description }] : [],
+  const verificationRows: StoryRow[] = Object.entries(verificationDefinitions).flatMap(
+    ([label, description]) =>
+      presentVerificationLabels.has(label) ? [{ label, description }] : [],
   );
 
   return (
-    <EditorialGuidePage
-      introduction="Every record passes through the same basic process: find the event, separate the claims, check the evidence and review the risks before publication."
-      kicker="OUR METHODOLOGY"
+    <StoryPage
+      eyebrow="METHODOLOGY"
+      introduction="Every event passes through the same four-stage process before it appears publicly."
       path="/methodology"
-      summaryItems={summaryItems}
-      summaryLabel="Four-stage editorial review summary"
-      title="How an event becomes a public record"
+      title="How an event becomes a record."
     >
-      <section aria-labelledby="methodology-steps-title">
-        <h2 className="visually-hidden" id="methodology-steps-title">
-          Four methodology steps
-        </h2>
-        <ol className="editorial-methodology-steps">
-          <MethodologyStep number="1" title="Find the event">
-            <p>We begin with public reporting, official information or a credible public lead.</p>
-            <p>
-              The first question is simple: is there enough reliable information to establish that
-              the event occurred?
-            </p>
-          </MethodologyStep>
-          <MethodologyStep number="2" title="Separate the information">
-            <p>
-              A source may contain confirmed details, participant claims, official responses and
-              opinion in the same report.
-            </p>
-            <p>
-              We separate them so readers can see what is established, what is attributed and what
-              remains disputed.
-            </p>
-          </MethodologyStep>
-          <MethodologyStep number="3" title="Check the evidence">
-            <p>
-              We compare sources and look for primary records, official notices, statements,
-              photographs, videos and supporting documents.
-            </p>
-            <p>
-              A single source may establish that an event occurred, but stronger or disputed claims
-              require additional support.
-            </p>
-          </MethodologyStep>
-          <MethodologyStep number="4" title="Review before publication">
-            <p>
-              Before publication, the record is checked for accuracy, source quality, privacy,
-              safety, media attribution and avoidable harm.
-            </p>
-            <p>
-              Publication is a human editorial decision. Automated tools may assist with
-              organisation and checks, but they do not make the final decision.
-            </p>
-          </MethodologyStep>
-        </ol>
-      </section>
+      <StoryProcess stages={methodologyStages} />
 
-      <section>
-        <h2>What verification labels mean</h2>
-        <EditorialFeatureGrid
-          items={verificationItems}
+      <StorySection id="verification-labels" title="How to read verification labels">
+        <StoryRows
+          items={verificationRows}
           label="Verification labels currently used by published event records"
+          variant="verification"
         />
-      </section>
+      </StorySection>
 
-      <section>
-        <h2>How sources are used</h2>
-        <p>Sources are linked so readers can inspect the underlying reporting and documents.</p>
+      <StorySection id="source-assessment" title="A source count is not a reliability score">
+        <p>Readers can open every public source used in a record.</p>
         <p>
-          The number of sources does not by itself determine reliability. Relevance, independence,
-          direct knowledge and supporting evidence matter more.
+          Sources are judged by relevance, direct knowledge, independence and supporting
+          evidence—not simply by how many links are available.
         </p>
-      </section>
+      </StorySection>
 
-      <section>
-        <h2>Privacy, safety and media</h2>
-        <p>Public-interest reporting does not require publishing every available detail.</p>
-        <p>
-          We may withhold names, close-up images, medical-distress scenes or sensitive locations
-          when disclosure creates an unnecessary risk.
-        </p>
-        <p>Event media must match the event, identify its source and carry visible credit.</p>
-      </section>
+      <StoryPrinciples
+        items={sourceCriteria}
+        label="Source assessment criteria"
+        title="What we assess"
+      />
 
-      <section>
-        <h2>Updates and corrections</h2>
-        <p>Records can be revised when new evidence, responses or outcomes become available.</p>
-        <p>The latest review date and meaningful corrections should remain visible to readers.</p>
-      </section>
-
-      <EditorialCallout
-        links={[
-          { href: "/events", label: "Explore reviewed events" },
-          { href: "/editorial-policy", label: "Read the editorial policy" },
-        ]}
-        title="Continue exploring"
+      <StorySection
+        id="privacy-and-media"
+        title="Not every available detail should be published"
+        tone="warm"
       >
-        <p>Review the published records or read the policy that governs editorial decisions.</p>
-      </EditorialCallout>
-    </EditorialGuidePage>
+        <p>
+          Names, close-up images, medical-distress scenes and sensitive locations may be withheld
+          when disclosure creates unnecessary risk.
+        </p>
+        <p>Published media must depict the event, identify its source and carry visible credit.</p>
+      </StorySection>
+
+      <StorySection id="updates-and-corrections" title="Records remain open to stronger evidence">
+        <p>Records can be revised when new evidence, responses or outcomes become available.</p>
+        <p>The latest review date and meaningful corrections remain visible.</p>
+      </StorySection>
+
+      <StoryClosing
+        description="Open a record and compare its summary with the evidence and sources shown alongside it."
+        primaryLink={{ href: "/events", label: "Explore events" }}
+        secondaryLink={{ href: "/editorial-policy", label: "Editorial policy" }}
+        title="See the methodology in practice"
+      />
+    </StoryPage>
   );
 }

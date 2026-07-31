@@ -1,7 +1,11 @@
 import {
-  EditorialCallout,
-  EditorialFeatureGrid,
-  EditorialGuidePage,
+  StoryClosing,
+  StoryPage,
+  StoryPrinciples,
+  StoryRows,
+  StorySection,
+  StorySplitSection,
+  StoryStatement,
 } from "@/app/components/EditorialGuidePage";
 
 export const metadata = {
@@ -11,103 +15,107 @@ export const metadata = {
   alternates: { canonical: "/about" },
 };
 
-const summaryItems = [
+const principles = [
   {
+    marker: "01",
     title: "Source-linked",
-    description: "Every published record links to the material used to review it.",
+    description: "Every record shows the reporting and documents used to review it.",
   },
   {
+    marker: "02",
     title: "Human-reviewed",
-    description: "Publication and correction decisions are made through editorial review.",
+    description: "Publication, updates and corrections are editorial decisions.",
   },
   {
+    marker: "03",
     title: "Safety-conscious",
     description:
-      "Private identities and sensitive details are withheld when publication could cause harm.",
+      "Sensitive identities and details are withheld when publishing them could cause harm.",
   },
 ] as const;
 
-const recordFeatures = [
+const recordRows = [
   {
-    title: "What happened",
-    description: "The date, place, event type and current status.",
+    label: "Event",
+    description:
+      "When and where it happened, what form it took and whether it is ongoing or concluded.",
   },
   {
-    title: "What people are asking for",
-    description: "The demands, concerns or grievances reported by participants and sources.",
+    label: "Demands and concerns",
+    description: "What participants, organisations or affected communities say they are seeking.",
   },
   {
-    title: "What authorities or organisations said",
-    description: "Relevant official responses and attributed statements.",
+    label: "Responses",
+    description: "Relevant statements, actions or decisions from authorities and organisations.",
   },
   {
-    title: "What remains unclear",
-    description: "Disputed details, missing information and questions that still require evidence.",
+    label: "Open questions",
+    description: "Details that remain disputed, incomplete or unsupported by available evidence.",
   },
 ] as const;
 
 export default function AboutPage() {
   return (
-    <EditorialGuidePage
-      introduction="India Observed documents protests, strikes, marches and other civic movements across India. Each record brings the event, claims, responses, sources and unresolved questions together in one place."
-      kicker="ABOUT INDIA OBSERVED"
+    <StoryPage
+      eyebrow="ABOUT INDIA OBSERVED"
+      introduction="India Observed brings protests, strikes, marches and other civic movements into one clear, source-linked public record."
       path="/about"
-      summaryItems={summaryItems}
-      summaryLabel="India Observed editorial commitments"
-      title="A public record of civic action"
+      title="Civic events, clearly documented."
     >
-      <section>
-        <h2>Why this exists</h2>
-        <p>
-          Public events are often reported in fragments. One source may describe what happened,
-          another may carry an official response, and important questions may remain unresolved.
-        </p>
-        <p>
-          India Observed organises that material into a clear record that can be checked, revisited
-          and corrected.
-        </p>
-      </section>
+      <StoryStatement>
+        Public events are often reported in fragments. India Observed brings those fragments
+        together into a record people can inspect.
+      </StoryStatement>
 
-      <section>
-        <h2>What each record shows</h2>
-        <EditorialFeatureGrid items={recordFeatures} label="Information shown in an event record" />
-      </section>
-
-      <section>
-        <h2>What we do not publish</h2>
+      <StorySplitSection id="why-india-observed-exists" title="Why India Observed exists">
         <p>
-          We do not publish participant directories, confidential-source identities, live tactical
-          locations or private documents.
+          Reporting about a public event may be spread across articles, videos, statements and
+          social posts.
         </p>
         <p>
-          Media is reviewed for source, event match, privacy, safety and attribution before it
-          appears publicly.
+          We organise that material so readers can understand what happened, what people are asking
+          for, how authorities responded and what remains unresolved.
         </p>
-      </section>
+      </StorySplitSection>
 
-      <section>
-        <h2>A record can change</h2>
+      <StoryPrinciples
+        items={principles}
+        label="India Observed editorial commitments"
+        title="Core principles"
+      />
+
+      <StorySection id="what-records-contain" title="What a record contains">
+        <StoryRows items={recordRows} label="Information shown in an event record" />
+      </StorySection>
+
+      <StorySection id="what-stays-private" title="What stays private" tone="teal">
         <p>
-          Records are updated when stronger evidence, an official response, a correction or a
+          India Observed does not publish confidential-source identities, participant directories,
+          live tactical locations or private documents.
+        </p>
+        <p>
+          Images and videos are reviewed for event match, attribution, privacy and safety before
+          they appear publicly.
+        </p>
+      </StorySection>
+
+      <StorySection id="public-record-updates" title="A public record is not static">
+        <p>
+          Records may change when stronger evidence, an official response, a correction or a
           meaningful outcome becomes available.
         </p>
         <p>
-          Earlier wording should not disappear silently. Important corrections and review dates
-          should remain visible.
+          Review dates and important corrections remain visible so readers can understand what
+          changed.
         </p>
-      </section>
+      </StorySection>
 
-      <EditorialCallout
-        links={[
-          { href: "/events", label: "Explore events" },
-          { href: "/methodology", label: "Read the methodology" },
-        ]}
-        title="See the record for yourself"
-      >
-        <p>
-          Open any event to review its sources, verification status and latest editorial review.
-        </p>
-      </EditorialCallout>
-    </EditorialGuidePage>
+      <StoryClosing
+        description="Open any event to inspect its sources, current status and latest review."
+        primaryLink={{ href: "/events", label: "Explore events" }}
+        secondaryLink={{ href: "/methodology", label: "How records are reviewed" }}
+        title="Explore the record"
+      />
+    </StoryPage>
   );
 }
