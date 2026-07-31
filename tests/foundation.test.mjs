@@ -78,7 +78,7 @@ test("homepage keeps the public archive safety boundaries visible", () => {
     ["/about", "About"],
     ["/events", "Events"],
     ["/methodology", "Methodology"],
-    ["#lead", "Submit a lead"],
+    ["/submit-a-lead", "Submit a lead"],
   ];
   const navigationLinks = (markup) =>
     [

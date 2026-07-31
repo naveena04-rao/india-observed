@@ -139,7 +139,7 @@ export default async function EventsPage({
                     Try removing a filter or searching a broader term. A missing record does not
                     mean that no civic activity occurred.
                   </p>
-                  <Link href="/#lead">Submit a public lead</Link>
+                  <Link href="/submit-a-lead">Submit a public lead</Link>
                 </div>
               )}
             </>

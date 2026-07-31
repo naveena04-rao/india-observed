@@ -13,6 +13,8 @@ const databaseTest = read("supabase/tests/database/0007_lead_submissions.test.sq
 const footer = read("src/app/components/PublicSiteFooter.tsx");
 const archiveShell = read("src/app/events/components/ArchiveShell.tsx");
 const leadNavigation = read("src/app/components/LeadNavigationAction.tsx");
+const homepage = read("src/app/page.tsx");
+const eventsPage = read("src/app/events/page.tsx");
 const privacy = read("src/app/privacy/page.tsx");
 const styles = read("src/app/globals.css");
 const { leadSubmissionSchema } = await import("../src/lib/leads/validation.ts");
@@ -49,6 +51,9 @@ test("footer and editorial page expose the private lead route", () => {
   );
   assert.match(leadNavigation, /titleField\.focus\(\{ preventScroll: true \}\)/);
   assert.doesNotMatch(archiveShell, /className="nav-action" href="\/#lead"/);
+  assert.equal((homepage.match(/href="\/submit-a-lead"/g) ?? []).length, 3);
+  assert.match(eventsPage, /href="\/submit-a-lead">Submit a public lead<\/Link>/);
+  assert.doesNotMatch(homepage + eventsPage, /href="\/?#lead"/);
   assert.match(page, /eyebrow="SUBMIT A LEAD"/);
   assert.match(page, /title="Submit a lead"/);
   assert.match(

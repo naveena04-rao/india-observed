@@ -339,9 +339,9 @@ export default async function HomePage() {
             {following.enabled ? (
               <HeaderAuthControl signedIn={initiallySignedIn} returnTo="/" />
             ) : null}
-            <a className="nav-action" href="#lead">
+            <Link className="nav-action" href="/submit-a-lead">
               Submit a lead
-            </a>
+            </Link>
           </nav>
 
           <details className="mobile-menu">
@@ -354,9 +354,9 @@ export default async function HomePage() {
               {following.enabled ? (
                 <HeaderAuthControl signedIn={initiallySignedIn} returnTo="/" />
               ) : null}
-              <a className="nav-action" href="#lead">
+              <Link className="nav-action" href="/submit-a-lead">
                 Submit a lead
-              </a>
+              </Link>
             </nav>
           </details>
         </div>
@@ -503,9 +503,9 @@ export default async function HomePage() {
               Share a public source link, approximate date and broad location. Do not submit private
               documents, participant lists or tactical information.
             </p>
-            <a className="button button-light" href="#lead">
+            <Link className="button button-light" href="/submit-a-lead">
               Submit a public lead
-            </a>
+            </Link>
           </div>
         </div>
       </section>
