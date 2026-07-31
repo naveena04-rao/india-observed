@@ -38,9 +38,12 @@ test("footer and editorial page expose the private lead route", () => {
   assert.match(footer, /href: "\/submit-a-lead", label: "Submit a lead"/);
   assert.match(
     archiveShell,
-    /authReturnTo === "\/submit-a-lead" \? "#lead-submission-form" : "\/submit-a-lead"/,
+    /authReturnTo === "\/submit-a-lead" \? "#lead-title" : "\/submit-a-lead"/,
   );
-  assert.equal((archiveShell.match(/href=\{submitLeadHref\}/g) ?? []).length, 2);
+  assert.equal(
+    (archiveShell.match(/<a className="nav-action" href=\{submitLeadHref\}>/g) ?? []).length,
+    2,
+  );
   assert.doesNotMatch(archiveShell, /className="nav-action" href="\/#lead"/);
   assert.match(page, /eyebrow="SUBMIT A LEAD"/);
   assert.match(page, /title="Submit a lead"/);
