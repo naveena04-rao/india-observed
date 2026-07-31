@@ -99,7 +99,7 @@ export function EventVisual({
   return (
     <figure className={`event-no-media ${variantClassName}`}>
       <div className="event-no-media__body">
-        <span className="event-no-media__label">No approved event image available</span>
+        <span className="event-no-media__label">Verified visual unavailable</span>
         <strong>{visual.title}</strong>
         <p>{visual.location}</p>
         <p className="event-no-media__meta">

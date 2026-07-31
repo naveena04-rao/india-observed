@@ -12,6 +12,7 @@ export default function MediaPolicyPage() {
       description="Only media depicting the exact event may be approved, and source links or credit alone never establish permission."
       kicker="MEDIA POLICY"
       path="/media-policy"
+      presentation="standards"
       title="Exact event, lawful display, human approval"
     >
       <section>

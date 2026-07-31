@@ -139,7 +139,10 @@ test("homepage keeps the public archive safety boundaries visible", () => {
     assert.doesNotMatch(carousel, new RegExp(removedCopy, "i"));
   }
   assert.match(page, /const reviewedEvents = await getReviewedEvents\(\)/);
-  assert.match(page, /events\.map\(\(\{ approvedMedia, internalId, slug, visual \}\)/);
+  assert.match(
+    page,
+    /events\.map\(\(\{ approvedMedia, eventVerification, internalId, slug, visual \}\)/,
+  );
   assert.match(page, /getHomepageVisual\(homepageVisualsByInternalId, record\.id\)/);
   assert.doesNotMatch(page, /https?:\/\//);
   assert.doesNotMatch(featuredBlock, /publicationStatus: "published_source_embed"/);
@@ -385,13 +388,10 @@ test("all nine homepage records use the central reviewed visual treatments", () 
     styles,
     /\.featured-record-video-frame[\s\S]*?aspect-ratio: 16 \/ 9;[\s\S]*?width: 100%;/,
   );
+  assert.match(styles, /\.latest-records-grid\s*\{\s*display: block;/);
   assert.match(
     styles,
-    /\.latest-records-grid[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/,
-  );
-  assert.match(
-    styles,
-    /\.latest-entry-preview[\s\S]*?grid-template-columns: minmax\(0, 1fr\);[\s\S]*?grid-template-rows: auto auto;/,
+    /\.latest-entry-preview\s*\{[\s\S]*?grid-template-columns: minmax\(0, 1fr\) minmax\(9rem, 13rem\);/,
   );
   assert.match(
     styles,
@@ -605,6 +605,9 @@ test("homepage uses the refined section hierarchy and editorial footer", () => {
   const styles = read("src/app/globals.css");
   const footer = read("src/app/components/PublicSiteFooter.tsx");
   const archiveShell = read("src/app/events/components/ArchiveShell.tsx");
+  const carousel = read("src/app/components/FeaturedRecordCarousel.tsx");
+  const verification = read("src/app/components/VerificationStatus.tsx");
+  const eventVisual = read("src/app/events/components/EventVisual.tsx");
 
   assert.match(page, /<PublicSiteFooter \/>/);
   assert.match(archiveShell, /<PublicSiteFooter \/>/);
@@ -614,6 +617,15 @@ test("homepage uses the refined section hierarchy and editorial footer", () => {
   assert.match(footer, /href: "\/corrections", label: "Corrections"/);
 
   assert.match(page, /<h2 id="on-record-title">ON RECORD<\/h2>/);
+  assert.equal((page.match(/className="trust-metrics"/g) ?? []).length, 1);
+  assert.ok(page.indexOf('className="trust-metrics"') < page.indexOf("<FeaturedRecordCarousel"));
+  assert.doesNotMatch(page, /className="coverage-ledger"/);
+  assert.match(verification, /\["verification-status", compact \? "verification-status--compact"/);
+  assert.match(carousel, /<VerificationStatus status=\{activeRecord\.verification\}/);
+  assert.match(carousel, /<VerificationStatus compact status=\{record\.verification\}/);
+  assert.match(page, /<VerificationStatus compact status=\{homepageVisual\.verification\}/);
+  assert.match(eventVisual, /Verified visual unavailable/);
+  assert.doesNotMatch(eventVisual, /No approved event image available/);
   assert.match(
     styles,
     /\.on-record-section h2\s*\{[\s\S]*?border-top: 3px double var\(--ink\);[\s\S]*?text-align: center;/,
@@ -676,7 +688,7 @@ test("homepage uses the refined section hierarchy and editorial footer", () => {
 
   assert.match(
     styles,
-    /\.public-footer\s*\{[\s\S]*?background-color: #e8e3da;[\s\S]*?border-top: 1px solid #cbc3b7;[\s\S]*?color: var\(--ink\);/,
+    /\.public-footer\s*\{[\s\S]*?background-color: #d9e1dc;[\s\S]*?border-top: 1px solid #b8c4be;[\s\S]*?color: var\(--ink\);/,
   );
   assert.match(styles, /\.public-footer__primary\s*\{[\s\S]*?padding-block: 1\.25rem;/);
   assert.doesNotMatch(styles, /\.public-footer__(?:primary|secondary)\s*\{[^}]*background/);
@@ -765,6 +777,6 @@ test("homepage preserves the approved black header and white page surfaces", () 
   )?.[0];
   assert.ok(whiteSurfaceRule);
   assert.doesNotMatch(whiteSurfaceRule, /#f5f2ea|#ebe6db|#fbfaf6|#f7f2e8|#fbf8f1/);
-  assert.match(styles, /\.public-footer\s*\{[\s\S]*?background-color: #e8e3da;/);
+  assert.match(styles, /\.public-footer\s*\{[\s\S]*?background-color: #d9e1dc;/);
   assert.doesNotMatch(read("src/app/page.tsx"), /Open questions/i);
 });

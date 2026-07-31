@@ -245,7 +245,10 @@ test("all nine homepage definitions resolve to published slugs and render compac
   assert.equal(new Set(homepageIds).size, 9);
   for (const id of homepageIds)
     assert.ok(reviewedSlugs.has(id), `missing published slug for ${id}`);
-  assert.match(homepage, /\{ approvedMedia, eventHref: `\/events\/\$\{slug\}`, slug, visual \}/);
+  assert.match(
+    homepage,
+    /approvedMedia,[\s\S]*?eventHref: `\/events\/\$\{slug\}`,[\s\S]*?slug,[\s\S]*?verification: eventVerification,[\s\S]*?visual/,
+  );
   assert.match(homepage, /getHomepageVisual\([\s\S]*?record\.id[\s\S]*?slug=\{slug\}/);
   assert.equal((carousel.match(/<EventFollowControl/g) ?? []).length, 2);
   assert.equal((homepage.match(/<EventFollowControl/g) ?? []).length, 1);

@@ -146,7 +146,7 @@ test("snapshot has 50 unique readable slugs and one truthful fallback per event"
   );
   assert.match(dataset, /static snapshot contains only truthful media fallbacks/i);
   assert.doesNotMatch(visual, /Verified event media|MediaClassificationLabel/);
-  assert.match(visual, /No approved event image available/);
+  assert.match(visual, /Verified visual unavailable/);
   assert.doesNotMatch(dataset, /stock|unsplash|pexels|pixabay/i);
 });
 

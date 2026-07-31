@@ -12,6 +12,13 @@ const archiveShell = read("src/app/events/components/ArchiveShell.tsx");
 const editorialLayout = read("src/app/components/EditorialGuidePage.tsx");
 const about = read("src/app/about/page.tsx");
 const methodology = read("src/app/methodology/page.tsx");
+const launchPolicy = read("src/app/components/LaunchPolicyPage.tsx");
+const standardsPages = [
+  read("src/app/editorial-policy/page.tsx"),
+  read("src/app/sources-verification/page.tsx"),
+  read("src/app/corrections/page.tsx"),
+  read("src/app/media-policy/page.tsx"),
+];
 const css = read("src/app/globals.css");
 const editorialCss = css.slice(css.indexOf("/* Reader-facing About and Methodology pages */"));
 const dataset = read("src/data/reviewed-events-preview.ts");
@@ -210,6 +217,51 @@ test("Methodology derives current verification labels and uses the four-stage st
     /\.editorial-page--methodology \.editorial-eyebrow\s*\{[\s\S]*?font-size: 0\.875rem;[\s\S]*?font-weight: 800;/,
   );
   assert.doesNotMatch(methodology, /Not every available detail should be published/);
+});
+
+test("Standards pages opt into the shared editorial presentation without changing policy content", () => {
+  assert.match(launchPolicy, /presentation\?: "launch" \| "standards"/);
+  assert.match(launchPolicy, /<StoryPage[\s\S]*?className="editorial-page--standards"/);
+  for (const page of standardsPages) assert.match(page, /presentation="standards"/);
+
+  const expected = [
+    [
+      "EDITORIAL POLICY",
+      "Evidence before certainty",
+      ["Attribution", "Disputed and unresolved information", "Publication control"],
+    ],
+    [
+      "SOURCES & VERIFICATION",
+      "How evidence is connected",
+      ["Source roles", "Verification language"],
+    ],
+    [
+      "CORRECTIONS",
+      "Corrections remain part of the record",
+      ["How corrections are handled", "Suggest a correction"],
+    ],
+    [
+      "MEDIA POLICY",
+      "Exact event, lawful display, human approval",
+      ["Uploaded images", "Official embeds", "Fail-closed review"],
+    ],
+  ];
+  for (const [index, [eyebrow, title, headings]] of expected.entries()) {
+    const page = standardsPages[index];
+    assert.match(page, new RegExp(`kicker="${eyebrow.replace("&", "&")}"`));
+    assert.match(page, new RegExp(`title="${title}"`));
+    const positions = headings.map((heading) => page.indexOf(`<h2>${heading}</h2>`));
+    assert.ok(positions.every((position) => position >= 0));
+    assert.deepEqual(
+      positions,
+      positions.toSorted((a, b) => a - b),
+    );
+  }
+  assert.match(css, /\.editorial-page--standards h1\s*\{[\s\S]*?white-space: nowrap;/);
+  assert.match(
+    css,
+    /\.editorial-page--standards \.editorial-eyebrow\s*\{[\s\S]*?font-size: 0\.875rem;[\s\S]*?font-weight: 800;/,
+  );
 });
 
 test("editorial pages use one orderly reading column without artificial About visuals", () => {

@@ -13,6 +13,7 @@ export default function CorrectionsPage() {
       description="Consequential corrections remain visible and connected to the affected record."
       kicker="CORRECTIONS"
       path="/corrections"
+      presentation="standards"
       title="Corrections remain part of the record"
     >
       <section>

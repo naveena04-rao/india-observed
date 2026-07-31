@@ -12,6 +12,7 @@ export default function SourcesVerificationPage() {
       description="Public claims resolve to reviewed sources, with source roles and limitations kept visible."
       kicker="SOURCES & VERIFICATION"
       path="/sources-verification"
+      presentation="standards"
       title="How evidence is connected"
     >
       <section>

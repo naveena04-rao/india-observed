@@ -12,6 +12,7 @@ export default function EditorialPolicyPage() {
       description="Publication requires human review, source-linked evidence and careful attribution."
       kicker="EDITORIAL POLICY"
       path="/editorial-policy"
+      presentation="standards"
       title="Evidence before certainty"
     >
       <section>

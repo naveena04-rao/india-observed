@@ -54,7 +54,8 @@ test("all 50 static records use a truthful fallback until database approval", ()
   assert.match(fallbackRegistry, /createNoApprovedMediaVisual\(event\)/);
   assert.doesNotMatch(fallbackRegistry, /publisher_video|social_embed|https?:\/\//);
   assert.match(dataset, /createEventMediaRegistry\(reviewedEventsWithoutMedia\)/);
-  assert.match(eventVisual, /No approved event image available/);
+  assert.match(eventVisual, /Verified visual unavailable/);
+  assert.doesNotMatch(eventVisual, /No approved event image available/);
   assert.match(eventVisual, /visual\.title/);
   assert.match(eventVisual, /visual\.location/);
   assert.match(eventVisual, /visual\.dateOrStatus/);
