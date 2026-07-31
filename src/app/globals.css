@@ -3373,6 +3373,231 @@ h3 {
   cursor: default;
 }
 
+/* Private lead-submission page */
+
+.lead-safety-notice,
+.lead-form,
+.lead-next-steps,
+.lead-result {
+  margin-inline: auto;
+  max-width: 47rem;
+  width: 100%;
+}
+
+.lead-safety-notice {
+  border-block: 1px solid var(--line-dark);
+  padding-block: 1.4rem;
+}
+
+.lead-safety-notice h2,
+.lead-next-steps h2,
+.lead-result h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.45rem, 2.5vw, 2rem);
+  line-height: 1.15;
+  margin: 0 0 0.8rem;
+}
+
+.lead-safety-notice ul {
+  margin: 0.75rem 0;
+  padding-left: 1.25rem;
+}
+
+.lead-safety-notice li + li {
+  margin-top: 0.35rem;
+}
+
+.lead-form {
+  padding-block: 2rem;
+}
+
+.lead-field,
+.lead-contact-section,
+.lead-confirmations {
+  border: 0;
+  margin: 0 0 1.6rem;
+  min-width: 0;
+  padding: 0;
+}
+
+.lead-field label,
+.lead-field legend,
+.lead-contact-section > legend {
+  color: var(--ink);
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1.35;
+  margin-bottom: 0.45rem;
+}
+
+.lead-field label span,
+.lead-field legend span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  margin-left: 0.35rem;
+  text-transform: uppercase;
+}
+
+.lead-field input[type="text"],
+.lead-field input[type="email"],
+.lead-field input[type="tel"],
+.lead-field input[type="date"],
+.lead-field input:not([type]),
+.lead-field textarea {
+  background: #ffffff;
+  border: 1px solid var(--line-dark);
+  border-radius: 1px;
+  color: var(--ink);
+  font: inherit;
+  line-height: 1.45;
+  max-width: 100%;
+  padding: 0.72rem 0.78rem;
+  width: 100%;
+}
+
+.lead-field textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.lead-field [aria-invalid="true"] {
+  border-color: #9b2c22;
+  border-width: 2px;
+}
+
+.lead-helper,
+.lead-contact-section > p {
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
+  margin: 0 0 0.55rem;
+}
+
+.lead-field-error {
+  color: #7d211a;
+  font-size: 0.84rem;
+  font-weight: 700;
+  margin: 0.4rem 0 0;
+}
+
+.lead-date-field {
+  border-bottom: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+  padding-block: 1.1rem;
+}
+
+.lead-choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1.3rem;
+  margin-bottom: 1rem;
+}
+
+.lead-choice-row label,
+.lead-date-label,
+.lead-confirmations label {
+  align-items: flex-start;
+  display: flex;
+  font-size: 0.9rem;
+  gap: 0.45rem;
+  line-height: 1.45;
+}
+
+.lead-choice-row input,
+.lead-confirmations input {
+  flex: 0 0 auto;
+  height: 1.1rem;
+  margin-top: 0.12rem;
+  width: 1.1rem;
+}
+
+.lead-date-label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+
+.lead-contact-section {
+  border-block: 3px double var(--ink);
+  padding-block: 1.4rem 0.2rem;
+}
+
+.lead-contact-section > legend {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.45rem;
+  padding-right: 0.7rem;
+}
+
+.lead-confirmations {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.lead-error-summary {
+  border-left: 4px solid #9b2c22;
+  margin-bottom: 1.5rem;
+  padding: 0.8rem 1rem;
+}
+
+.lead-error-summary h2 {
+  font-size: 1.05rem;
+  margin: 0 0 0.3rem;
+}
+
+.lead-error-summary p {
+  margin: 0;
+}
+
+.lead-submit {
+  background: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 1px;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  min-height: 2.8rem;
+  padding: 0.7rem 1.35rem;
+}
+
+.lead-submit:hover:not(:disabled) {
+  background: #3b3b37;
+}
+
+.lead-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.lead-honeypot {
+  left: -10000px;
+  position: absolute;
+  top: auto;
+}
+
+.lead-next-steps,
+.lead-result {
+  border-top: 1px solid var(--line-dark);
+  padding-block: 1.6rem 2.2rem;
+}
+
+@media (max-width: 700px) {
+  .lead-form {
+    padding-block: 1.5rem;
+  }
+
+  .lead-choice-row {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .lead-submit {
+    width: 100%;
+  }
+}
+
 /* Approved black-header and white-page treatment */
 :root {
   --paper: #ffffff;

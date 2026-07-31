@@ -8,7 +8,7 @@ const footerGroups = [
       { href: "/events", label: "Events" },
       { href: "/methodology", label: "Methodology" },
       { href: "/#coverage", label: "Coverage" },
-      { href: "/#lead", label: "Submit a lead" },
+      { href: "/submit-a-lead", label: "Submit a lead" },
     ],
   },
   {

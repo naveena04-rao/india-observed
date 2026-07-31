@@ -4,7 +4,7 @@ import { getPublicContactEmail } from "@/lib/site";
 
 export const metadata = {
   title: "Privacy | India Observed",
-  description: "How India Observed handles authentication and private event follows.",
+  description: "How India Observed handles reader accounts, event follows and submitted leads.",
 };
 
 export default function PrivacyPage() {
@@ -46,6 +46,19 @@ export default function PrivacyPage() {
           <p>
             Email addresses, account identifiers, individual follow records, lists of events
             followed by a person and follower directories are not displayed publicly.
+          </p>
+        </section>
+
+        <section>
+          <h2>Information submitted as a lead</h2>
+          <p>
+            A lead may include event details, public source links, an email address and an optional
+            phone number. Submissions are held privately for editorial review and do not create a
+            public event record automatically.
+          </p>
+          <p>
+            Contact details are used only to review or follow up on the submission. They are not
+            published or used for marketing.
           </p>
         </section>
 
