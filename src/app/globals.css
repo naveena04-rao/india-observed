@@ -4725,6 +4725,11 @@ main .lead-panel {
   max-width: 18ch;
 }
 
+.editorial-page--about h1 {
+  max-width: none;
+  white-space: nowrap;
+}
+
 .editorial-page .editorial-hero-introduction {
   color: var(--editorial-muted);
   font-size: clamp(1rem, 1.25vw, 1.125rem);
@@ -4776,6 +4781,17 @@ main .lead-panel {
 
 .editorial-page .editorial-section p + p {
   margin-top: 0.675rem;
+}
+
+.editorial-page--about .editorial-section h3 {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 1.75rem 0 0.5rem;
+}
+
+.editorial-page--about .about-fragments p {
+  margin: 0;
 }
 
 .editorial-page .story-statement > p {
@@ -5034,6 +5050,10 @@ main .lead-panel {
 
   .editorial-page h1 {
     font-size: clamp(1.8125rem, 7.7vw, 2rem);
+  }
+
+  .editorial-page--about h1 {
+    white-space: normal;
   }
 
   .editorial-page .editorial-hero-introduction {

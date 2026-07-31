@@ -95,8 +95,7 @@ test("record links have visible focus and linked media has an obvious stable int
 
 test("About uses the reference-inspired story system and approved narrative content", () => {
   assert.match(about, /<StoryPage/);
-  assert.match(about, /<StoryStatement>/);
-  assert.match(about, /<StorySplitSection/);
+  assert.match(about, /className="editorial-page--about"/);
   assert.match(about, /<StoryPrinciples/);
   assert.doesNotMatch(
     about,
@@ -118,7 +117,21 @@ test("About uses the reference-inspired story system and approved narrative cont
   assert.match(about, /\{ href: "\/methodology", label: "How records are reviewed" \}/);
   assert.match(editorialLayout, /<ArchiveShell authReturnTo=\{path\}>/);
   assert.match(about, /<StoryRows items=\{recordRows\}/);
-  assert.match(about, /tone="teal"/);
+  assert.equal((about.match(/What stays private/g) ?? []).length, 1);
+  assert.equal((about.match(/A public record is not static/g) ?? []).length, 1);
+  assert.match(
+    about,
+    /Why India Observed exists[\s\S]*What stays private[\s\S]*A public record is not static[\s\S]*Public events are often reported in fragments/,
+  );
+  assert.doesNotMatch(about, /Civic events,[\s\S]*<br\s*\/?>[\s\S]*clearly documented\./);
+  assert.match(
+    css,
+    /\.editorial-page--about h1\s*\{[\s\S]*?max-width: none;[\s\S]*?white-space: nowrap;/,
+  );
+  assert.match(
+    css,
+    /@media \(max-width: 600px\)[\s\S]*?\.editorial-page--about h1\s*\{[\s\S]*?white-space: normal;/,
+  );
   assert.match(
     about,
     /Reporting about a public event may be spread across articles, videos, statements and\s+social posts\. India Observed organises that material so readers can understand what\s+happened, what people are asking for, how authorities responded and what remains\s+unresolved\.\s*<\/p>/,

@@ -212,17 +212,19 @@ export function StoryPage({
   title,
   introduction,
   path,
+  className,
   children,
 }: {
   eyebrow: string;
   title: string;
   introduction: string;
   path: string;
+  className?: string;
   children: ReactNode;
 }) {
   return (
     <ArchiveShell authReturnTo={path}>
-      <article className="editorial-page page-shell">
+      <article className={`editorial-page page-shell${className ? ` ${className}` : ""}`}>
         <div className="editorial-page-inner">
           <StoryHero eyebrow={eyebrow} introduction={introduction} title={title} />
           <div className="editorial-page-content">{children}</div>

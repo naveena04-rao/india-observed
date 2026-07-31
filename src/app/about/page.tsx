@@ -4,8 +4,6 @@ import {
   StoryPrinciples,
   StoryRows,
   StorySection,
-  StorySplitSection,
-  StoryStatement,
 } from "@/app/components/EditorialGuidePage";
 
 export const metadata = {
@@ -57,24 +55,47 @@ const recordRows = [
 export default function AboutPage() {
   return (
     <StoryPage
+      className="editorial-page--about"
       eyebrow="ABOUT INDIA OBSERVED"
       introduction="India Observed brings protests, strikes, marches and other civic movements into one clear, source-linked public record."
       path="/about"
       title="Civic events, clearly documented."
     >
-      <StoryStatement>
-        Public events are often reported in fragments. India Observed brings those fragments
-        together into a record people can inspect.
-      </StoryStatement>
-
-      <StorySplitSection id="why-india-observed-exists" title="Why India Observed exists">
+      <StorySection id="why-india-observed-exists" title="Why India Observed exists">
         <p>
           Reporting about a public event may be spread across articles, videos, statements and
           social posts. India Observed organises that material so readers can understand what
           happened, what people are asking for, how authorities responded and what remains
           unresolved.
         </p>
-      </StorySplitSection>
+
+        <h3>What stays private</h3>
+        <p>
+          India Observed does not publish confidential-source identities, participant directories,
+          live tactical locations or private documents. Images and videos are reviewed for event
+          match, attribution, privacy and safety before they appear publicly.
+        </p>
+
+        <h3>A public record is not static</h3>
+        <p>
+          Records may change when stronger evidence, an official response, a correction or a
+          meaningful outcome becomes available. Review dates and important corrections remain
+          visible so readers can understand what changed.
+        </p>
+      </StorySection>
+
+      <section
+        className="editorial-section about-fragments"
+        aria-labelledby="about-fragments-title"
+      >
+        <h2 className="visually-hidden" id="about-fragments-title">
+          Bringing fragmented reporting together
+        </h2>
+        <p>
+          Public events are often reported in fragments. India Observed brings those fragments
+          together into a record people can inspect.
+        </p>
+      </section>
 
       <StoryPrinciples
         items={principles}
@@ -84,22 +105,6 @@ export default function AboutPage() {
 
       <StorySection id="what-records-contain" title="What a record contains">
         <StoryRows items={recordRows} label="Information shown in an event record" />
-      </StorySection>
-
-      <StorySection id="what-stays-private" title="What stays private" tone="teal">
-        <p>
-          India Observed does not publish confidential-source identities, participant directories,
-          live tactical locations or private documents. Images and videos are reviewed for event
-          match, attribution, privacy and safety before they appear publicly.
-        </p>
-      </StorySection>
-
-      <StorySection id="public-record-updates" title="A public record is not static">
-        <p>
-          Records may change when stronger evidence, an official response, a correction or a
-          meaningful outcome becomes available. Review dates and important corrections remain
-          visible so readers can understand what changed.
-        </p>
       </StorySection>
 
       <StoryClosing
