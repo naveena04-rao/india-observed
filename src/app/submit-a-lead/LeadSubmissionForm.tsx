@@ -2,8 +2,13 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { fieldErrors, leadSubmissionSchema } from "@/lib/leads/validation";
 
 type FieldErrors = Record<string, string>;
+
+const validationMessage = "Review the highlighted fields and submit again.";
+const requestFailureMessage = "We could not submit this lead right now. Please try again later.";
+const REQUEST_TIMEOUT_MS = 15_000;
 
 const errorId = (name: string) => `${name}-error`;
 
@@ -23,7 +28,6 @@ export function LeadSubmissionForm() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitting) return;
-    setSubmitting(true);
     setMessage("");
     setErrors({});
 
@@ -34,45 +38,56 @@ export function LeadSubmissionForm() {
       .map((value) => value.trim())
       .filter(Boolean);
 
+    const payload = {
+      title: data.get("title"),
+      description: data.get("description"),
+      location: data.get("location"),
+      datePrecision: data.get("datePrecision"),
+      eventDate: data.get("eventDate"),
+      sourceLinks,
+      additionalContext: data.get("additionalContext"),
+      contactEmail: data.get("contactEmail"),
+      contactPhone: data.get("contactPhone"),
+      goodFaith: data.get("goodFaith") === "on",
+      policyAcknowledgement: data.get("policyAcknowledgement") === "on",
+      website: data.get("website"),
+      formStartedAt: startedAt,
+    };
+    const parsed = leadSubmissionSchema.safeParse(payload);
+    if (!parsed.success) {
+      setErrors(fieldErrors(parsed.error));
+      setMessage(validationMessage);
+      return;
+    }
+
+    setSubmitting(true);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
     try {
       const response = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: data.get("title"),
-          description: data.get("description"),
-          location: data.get("location"),
-          datePrecision: data.get("datePrecision"),
-          eventDate: data.get("eventDate"),
-          sourceLinks,
-          additionalContext: data.get("additionalContext"),
-          contactEmail: data.get("contactEmail"),
-          contactPhone: data.get("contactPhone"),
-          goodFaith: data.get("goodFaith") === "on",
-          policyAcknowledgement: data.get("policyAcknowledgement") === "on",
-          website: data.get("website"),
-          formStartedAt: startedAt,
-        }),
+        body: JSON.stringify(parsed.data),
+        signal: controller.signal,
       });
-      const result = (await response.json()) as {
+      const result = (await response.json().catch(() => ({}))) as {
         ok?: boolean;
         message?: string;
         fieldErrors?: FieldErrors;
       };
       if (!response.ok || !result.ok) {
         setErrors(result.fieldErrors ?? {});
-        setMessage(
-          result.message ??
-            "We could not submit this lead. Review the highlighted fields and try again.",
-        );
+        setMessage(result.message ?? requestFailureMessage);
         return;
       }
       setSuccess(true);
       setMessage("Your lead has been submitted for review.");
       form.reset();
     } catch {
-      setMessage("We could not submit this lead. Review the highlighted fields and try again.");
+      setMessage(requestFailureMessage);
     } finally {
+      window.clearTimeout(timeout);
       setSubmitting(false);
     }
   }

@@ -43,7 +43,7 @@ export async function ArchiveShell({ authReturnTo, children }: ArchiveShellProps
             {following.enabled ? (
               <HeaderAuthControl signedIn={signedIn} returnTo={authReturnTo} />
             ) : null}
-            <Link className="nav-action" href="/#lead">
+            <Link className="nav-action" href="/submit-a-lead">
               Submit a lead
             </Link>
           </nav>
@@ -60,7 +60,7 @@ export async function ArchiveShell({ authReturnTo, children }: ArchiveShellProps
               {following.enabled ? (
                 <HeaderAuthControl signedIn={signedIn} returnTo={authReturnTo} />
               ) : null}
-              <Link className="nav-action" href="/#lead">
+              <Link className="nav-action" href="/submit-a-lead">
                 Submit a lead
               </Link>
             </nav>

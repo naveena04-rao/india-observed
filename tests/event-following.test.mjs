@@ -17,6 +17,14 @@ const privacy = read("src/app/privacy/page.tsx");
 const featureGate = read("src/lib/events/following.ts");
 const returnPath = read("src/lib/auth/returnPath.ts");
 const sameOrigin = read("src/lib/http/sameOrigin.ts");
+const sameOriginModule = await import(
+  `data:text/javascript,${encodeURIComponent(
+    sameOrigin
+      .replace('import "server-only";', "")
+      .replace("value: string | null", "value")
+      .replaceAll("request: Request", "request"),
+  )}`
+);
 const proxy = read("src/proxy.ts");
 const proxyClient = read("src/lib/supabase/proxy.ts");
 const envExample = read(".env.example");
@@ -99,12 +107,32 @@ test("follow API validates published events and verifies every mutation", () => 
   assert.match(route, /export async function DELETE/);
 });
 
-test("same-origin helper rejects missing origins and derives the forwarded host", () => {
+test("same-origin helper accepts safe preview aliases and rejects missing origins", () => {
   assert.match(sameOrigin, /request\.headers\.get\("origin"\)/);
-  assert.match(sameOrigin, /if \(!suppliedOrigin \|\| !expectedOrigin\) return false/);
+  assert.match(sameOrigin, /if \(!suppliedOrigin\) return false/);
   assert.match(sameOrigin, /x-forwarded-host/);
   assert.match(sameOrigin, /x-forwarded-proto/);
-  assert.match(sameOrigin, /new URL\(suppliedOrigin\)\.origin === expectedOrigin/);
+  assert.match(sameOrigin, /const allowedOrigins = new Set\(\[new URL\(request\.url\)\.origin\]\)/);
+  assert.match(sameOrigin, /if \(forwardedHost\) allowedOrigins\.add/);
+  assert.match(sameOrigin, /if \(host\) allowedOrigins\.add/);
+  assert.match(sameOrigin, /allowedOrigins\.has\(new URL\(suppliedOrigin\)\.origin\)/);
+
+  const previewRequest = new Request("https://canonical-deployment.vercel.app/api/leads", {
+    method: "POST",
+    headers: {
+      host: "preview-branch.example.vercel.app",
+      origin: "https://preview-branch.example.vercel.app",
+      "x-forwarded-host": "canonical-deployment.vercel.app",
+      "x-forwarded-proto": "https",
+    },
+  });
+  assert.equal(sameOriginModule.isSameOriginMutation(previewRequest), true);
+  assert.equal(
+    sameOriginModule.isSameOriginMutation(
+      new Request(previewRequest, { headers: { origin: "https://attacker.example" } }),
+    ),
+    false,
+  );
 });
 
 test("event pages show one compact accessible Follow control without visible clutter", () => {

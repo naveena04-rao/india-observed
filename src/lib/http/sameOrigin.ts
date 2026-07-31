@@ -17,11 +17,21 @@ export function requestOrigin(request: Request) {
 
 export function isSameOriginMutation(request: Request) {
   const suppliedOrigin = request.headers.get("origin");
-  const expectedOrigin = requestOrigin(request);
-  if (!suppliedOrigin || !expectedOrigin) return false;
+  if (!suppliedOrigin) return false;
 
   try {
-    return new URL(suppliedOrigin).origin === expectedOrigin;
+    const protocol =
+      firstHeaderValue(request.headers.get("x-forwarded-proto")) ||
+      new URL(request.url).protocol.replace(":", "");
+    if (protocol !== "http" && protocol !== "https") return false;
+
+    const forwardedHost = firstHeaderValue(request.headers.get("x-forwarded-host"));
+    const host = firstHeaderValue(request.headers.get("host"));
+    const allowedOrigins = new Set([new URL(request.url).origin]);
+    if (forwardedHost) allowedOrigins.add(`${protocol}://${forwardedHost}`);
+    if (host) allowedOrigins.add(`${protocol}://${host}`);
+
+    return allowedOrigins.has(new URL(suppliedOrigin).origin);
   } catch {
     return false;
   }

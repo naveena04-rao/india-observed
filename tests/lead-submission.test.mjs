@@ -11,6 +11,7 @@ const rateLimit = read("src/lib/leads/rateLimit.ts");
 const migration = read("supabase/migrations/20260731000100_add_lead_submissions.sql");
 const databaseTest = read("supabase/tests/database/0007_lead_submissions.test.sql");
 const footer = read("src/app/components/PublicSiteFooter.tsx");
+const archiveShell = read("src/app/events/components/ArchiveShell.tsx");
 const privacy = read("src/app/privacy/page.tsx");
 const styles = read("src/app/globals.css");
 const { leadSubmissionSchema } = await import("../src/lib/leads/validation.ts");
@@ -35,6 +36,8 @@ const validLead = (overrides = {}) => ({
 
 test("footer and editorial page expose the private lead route", () => {
   assert.match(footer, /href: "\/submit-a-lead", label: "Submit a lead"/);
+  assert.equal((archiveShell.match(/href="\/submit-a-lead"/g) ?? []).length, 2);
+  assert.doesNotMatch(archiveShell, /className="nav-action" href="\/#lead"/);
   assert.match(page, /eyebrow="SUBMIT A LEAD"/);
   assert.match(page, /title="Submit a lead"/);
   assert.match(
@@ -45,6 +48,46 @@ test("footer and editorial page expose the private lead route", () => {
   assert.match(page, /Do not submit confidential-source identities or participant directories/);
   assert.match(page, /Do not submit live tactical locations/);
   assert.match(page, /<StoryPage/);
+});
+
+test("one enabled primary submit button uses native form semantics", () => {
+  assert.equal((form.match(/<form\b/g) ?? []).length, 1);
+  assert.equal((form.match(/<button\b/g) ?? []).length, 1);
+  assert.equal((form.match(/className="lead-submit"/g) ?? []).length, 1);
+  assert.match(form, /<form className="lead-form" noValidate onSubmit=\{submit\}>/);
+  assert.match(form, /<button className="lead-submit" type="submit" disabled=\{submitting\}>/);
+  assert.ok(form.indexOf('<button className="lead-submit"') > form.indexOf("<form "));
+  assert.ok(form.indexOf('<button className="lead-submit"') < form.lastIndexOf("</form>"));
+  assert.doesNotMatch(form, /useState\(true\)/);
+});
+
+test("client validates native form values before starting exactly one request", () => {
+  assert.equal((form.match(/await fetch\("\/api\/leads"/g) ?? []).length, 1);
+  assert.ok(
+    form.indexOf("new FormData(form)") < form.indexOf("leadSubmissionSchema.safeParse(payload)"),
+  );
+  assert.ok(
+    form.indexOf("leadSubmissionSchema.safeParse(payload)") < form.indexOf("setSubmitting(true)"),
+  );
+  assert.ok(form.indexOf("setSubmitting(true)") < form.indexOf('await fetch("/api/leads"'));
+  assert.match(form, /goodFaith: data\.get\("goodFaith"\) === "on"/);
+  assert.match(form, /policyAcknowledgement: data\.get\("policyAcknowledgement"\) === "on"/);
+  assert.match(form, /datePrecision: data\.get\("datePrecision"\)/);
+  assert.match(form, /eventDate: data\.get\("eventDate"\)/);
+  assert.match(form, /sourceLinks,[\s\S]*?contactPhone: data\.get\("contactPhone"\)/);
+  assert.match(form, /body: JSON\.stringify\(parsed\.data\)/);
+});
+
+test("client recovers from request errors, timeouts and duplicate activation", () => {
+  assert.match(form, /if \(submitting\) return/);
+  assert.match(form, /new AbortController\(\)/);
+  assert.match(form, /window\.setTimeout\(\(\) => controller\.abort\(\), REQUEST_TIMEOUT_MS\)/);
+  assert.match(form, /response\.json\(\)\.catch\(\(\) => \(\{\}\)\)/);
+  assert.match(
+    form,
+    /finally \{[\s\S]*?window\.clearTimeout\(timeout\)[\s\S]*?setSubmitting\(false\)/,
+  );
+  assert.match(form, /setSuccess\(true\)[\s\S]*?Your lead has been submitted for review\./);
 });
 
 test("required fields and optional phone render in the prescribed order", () => {
@@ -139,19 +182,26 @@ test("server schema rejects unsafe URLs, excessive links and overlong content", 
 });
 
 test("submission endpoint revalidates, rate limits and avoids duplicate publication", () => {
+  assert.match(route, /export const runtime = "nodejs"/);
   assert.match(route, /leadSubmissionSchema\.safeParse\(body\)/);
   assert.match(route, /isSameOriginMutation\(request\)/);
   assert.match(route, /consumeLeadSubmissionAttempt\(request\)/);
   assert.match(route, /new TextEncoder\(\)\.encode\(raw\)\.byteLength > MAX_LEAD_PAYLOAD_BYTES/);
   assert.match(route, /createHash\("sha256"\)/);
   assert.match(route, /supabase\.rpc\("submit_lead"/);
-  assert.match(route, /error\.code !== "23505"/);
+  assert.match(route, /error\?\.code === "23505"[\s\S]*?status: 409/);
   assert.doesNotMatch(route, /console\.(?:log|error)|\.from\("events"\)/);
   assert.match(rateLimit, /MAX_ATTEMPTS = 5/);
   assert.match(rateLimit, /WINDOW_MS = 15 \* 60 \* 1000/);
   assert.match(rateLimit, /randomBytes\(32\)/);
   assert.match(form, /name="website" tabIndex=\{-1\}/);
   assert.match(form, /if \(submitting\) return/);
+  assert.ok(
+    route.indexOf("leadSubmissionSchema.safeParse(body)") <
+      route.indexOf("consumeLeadSubmissionAttempt(request)"),
+  );
+  assert.match(route, /elapsed < 500/);
+  assert.match(route, /headers: \{ "Retry-After": "900" \}/);
 });
 
 test("database keeps leads and contact details private pending review", () => {
@@ -177,10 +227,11 @@ test("database keeps leads and contact details private pending review", () => {
 test("success, failure, accessibility and privacy wording are explicit", () => {
   assert.match(form, /Your lead has been submitted for review\./);
   assert.match(form, /Submission does not guarantee publication\./);
-  assert.match(
-    form,
-    /We could not submit this lead\. Review the highlighted fields and try again\./,
-  );
+  assert.match(form, /Review the highlighted fields and submit again\./);
+  assert.match(form, /We could not submit this lead right now\. Please try again later\./);
+  assert.match(route, /This lead appears to have already been submitted\./);
+  assert.match(route, /Too many submission attempts were made\. Please try again later\./);
+  assert.match(route, /We could not submit this lead right now\. Please try again later\./);
   assert.match(form, /role="alert" tabIndex=\{-1\}/);
   assert.match(form, /aria-live="polite"/);
   assert.match(styles, /\.lead-field textarea[\s\S]*?resize: vertical/);

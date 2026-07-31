@@ -11,20 +11,21 @@ import {
 } from "@/lib/leads/validation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-const failureMessage =
-  "We could not submit this lead. Review the highlighted fields and try again.";
+export const runtime = "nodejs";
+
+const validationMessage = "Review the highlighted fields and submit again.";
+const duplicateMessage = "This lead appears to have already been submitted.";
+const rateLimitMessage = "Too many submission attempts were made. Please try again later.";
+const storageMessage = "We could not submit this lead right now. Please try again later.";
 
 export async function POST(request: Request) {
   if (!isSameOriginMutation(request)) {
-    return NextResponse.json({ ok: false, message: failureMessage }, { status: 403 });
+    return NextResponse.json({ ok: false, message: validationMessage }, { status: 403 });
   }
 
   const declaredLength = Number(request.headers.get("content-length") ?? "0");
   if (Number.isFinite(declaredLength) && declaredLength > MAX_LEAD_PAYLOAD_BYTES) {
-    return NextResponse.json({ ok: false, message: failureMessage }, { status: 413 });
-  }
-  if (!consumeLeadSubmissionAttempt(request)) {
-    return NextResponse.json({ ok: false, message: failureMessage }, { status: 429 });
+    return NextResponse.json({ ok: false, message: validationMessage }, { status: 413 });
   }
 
   let body: unknown;
@@ -33,13 +34,13 @@ export async function POST(request: Request) {
     if (new TextEncoder().encode(raw).byteLength > MAX_LEAD_PAYLOAD_BYTES) throw new Error();
     body = JSON.parse(raw);
   } catch {
-    return NextResponse.json({ ok: false, message: failureMessage }, { status: 400 });
+    return NextResponse.json({ ok: false, message: validationMessage }, { status: 400 });
   }
 
   const parsed = leadSubmissionSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { ok: false, message: failureMessage, fieldErrors: fieldErrors(parsed.error) },
+      { ok: false, message: validationMessage, fieldErrors: fieldErrors(parsed.error) },
       { status: 400 },
     );
   }
@@ -49,13 +50,19 @@ export async function POST(request: Request) {
   if (lead.website) {
     return NextResponse.json({ ok: true });
   }
-  if (elapsed < 1500 || elapsed > 24 * 60 * 60 * 1000) {
-    return NextResponse.json({ ok: false, message: failureMessage }, { status: 429 });
+  if (elapsed < 500 || elapsed > 24 * 60 * 60 * 1000) {
+    return NextResponse.json({ ok: false, message: rateLimitMessage }, { status: 429 });
+  }
+  if (!consumeLeadSubmissionAttempt(request)) {
+    return NextResponse.json(
+      { ok: false, message: rateLimitMessage },
+      { status: 429, headers: { "Retry-After": "900" } },
+    );
   }
 
   const supabase = createServerSupabaseClient();
   if (!supabase) {
-    return NextResponse.json({ ok: false, message: failureMessage }, { status: 503 });
+    return NextResponse.json({ ok: false, message: storageMessage }, { status: 503 });
   }
 
   const fingerprint = createHash("sha256")
@@ -86,11 +93,14 @@ export async function POST(request: Request) {
       p_title: lead.title,
     }));
   } catch {
-    return NextResponse.json({ ok: false, message: failureMessage }, { status: 503 });
+    return NextResponse.json({ ok: false, message: storageMessage }, { status: 503 });
   }
 
-  if (error && error.code !== "23505") {
-    return NextResponse.json({ ok: false, message: failureMessage }, { status: 503 });
+  if (error?.code === "23505") {
+    return NextResponse.json({ ok: false, message: duplicateMessage }, { status: 409 });
+  }
+  if (error) {
+    return NextResponse.json({ ok: false, message: storageMessage }, { status: 503 });
   }
 
   return NextResponse.json({ ok: true });
