@@ -70,11 +70,9 @@ export default function AboutPage() {
       <StorySplitSection id="why-india-observed-exists" title="Why India Observed exists">
         <p>
           Reporting about a public event may be spread across articles, videos, statements and
-          social posts.
-        </p>
-        <p>
-          We organise that material so readers can understand what happened, what people are asking
-          for, how authorities responded and what remains unresolved.
+          social posts. India Observed organises that material so readers can understand what
+          happened, what people are asking for, how authorities responded and what remains
+          unresolved.
         </p>
       </StorySplitSection>
 
@@ -91,22 +89,16 @@ export default function AboutPage() {
       <StorySection id="what-stays-private" title="What stays private" tone="teal">
         <p>
           India Observed does not publish confidential-source identities, participant directories,
-          live tactical locations or private documents.
-        </p>
-        <p>
-          Images and videos are reviewed for event match, attribution, privacy and safety before
-          they appear publicly.
+          live tactical locations or private documents. Images and videos are reviewed for event
+          match, attribution, privacy and safety before they appear publicly.
         </p>
       </StorySection>
 
       <StorySection id="public-record-updates" title="A public record is not static">
         <p>
           Records may change when stronger evidence, an official response, a correction or a
-          meaningful outcome becomes available.
-        </p>
-        <p>
-          Review dates and important corrections remain visible so readers can understand what
-          changed.
+          meaningful outcome becomes available. Review dates and important corrections remain
+          visible so readers can understand what changed.
         </p>
       </StorySection>
 

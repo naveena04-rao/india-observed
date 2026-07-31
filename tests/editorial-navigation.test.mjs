@@ -7,10 +7,12 @@ const carousel = read("src/app/components/FeaturedRecordCarousel.tsx");
 const homepage = read("src/app/page.tsx");
 const eventVisual = read("src/app/events/components/EventVisual.tsx");
 const archivePreview = read("src/app/events/components/ArchiveMediaPreview.tsx");
+const archiveShell = read("src/app/events/components/ArchiveShell.tsx");
 const editorialLayout = read("src/app/components/EditorialGuidePage.tsx");
 const about = read("src/app/about/page.tsx");
 const methodology = read("src/app/methodology/page.tsx");
 const css = read("src/app/globals.css");
+const editorialCss = css.slice(css.indexOf("/* Reader-facing About and Methodology pages */"));
 const dataset = read("src/data/reviewed-events-preview.ts");
 
 const expectedLatestRecords = [
@@ -117,6 +119,18 @@ test("About uses the reference-inspired story system and approved narrative cont
   assert.match(editorialLayout, /<ArchiveShell authReturnTo=\{path\}>/);
   assert.match(about, /<StoryRows items=\{recordRows\}/);
   assert.match(about, /tone="teal"/);
+  assert.match(
+    about,
+    /Reporting about a public event may be spread across articles, videos, statements and\s+social posts\. India Observed organises that material so readers can understand what\s+happened, what people are asking for, how authorities responded and what remains\s+unresolved\.\s*<\/p>/,
+  );
+  assert.match(
+    about,
+    /India Observed does not publish confidential-source identities, participant directories,\s+live tactical locations or private documents\. Images and videos are reviewed for event\s+match, attribution, privacy and safety before they appear publicly\.\s*<\/p>/,
+  );
+  assert.match(
+    about,
+    /Records may change when stronger evidence, an official response, a correction or a\s+meaningful outcome becomes available\. Review dates and important corrections remain\s+visible so readers can understand what changed\.\s*<\/p>/,
+  );
 });
 
 test("Methodology derives current verification labels and uses the four-stage story process", () => {
@@ -151,9 +165,17 @@ test("Methodology derives current verification labels and uses the four-stage st
   assert.match(methodology, /\{ href: "\/events", label: "Explore events" \}/);
   assert.match(methodology, /\{ href: "\/editorial-policy", label: "Editorial policy" \}/);
   assert.doesNotMatch(methodology, /same_event_verified|approval status|reviewer|rights_basis/i);
+  for (const paragraph of [
+    "We begin with public reporting, official information or a credible public lead. There must be enough reliable information to establish that the event occurred.",
+    "A report may mix confirmed details, participant claims, official responses and opinion. We separate them so readers can see what is established, what is attributed and what remains disputed.",
+    "We compare sources and look for official notices, statements, photographs, videos and supporting documents. Important or disputed claims require stronger evidence than the basic occurrence of an event.",
+    "The record is checked for accuracy, source quality, privacy, safety, media attribution and avoidable harm. Automated tools may assist with organisation and checks, but publication remains a human editorial decision.",
+  ]) {
+    assert.match(methodology, new RegExp(`description: \\[\\s*"${paragraph}"`));
+  }
 });
 
-test("editorial pages use compact scoped typography without artificial About visuals", () => {
+test("editorial pages use one orderly reading column without artificial About visuals", () => {
   for (const component of [
     "StoryPage",
     "StoryHero",
@@ -175,15 +197,21 @@ test("editorial pages use compact scoped typography without artificial About vis
     css,
     /\.editorial-page\s*\{[\s\S]*?font-family: Arial, "Helvetica Neue", system-ui, sans-serif;/,
   );
-  assert.match(css, /\.editorial-page \.editorial-page-inner\s*\{[\s\S]*?max-width: 54rem;/);
-  assert.match(css, /\.editorial-page \.editorial-reading-column\s*\{[\s\S]*?max-width: 33rem;/);
+  assert.match(
+    editorialCss,
+    /\.editorial-page \.editorial-page-inner\s*\{[\s\S]*?margin-inline: auto;[\s\S]*?max-width: 46rem;/,
+  );
+  assert.match(
+    editorialCss,
+    /\.editorial-page \.editorial-reading-column,[\s\S]*?\.editorial-page \.editorial-closing\s*\{[\s\S]*?margin-inline: 0;[\s\S]*?max-width: none;[\s\S]*?width: 100%;/,
+  );
   assert.match(
     css,
     /\.editorial-page h1\s*\{[\s\S]*?font-size: clamp\(2rem, 3\.2vw, 2\.8125rem\);[\s\S]*?line-height: 1\.08;/,
   );
   assert.match(
     css,
-    /\.editorial-page \.editorial-hero-introduction\s*\{[\s\S]*?font-size: clamp\(1rem, 1\.25vw, 1\.125rem\);[\s\S]*?line-height: 1\.55;[\s\S]*?max-width: 34rem;/,
+    /\.editorial-page \.editorial-hero-introduction\s*\{[\s\S]*?font-size: clamp\(1rem, 1\.25vw, 1\.125rem\);[\s\S]*?line-height: 1\.55;[\s\S]*?max-width: 42rem;/,
   );
   assert.match(css, /\.editorial-page p,[\s\S]*?font-size: 1rem;[\s\S]*?line-height: 1\.6;/);
   assert.match(
@@ -192,14 +220,32 @@ test("editorial pages use compact scoped typography without artificial About vis
   );
   assert.match(
     css,
-    /\.editorial-page \.story-principles-list\s*\{[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/,
+    /\.editorial-page \.story-principles-list\s*\{[\s\S]*?display: block;[\s\S]*?\.editorial-page \.story-principles-list article\s*\{[\s\S]*?grid-template-columns: 2\.5rem minmax\(0, 10rem\) minmax\(0, 1fr\);/,
   );
   assert.match(
     css,
     /@media \(max-width: 600px\)[\s\S]*?\.editorial-page h1\s*\{[\s\S]*?font-size: clamp\(1\.8125rem, 7\.7vw, 2rem\);/,
   );
-  assert.match(css, /\.editorial-page \.story-hero-copy\s*\{[\s\S]*?max-width: 34rem;/);
-  assert.match(css, /\.editorial-page \.story-statement > p\s*\{/);
+  assert.match(css, /\.editorial-page \.story-hero-copy\s*\{[\s\S]*?max-width: none;/);
+  assert.match(
+    css,
+    /\.editorial-page \.story-statement > p\s*\{[\s\S]*?font-size: clamp\(1\.4rem, 2\.5vw, 2rem\);[\s\S]*?max-width: 42rem;/,
+  );
+  assert.match(
+    editorialCss,
+    /\.editorial-page \.editorial-hero\s*\{[\s\S]*?background: transparent;[\s\S]*?box-shadow: none;[\s\S]*?clip-path: none;/,
+  );
+  assert.match(
+    editorialCss,
+    /\.editorial-page \.methodology-steps > li\s*\{[\s\S]*?background: transparent;[\s\S]*?grid-template-columns: 3rem minmax\(0, 1fr\);[\s\S]*?padding-block: 1\.5rem;/,
+  );
+  assert.match(
+    editorialCss,
+    /\.editorial-page \.editorial-closing\s*\{[\s\S]*?background: transparent;[\s\S]*?color: var\(--ink\);[\s\S]*?display: block;/,
+  );
+  assert.doesNotMatch(editorialCss, /0 0 0 100vmax|clip-path: inset|linear-gradient/);
+  assert.doesNotMatch(editorialCss, /methodology-steps > li:nth-child\(even\)/);
+  assert.doesNotMatch(editorialCss, /max-width: (?:30rem|33rem|27ch|60ch)/);
   assert.doesNotMatch(
     `${editorialLayout}\n${css}`,
     /story-source-motif|story-record-diagram|PUBLIC RECORD|REPORTING|STATEMENTS|DOCUMENTS|01 \/ SOURCE \/ REVIEW/,
@@ -214,4 +260,9 @@ test("editorial pages use compact scoped typography without artificial About vis
   ]) {
     assert.match(read(path), /LaunchPolicyPage/);
   }
+
+  for (const href of ["/about", "/events", "/methodology"]) {
+    assert.match(archiveShell, new RegExp(`href="${href}"`));
+  }
+  assert.equal((dataset.match(/internalId: "IO-CM-/g) ?? []).length, 50);
 });

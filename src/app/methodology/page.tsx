@@ -22,8 +22,7 @@ const methodologyStages: readonly StoryProcessStage[] = [
     shortTitle: "Find",
     title: "Find the event",
     description: [
-      "We begin with public reporting, official information or a credible public lead.",
-      "There must be enough reliable information to establish that the event occurred.",
+      "We begin with public reporting, official information or a credible public lead. There must be enough reliable information to establish that the event occurred.",
     ],
   },
   {
@@ -31,8 +30,7 @@ const methodologyStages: readonly StoryProcessStage[] = [
     shortTitle: "Separate",
     title: "Separate the information",
     description: [
-      "A report may mix confirmed details, participant claims, official responses and opinion.",
-      "We separate them so readers can see what is established, what is attributed and what remains disputed.",
+      "A report may mix confirmed details, participant claims, official responses and opinion. We separate them so readers can see what is established, what is attributed and what remains disputed.",
     ],
   },
   {
@@ -40,8 +38,7 @@ const methodologyStages: readonly StoryProcessStage[] = [
     shortTitle: "Check",
     title: "Check the evidence",
     description: [
-      "We compare sources and look for official notices, statements, photographs, videos and supporting documents.",
-      "Important or disputed claims require stronger evidence than the basic occurrence of an event.",
+      "We compare sources and look for official notices, statements, photographs, videos and supporting documents. Important or disputed claims require stronger evidence than the basic occurrence of an event.",
     ],
   },
   {
@@ -49,8 +46,7 @@ const methodologyStages: readonly StoryProcessStage[] = [
     shortTitle: "Review",
     title: "Review before publication",
     description: [
-      "The record is checked for accuracy, source quality, privacy, safety, media attribution and avoidable harm.",
-      "Automated tools may assist with organisation and checks, but publication remains a human editorial decision.",
+      "The record is checked for accuracy, source quality, privacy, safety, media attribution and avoidable harm. Automated tools may assist with organisation and checks, but publication remains a human editorial decision.",
     ],
   },
 ] as const;
@@ -113,10 +109,10 @@ export default async function MethodologyPage() {
       </StorySection>
 
       <StorySection id="source-assessment" title="A source count is not a reliability score">
-        <p>Readers can open every public source used in a record.</p>
         <p>
-          Sources are judged by relevance, direct knowledge, independence and supporting
-          evidence—not simply by how many links are available.
+          Readers can open every public source used in a record. Sources are judged by relevance,
+          direct knowledge, independence and supporting evidence—not simply by how many links are
+          available.
         </p>
       </StorySection>
 
@@ -133,14 +129,16 @@ export default async function MethodologyPage() {
       >
         <p>
           Names, close-up images, medical-distress scenes and sensitive locations may be withheld
-          when disclosure creates unnecessary risk.
+          when disclosure creates unnecessary risk. Published media must depict the event, identify
+          its source and carry visible credit.
         </p>
-        <p>Published media must depict the event, identify its source and carry visible credit.</p>
       </StorySection>
 
       <StorySection id="updates-and-corrections" title="Records remain open to stronger evidence">
-        <p>Records can be revised when new evidence, responses or outcomes become available.</p>
-        <p>The latest review date and meaningful corrections remain visible.</p>
+        <p>
+          Records can be revised when new evidence, responses or outcomes become available. The
+          latest review date and meaningful corrections remain visible.
+        </p>
       </StorySection>
 
       <StoryClosing
