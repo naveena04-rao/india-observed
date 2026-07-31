@@ -9,6 +9,10 @@ const route = read("src/app/api/leads/route.ts");
 const validation = read("src/lib/leads/validation.ts");
 const rateLimit = read("src/lib/leads/rateLimit.ts");
 const migration = read("supabase/migrations/20260731000100_add_lead_submissions.sql");
+const contributionMigration = read(
+  "supabase/migrations/20260731000200_add_lead_contribution_context.sql",
+);
+const eventDetailPage = read("src/app/events/[slug]/page.tsx");
 const databaseTest = read("supabase/tests/database/0007_lead_submissions.test.sql");
 const footer = read("src/app/components/PublicSiteFooter.tsx");
 const archiveShell = read("src/app/events/components/ArchiveShell.tsx");
@@ -27,6 +31,9 @@ const validLead = (overrides = {}) => ({
   datePrecision: "exact",
   eventDate: "2026-07-31",
   sourceLinks: ["https://example.org/report"],
+  mediaType: "none",
+  relatedEventSlug: "",
+  contributionType: "new-lead",
   additionalContext: "",
   contactEmail: "reader@example.org",
   contactPhone: "",
@@ -58,7 +65,7 @@ test("footer and editorial page expose the private lead route", () => {
   assert.match(page, /title="Submit a lead"/);
   assert.match(
     page,
-    /className="lead-safety-notice"[\s\S]*?<LeadSubmissionForm \/>[\s\S]*?className="lead-next-steps"/,
+    /className="lead-safety-notice"[\s\S]*?<LeadSubmissionForm[\s\S]*?\/>[\s\S]*?className="lead-next-steps"/,
   );
   assert.match(page, /Submissions are reviewed and are not automatically published/);
   assert.match(page, /Do not submit confidential-source identities or participant directories/);
@@ -94,6 +101,9 @@ test("client validates native form values before starting exactly one request", 
   assert.match(form, /datePrecision: data\.get\("datePrecision"\)/);
   assert.match(form, /eventDate: data\.get\("eventDate"\)/);
   assert.match(form, /sourceLinks,[\s\S]*?contactPhone: data\.get\("contactPhone"\)/);
+  assert.match(form, /mediaType: data\.get\("mediaType"\)/);
+  assert.match(form, /relatedEventSlug: data\.get\("relatedEventSlug"\)/);
+  assert.match(form, /contributionType: data\.get\("contributionType"\)/);
   assert.match(form, /body: JSON\.stringify\(parsed\.data\)/);
 });
 
@@ -122,6 +132,7 @@ test("required fields and optional phone render in the prescribed order", () => 
     "Location",
     "When did this happen?",
     "Source links",
+    "Photo or video evidence",
     "Additional context",
     "Email address",
     "Phone number",
@@ -156,6 +167,8 @@ test("server validation bounds every field and rejects unsafe links", () => {
   assert.match(validation, /MAX_SOURCE_LINKS = 10/);
   assert.match(validation, /MAX_LEAD_PAYLOAD_BYTES = 32 \* 1024/);
   assert.match(validation, /z\.enum\(\["exact", "approximate", "ongoing"\]\)/);
+  assert.match(validation, /leadMediaTypes = \["none", "photo", "video", "photo-and-video"\]/);
+  assert.match(validation, /contributionTypes = \[/);
 });
 
 test("server schema rejects invalid contact data and accepts international phone formats", () => {
@@ -171,6 +184,36 @@ test("server schema rejects invalid contact data and accepts international phone
   for (const contactPhone of ["+91 98765 43210", "+44 (0)20 7946-0958", "+1-202-555-0147"]) {
     assert.equal(leadSubmissionSchema.safeParse(validLead({ contactPhone })).success, true);
   }
+});
+
+test("event contribution actions preserve record, action and media context", () => {
+  for (const [label, contribution] of [
+    ["Add a public source", "public-source"],
+    ["Suggest a correction", "correction"],
+    ["Submit an official response", "official-response"],
+  ]) {
+    assert.match(eventDetailPage, new RegExp(label));
+    assert.match(eventDetailPage, new RegExp(`type: "${contribution}"`));
+  }
+  assert.match(
+    eventDetailPage,
+    /href=\{`\/submit-a-lead\?event=\$\{encodeURIComponent\(event\.slug\)\}&contribution=\$\{type\}`\}/,
+  );
+  assert.match(page, /searchParams: Promise/);
+  assert.match(page, /relatedEventSlug=\{event\}/);
+  assert.match(form, /name="relatedEventSlug" type="hidden" value=\{relatedEventSlug\}/);
+  assert.match(form, /name="contributionType" type="hidden" value=\{contributionType\}/);
+  assert.match(form, /name="mediaType"[\s\S]*?type="radio"/);
+  for (const value of ["none", "photo", "video", "photo-and-video"]) {
+    assert.equal(leadSubmissionSchema.safeParse(validLead({ mediaType: value })).success, true);
+  }
+  assert.equal(leadSubmissionSchema.safeParse(validLead({ mediaType: "audio" })).success, false);
+  assert.equal(
+    leadSubmissionSchema.safeParse(
+      validLead({ relatedEventSlug: "existing-record", contributionType: "correction" }),
+    ).success,
+    true,
+  );
 });
 
 test("server schema rejects unsafe URLs, excessive links and overlong content", () => {
@@ -214,6 +257,9 @@ test("submission endpoint revalidates, rate limits and avoids duplicate publicat
   assert.match(route, /new TextEncoder\(\)\.encode\(raw\)\.byteLength > MAX_LEAD_PAYLOAD_BYTES/);
   assert.match(route, /createHash\("sha256"\)/);
   assert.match(route, /supabase\.rpc\("submit_lead"/);
+  assert.match(route, /p_related_event_slug: lead\.relatedEventSlug \|\| null/);
+  assert.match(route, /p_contribution_type: lead\.contributionType/);
+  assert.match(route, /p_media_type: lead\.mediaType/);
   assert.match(route, /error\?\.code === "23505"[\s\S]*?status: 409/);
   assert.doesNotMatch(route, /console\.(?:log|error)|\.from\("events"\)/);
   assert.match(rateLimit, /MAX_ATTEMPTS = 5/);
@@ -247,6 +293,12 @@ test("database keeps leads and contact details private pending review", () => {
   assert.match(databaseTest, /initial status is pending review/);
   assert.match(databaseTest, /duplicate fingerprint is rejected/);
   assert.match(databaseTest, /submission does not create another public event/);
+  assert.match(contributionMigration, /add column related_event_slug text/);
+  assert.match(contributionMigration, /add column contribution_type text not null/);
+  assert.match(contributionMigration, /add column media_type text not null/);
+  assert.match(databaseTest, /related event is stored/);
+  assert.match(databaseTest, /contribution type is stored/);
+  assert.match(databaseTest, /media type is stored/);
 });
 
 test("success, failure, accessibility and privacy wording are explicit", () => {

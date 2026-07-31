@@ -74,6 +74,9 @@ export async function POST(request: Request) {
         eventDate: lead.eventDate,
         contactEmail: lead.contactEmail,
         sourceLinks: lead.sourceLinks,
+        mediaType: lead.mediaType,
+        relatedEventSlug: lead.relatedEventSlug,
+        contributionType: lead.contributionType,
       }),
     )
     .digest("hex");
@@ -88,9 +91,12 @@ export async function POST(request: Request) {
       p_description: lead.description,
       p_event_date: lead.eventDate || null,
       p_location: lead.location,
+      p_media_type: lead.mediaType,
+      p_related_event_slug: lead.relatedEventSlug || null,
       p_source_links: lead.sourceLinks,
       p_submission_fingerprint: fingerprint,
       p_title: lead.title,
+      p_contribution_type: lead.contributionType,
     }));
   } catch {
     return NextResponse.json({ ok: false, message: storageMessage }, { status: 503 });

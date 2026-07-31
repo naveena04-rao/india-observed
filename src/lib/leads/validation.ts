@@ -2,6 +2,13 @@ import { z } from "zod";
 
 export const MAX_LEAD_PAYLOAD_BYTES = 32 * 1024;
 export const MAX_SOURCE_LINKS = 10;
+export const contributionTypes = [
+  "new-lead",
+  "public-source",
+  "correction",
+  "official-response",
+] as const;
+export const leadMediaTypes = ["none", "photo", "video", "photo-and-video"] as const;
 
 const trimmed = (minimum: number, maximum: number) =>
   z
@@ -41,6 +48,16 @@ export const leadSubmissionSchema = z
     sourceLinks: z
       .array(sourceUrl)
       .max(MAX_SOURCE_LINKS, `Add no more than ${MAX_SOURCE_LINKS} source links.`),
+    mediaType: z.enum(leadMediaTypes),
+    relatedEventSlug: z
+      .string()
+      .trim()
+      .max(120)
+      .refine(
+        (value) => value === "" || /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value),
+        "Invalid related event.",
+      ),
+    contributionType: z.enum(contributionTypes),
     additionalContext: z.string().trim().max(3000, "Enter no more than 3000 characters."),
     contactEmail: z
       .string()

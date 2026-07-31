@@ -1646,27 +1646,39 @@ main {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.event-record-actions button {
+.event-record-actions a {
   background: #ffffff;
   border: 1px solid var(--line-dark);
-  color: var(--muted);
-  cursor: not-allowed;
+  color: var(--ink);
+  cursor: pointer;
+  display: block;
   min-height: 5rem;
   padding: 0.8rem;
   text-align: left;
+  text-decoration: none;
 }
 
-.event-record-actions button span,
-.event-record-actions button small {
+.event-record-actions a:hover span {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.event-record-actions a:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.event-record-actions a span,
+.event-record-actions a small {
   display: block;
 }
 
-.event-record-actions button span {
+.event-record-actions a span {
   font-size: 0.76rem;
   font-weight: 800;
 }
 
-.event-record-actions button small {
+.event-record-actions a small {
   font-size: 0.65rem;
   margin-top: 0.35rem;
 }
@@ -3411,6 +3423,21 @@ h3 {
   padding-block: 2rem;
 }
 
+.lead-contribution-context {
+  background: var(--surface);
+  border-left: 4px solid var(--terracotta);
+  display: grid;
+  gap: 0.2rem;
+  margin-bottom: 1.6rem;
+  padding: 0.8rem 1rem;
+}
+
+.lead-contribution-context span {
+  color: var(--muted);
+  font-size: 0.84rem;
+  overflow-wrap: anywhere;
+}
+
 .lead-field,
 .lead-contact-section,
 .lead-confirmations {
@@ -3482,7 +3509,8 @@ h3 {
   margin: 0.4rem 0 0;
 }
 
-.lead-date-field {
+.lead-date-field,
+.lead-media-field {
   border-bottom: 1px solid var(--line);
   border-top: 1px solid var(--line);
   padding-block: 1.1rem;

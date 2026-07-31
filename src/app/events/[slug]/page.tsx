@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatEventDate, formatEventDateRange } from "../../../lib/events/archive";
 import {
@@ -18,6 +19,12 @@ export const dynamic = "force-dynamic";
 type EventPageProps = {
   params: Promise<{ slug: string }>;
 };
+
+const contributionActions = [
+  { label: "Add a public source", type: "public-source" },
+  { label: "Suggest a correction", type: "correction" },
+  { label: "Submit an official response", type: "official-response" },
+] as const;
 
 async function findEvent(slug: string) {
   const events = await getReviewedEvents();
@@ -138,14 +145,15 @@ export default async function EventRecordPage({ params }: EventPageProps) {
           <section className="event-record-actions" aria-labelledby="record-actions-heading">
             <h2 id="record-actions-heading">Contribute to this record</h2>
             <div>
-              {["Add a public source", "Suggest a correction", "Submit an official response"].map(
-                (label) => (
-                  <button key={label} type="button" disabled>
-                    <span>{label}</span>
-                    <small>Available after public launch</small>
-                  </button>
-                ),
-              )}
+              {contributionActions.map(({ label, type }) => (
+                <Link
+                  key={type}
+                  href={`/submit-a-lead?event=${encodeURIComponent(event.slug)}&contribution=${type}`}
+                >
+                  <span>{label}</span>
+                  <small>Send privately for editorial review</small>
+                </Link>
+              ))}
             </div>
           </section>
         </div>

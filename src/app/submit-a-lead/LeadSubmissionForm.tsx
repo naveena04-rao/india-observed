@@ -5,6 +5,12 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { fieldErrors, leadSubmissionSchema } from "@/lib/leads/validation";
 
 type FieldErrors = Record<string, string>;
+type ContributionType = "new-lead" | "public-source" | "correction" | "official-response";
+
+type LeadSubmissionFormProps = {
+  contributionType?: ContributionType;
+  relatedEventSlug?: string;
+};
 
 const validationMessage = "Review the highlighted fields and submit again.";
 const requestFailureMessage = "We could not submit this lead right now. Please try again later.";
@@ -12,7 +18,17 @@ const REQUEST_TIMEOUT_MS = 15_000;
 
 const errorId = (name: string) => `${name}-error`;
 
-export function LeadSubmissionForm() {
+const contributionLabels: Record<ContributionType, string> = {
+  "new-lead": "New lead",
+  "public-source": "Public source",
+  correction: "Correction",
+  "official-response": "Official response",
+};
+
+export function LeadSubmissionForm({
+  contributionType = "new-lead",
+  relatedEventSlug = "",
+}: LeadSubmissionFormProps) {
   const [datePrecision, setDatePrecision] = useState("exact");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -53,6 +69,9 @@ export function LeadSubmissionForm() {
       datePrecision: data.get("datePrecision"),
       eventDate: data.get("eventDate"),
       sourceLinks,
+      mediaType: data.get("mediaType"),
+      relatedEventSlug: data.get("relatedEventSlug"),
+      contributionType: data.get("contributionType"),
       additionalContext: data.get("additionalContext"),
       contactEmail: data.get("contactEmail"),
       contactPhone: data.get("contactPhone"),
@@ -118,6 +137,16 @@ export function LeadSubmissionForm() {
 
   return (
     <form className="lead-form" id="lead-submission-form" noValidate onSubmit={submit}>
+      <input name="relatedEventSlug" type="hidden" value={relatedEventSlug} />
+      <input name="contributionType" type="hidden" value={contributionType} />
+
+      {relatedEventSlug ? (
+        <div className="lead-contribution-context" role="note">
+          <strong>{contributionLabels[contributionType]} for an existing record</strong>
+          <span>Record: {relatedEventSlug}</span>
+        </div>
+      ) : null}
+
       {message ? (
         <div className="lead-error-summary" ref={summaryRef} role="alert" tabIndex={-1}>
           <h2>There is a problem with the submission</h2>
@@ -254,6 +283,36 @@ export function LeadSubmissionForm() {
           </p>
         ) : null}
       </div>
+
+      <fieldset className="lead-field lead-media-field">
+        <legend>
+          Photo or video evidence <span>Optional</span>
+        </legend>
+        <p className="lead-helper" id="lead-media-help">
+          Select what the source links include. Add a public photo or video URL under Source links;
+          do not submit private files or unsafe material.
+        </p>
+        <div className="lead-choice-row" aria-describedby="lead-media-help">
+          {(
+            [
+              ["none", "No photo or video"],
+              ["photo", "Photo"],
+              ["video", "Video"],
+              ["photo-and-video", "Photo and video"],
+            ] as const
+          ).map(([value, label]) => (
+            <label key={value}>
+              <input
+                defaultChecked={value === "none"}
+                name="mediaType"
+                type="radio"
+                value={value}
+              />{" "}
+              {label}
+            </label>
+          ))}
+        </div>
+      </fieldset>
 
       <div className="lead-field">
         <label htmlFor="lead-additional-context">

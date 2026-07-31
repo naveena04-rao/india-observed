@@ -7,7 +7,22 @@ export const metadata = {
   alternates: { canonical: "/submit-a-lead" },
 };
 
-export default function SubmitALeadPage() {
+type SubmitALeadPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+const contributionTypes = ["new-lead", "public-source", "correction", "official-response"] as const;
+
+export default async function SubmitALeadPage({ searchParams }: SubmitALeadPageProps) {
+  const query = await searchParams;
+  const event = typeof query.event === "string" ? query.event : "";
+  const requestedType = typeof query.contribution === "string" ? query.contribution : "new-lead";
+  const contributionType = contributionTypes.includes(
+    requestedType as (typeof contributionTypes)[number],
+  )
+    ? (requestedType as (typeof contributionTypes)[number])
+    : "new-lead";
+
   return (
     <StoryPage
       className="submit-lead-page"
@@ -30,7 +45,7 @@ export default function SubmitALeadPage() {
         </p>
       </section>
 
-      <LeadSubmissionForm />
+      <LeadSubmissionForm contributionType={contributionType} relatedEventSlug={event} />
 
       <section className="lead-next-steps" aria-labelledby="lead-next-title">
         <h2 id="lead-next-title">What happens next</h2>

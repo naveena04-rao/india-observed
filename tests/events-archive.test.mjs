@@ -613,7 +613,7 @@ test("archive controls use the compact title and spacing without changing grid, 
   assert.match(mediaRegistry, /createNoApprovedMediaVisual\(event\)/);
 });
 
-test("detail pages show full public-safe records and disabled launch actions", () => {
+test("detail pages show full public-safe records and working contribution actions", () => {
   for (const field of [
     "event.eventType",
     "event.eventStatus",
@@ -634,8 +634,16 @@ test("detail pages show full public-safe records and disabled launch actions", (
   ]) {
     assert.match(detailPage, new RegExp(action));
   }
-  assert.match(detailPage, /Available after public launch/);
-  assert.match(detailPage, /<button key=\{label\} type="button" disabled>/);
+  for (const contribution of ["public-source", "correction", "official-response"]) {
+    assert.match(
+      detailPage,
+      new RegExp(`contribution=\\$\\{type\\}`),
+      `${contribution} action uses the event-aware contribution route`,
+    );
+  }
+  assert.match(detailPage, /event=\$\{encodeURIComponent\(event\.slug\)\}/);
+  assert.match(detailPage, /Send privately for editorial review/);
+  assert.doesNotMatch(detailPage, /Available after public launch|disabled>/);
   assert.match(detailPage, /<EventSafety event=\{event\} \/>/);
   assert.match(detailPage, /<EventSources sources=\{event\.sources\} \/>/);
   assert.ok(detailPage.indexOf("<EventSafety") < detailPage.indexOf("<EventSources"));
