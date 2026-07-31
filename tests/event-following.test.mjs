@@ -247,7 +247,7 @@ test("all nine homepage definitions resolve to published slugs and render compac
     assert.ok(reviewedSlugs.has(id), `missing published slug for ${id}`);
   assert.match(
     homepage,
-    /approvedMedia,[\s\S]*?eventHref: `\/events\/\$\{slug\}`,[\s\S]*?slug,[\s\S]*?verification: eventVerification,[\s\S]*?visual/,
+    /approvedMedia,[\s\S]*?eventHref: `\/events\/\$\{slug\}`,[\s\S]*?slug,[\s\S]*?visual/,
   );
   assert.match(homepage, /getHomepageVisual\([\s\S]*?record\.id[\s\S]*?slug=\{slug\}/);
   assert.equal((carousel.match(/<EventFollowControl/g) ?? []).length, 2);

@@ -2,7 +2,6 @@ import Link from "next/link";
 import { EventStatusTag } from "./components/EventStatusTag";
 import { EventTypeTag } from "./components/EventTypeTag";
 import { PublicSiteFooter } from "./components/PublicSiteFooter";
-import { VerificationStatus } from "./components/VerificationStatus";
 import { FeaturedRecordCarousel, type FeaturedRecord } from "./components/FeaturedRecordCarousel";
 import { HeaderAuthControl } from "./components/HeaderAuthControl";
 import { EventFollowControl } from "./events/components/EventFollowControl";
@@ -22,7 +21,6 @@ type HomepageVisual = {
   approvedMedia?: ApprovedEventMedia;
   eventHref: string;
   slug: string;
-  verification: string;
   visual: EventVisualData;
 };
 
@@ -39,15 +37,9 @@ function createHomepageVisualMap(
   events: Awaited<ReturnType<typeof getReviewedEvents>>,
 ): Map<string, HomepageVisual> {
   return new Map(
-    events.map(({ approvedMedia, eventVerification, internalId, slug, visual }) => [
+    events.map(({ approvedMedia, internalId, slug, visual }) => [
       internalId,
-      {
-        approvedMedia,
-        eventHref: `/events/${slug}`,
-        slug,
-        verification: eventVerification,
-        visual,
-      },
+      { approvedMedia, eventHref: `/events/${slug}`, slug, visual },
     ]),
   );
 }
@@ -376,23 +368,6 @@ export default async function HomePage() {
         </div>
       </div>
 
-      <section className="trust-metrics" aria-label="Coverage notes">
-        <div className="page-shell trust-metrics__inner">
-          <div>
-            <strong>{coverageStates}</strong>
-            <span>states and Union Territories represented</span>
-          </div>
-          <div>
-            <strong>{reviewedEvents.length}</strong>
-            <span>reviewed event records</span>
-          </div>
-          <div>
-            <strong>{coverageSources}</strong>
-            <span>source records linked to reviewed events</span>
-          </div>
-        </div>
-      </section>
-
       <FeaturedRecordCarousel
         followingEnabled={following.enabled}
         initiallySignedIn={initiallySignedIn}
@@ -424,7 +399,6 @@ export default async function HomePage() {
                     <h3>
                       <Link href={eventHref}>{record.title}</Link>
                     </h3>
-                    <VerificationStatus compact status={homepageVisual.verification} />
                     <p className="on-record-description" title={record.context}>
                       {record.context}
                     </p>
@@ -500,6 +474,20 @@ export default async function HomePage() {
               {coverageStates} states and Union Territories, supported by source-linked
               documentation.
             </p>
+          </div>
+          <div className="coverage-ledger" aria-label="Coverage notes">
+            <div>
+              <strong>{coverageStates}</strong>
+              <span>states and Union Territories represented</span>
+            </div>
+            <div>
+              <strong>{reviewedEvents.length}</strong>
+              <span>reviewed event records</span>
+            </div>
+            <div>
+              <strong>{coverageSources}</strong>
+              <span>source records linked to reviewed events</span>
+            </div>
           </div>
         </div>
       </section>

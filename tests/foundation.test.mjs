@@ -139,10 +139,7 @@ test("homepage keeps the public archive safety boundaries visible", () => {
     assert.doesNotMatch(carousel, new RegExp(removedCopy, "i"));
   }
   assert.match(page, /const reviewedEvents = await getReviewedEvents\(\)/);
-  assert.match(
-    page,
-    /events\.map\(\(\{ approvedMedia, eventVerification, internalId, slug, visual \}\)/,
-  );
+  assert.match(page, /events\.map\(\(\{ approvedMedia, internalId, slug, visual \}\)/);
   assert.match(page, /getHomepageVisual\(homepageVisualsByInternalId, record\.id\)/);
   assert.doesNotMatch(page, /https?:\/\//);
   assert.doesNotMatch(featuredBlock, /publicationStatus: "published_source_embed"/);
@@ -388,10 +385,13 @@ test("all nine homepage records use the central reviewed visual treatments", () 
     styles,
     /\.featured-record-video-frame[\s\S]*?aspect-ratio: 16 \/ 9;[\s\S]*?width: 100%;/,
   );
-  assert.match(styles, /\.latest-records-grid\s*\{\s*display: block;/);
   assert.match(
     styles,
-    /\.latest-entry-preview\s*\{[\s\S]*?grid-template-columns: minmax\(0, 1fr\) minmax\(9rem, 13rem\);/,
+    /\.latest-records-grid\s*\{[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/,
+  );
+  assert.match(
+    styles,
+    /\.latest-entry-preview\s*\{[\s\S]*?grid-template-columns: minmax\(0, 1fr\);[\s\S]*?grid-template-rows: auto auto;/,
   );
   assert.match(
     styles,
@@ -606,7 +606,6 @@ test("homepage uses the refined section hierarchy and editorial footer", () => {
   const footer = read("src/app/components/PublicSiteFooter.tsx");
   const archiveShell = read("src/app/events/components/ArchiveShell.tsx");
   const carousel = read("src/app/components/FeaturedRecordCarousel.tsx");
-  const verification = read("src/app/components/VerificationStatus.tsx");
   const eventVisual = read("src/app/events/components/EventVisual.tsx");
 
   assert.match(page, /<PublicSiteFooter \/>/);
@@ -617,13 +616,12 @@ test("homepage uses the refined section hierarchy and editorial footer", () => {
   assert.match(footer, /href: "\/corrections", label: "Corrections"/);
 
   assert.match(page, /<h2 id="on-record-title">ON RECORD<\/h2>/);
-  assert.equal((page.match(/className="trust-metrics"/g) ?? []).length, 1);
-  assert.ok(page.indexOf('className="trust-metrics"') < page.indexOf("<FeaturedRecordCarousel"));
-  assert.doesNotMatch(page, /className="coverage-ledger"/);
-  assert.match(verification, /\["verification-status", compact \? "verification-status--compact"/);
-  assert.match(carousel, /<VerificationStatus status=\{activeRecord\.verification\}/);
-  assert.match(carousel, /<VerificationStatus compact status=\{record\.verification\}/);
-  assert.match(page, /<VerificationStatus compact status=\{homepageVisual\.verification\}/);
+  assert.doesNotMatch(page, /className="trust-metrics"/);
+  assert.equal((page.match(/className="coverage-ledger"/g) ?? []).length, 1);
+  assert.ok(page.indexOf('className="coverage-ledger"') > page.indexOf("<FeaturedRecordCarousel"));
+  assert.match(carousel, /className="featured-evidence"/);
+  assert.doesNotMatch(carousel, /VerificationStatus/);
+  assert.doesNotMatch(page, /VerificationStatus/);
   assert.match(eventVisual, /Verified visual unavailable/);
   assert.doesNotMatch(eventVisual, /No approved event image available/);
   assert.match(

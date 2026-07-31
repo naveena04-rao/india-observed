@@ -12,7 +12,6 @@ import { EventFollowControl } from "../events/components/EventFollowControl";
 import { EventVisual } from "../events/components/EventVisual";
 import { EventStatusTag } from "./EventStatusTag";
 import { EventTypeTag } from "./EventTypeTag";
-import { VerificationStatus } from "./VerificationStatus";
 import type { EventStatus } from "../eventStatuses";
 import type { EventType } from "../eventTypes";
 
@@ -98,7 +97,6 @@ type LatestRecord = Pick<
   | "approvedMedia"
   | "eventHref"
   | "slug"
-  | "verification"
 >;
 
 type FeaturedRecordCarouselProps = {
@@ -205,7 +203,10 @@ export function FeaturedRecordCarousel({
         </span>
       </p>
       <h1>{activeRecord.title}</h1>
-      <VerificationStatus status={activeRecord.verification} detail={activeRecord.note} />
+      <div className="featured-evidence" aria-label="Record evidence summary">
+        <span>{activeRecord.verification}</span>
+        <span>{activeRecord.note}</span>
+      </div>
       <EventFollowControl
         className="homepage-follow-control"
         enabled={followingEnabled}
@@ -312,7 +313,6 @@ export function FeaturedRecordCarousel({
                   <h3 className="latest-entry-title">
                     <Link href={record.eventHref}>{record.title}</Link>
                   </h3>
-                  <VerificationStatus compact status={record.verification} />
                   <div className="latest-entry-footer">
                     <time dateTime="2026-07-15">Reviewed {record.reviewed}</time>
                     <EventFollowControl
