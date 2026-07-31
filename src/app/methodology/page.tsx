@@ -93,6 +93,7 @@ export default async function MethodologyPage() {
 
   return (
     <StoryPage
+      className="editorial-page--methodology"
       eyebrow="METHODOLOGY"
       introduction="Every event passes through the same four-stage process before it appears publicly."
       path="/methodology"

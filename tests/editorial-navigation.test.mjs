@@ -121,8 +121,14 @@ test("About uses the reference-inspired story system and approved narrative cont
   assert.equal((about.match(/A public record is not static/g) ?? []).length, 1);
   assert.match(
     about,
-    /Why India Observed exists[\s\S]*What stays private[\s\S]*A public record is not static[\s\S]*Public events are often reported in fragments/,
+    /introduction="India Observed brings protests, strikes, marches and other civic movements into one clear, source-linked public record\. Public events are often reported in fragments\. India Observed brings those fragments together into a record people can inspect\."/,
   );
+  assert.equal((about.match(/Public events are often reported in fragments\./g) ?? []).length, 1);
+  assert.match(
+    about,
+    /introduction=[\s\S]*Why India Observed exists[\s\S]*What stays private[\s\S]*A public record is not static/,
+  );
+  assert.doesNotMatch(about, /about-fragments|Bringing fragmented reporting together/);
   assert.doesNotMatch(about, /Civic events,[\s\S]*<br\s*\/?>[\s\S]*clearly documented\./);
   assert.match(
     css,
@@ -147,6 +153,7 @@ test("About uses the reference-inspired story system and approved narrative cont
 });
 
 test("Methodology derives current verification labels and uses the four-stage story process", () => {
+  assert.match(methodology, /className="editorial-page--methodology"/);
   assert.match(methodology, /await getReviewedEvents\(\)/);
   assert.match(methodology, /reviewedEvents\.map\(\(event\) => event\.eventVerification\)/);
   assert.match(methodology, /presentVerificationLabels\.has\(label\)/);
@@ -160,7 +167,7 @@ test("Methodology derives current verification labels and uses the four-stage st
   );
   assert.doesNotMatch(
     methodology,
-    /EditorialSummaryStrip|EditorialFeatureGrid|MethodologyStep|EditorialCallout/,
+    /EditorialSummaryStrip|EditorialFeatureGrid|MethodologyStep|EditorialCallout|about-fragments/,
   );
   for (const heading of [
     "Find the event",
@@ -186,6 +193,10 @@ test("Methodology derives current verification labels and uses the four-stage st
   ]) {
     assert.match(methodology, new RegExp(`description: \\[\\s*"${paragraph}"`));
   }
+  assert.match(
+    css,
+    /\.editorial-page--methodology \.methodology-sequence,[\s\S]*?background: transparent;[\s\S]*?margin-inline: 0;[\s\S]*?max-width: none;[\s\S]*?width: 100%;/,
+  );
 });
 
 test("editorial pages use one orderly reading column without artificial About visuals", () => {

@@ -4790,8 +4790,14 @@ main .lead-panel {
   margin: 1.75rem 0 0.5rem;
 }
 
-.editorial-page--about .about-fragments p {
-  margin: 0;
+.editorial-page--methodology .methodology-sequence,
+.editorial-page--methodology .editorial-section,
+.editorial-page--methodology .editorial-key-points,
+.editorial-page--methodology .editorial-closing {
+  background: transparent;
+  margin-inline: 0;
+  max-width: none;
+  width: 100%;
 }
 
 .editorial-page .story-statement > p {

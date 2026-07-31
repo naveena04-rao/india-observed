@@ -57,7 +57,7 @@ export default function AboutPage() {
     <StoryPage
       className="editorial-page--about"
       eyebrow="ABOUT INDIA OBSERVED"
-      introduction="India Observed brings protests, strikes, marches and other civic movements into one clear, source-linked public record."
+      introduction="India Observed brings protests, strikes, marches and other civic movements into one clear, source-linked public record. Public events are often reported in fragments. India Observed brings those fragments together into a record people can inspect."
       path="/about"
       title="Civic events, clearly documented."
     >
@@ -83,19 +83,6 @@ export default function AboutPage() {
           visible so readers can understand what changed.
         </p>
       </StorySection>
-
-      <section
-        className="editorial-section about-fragments"
-        aria-labelledby="about-fragments-title"
-      >
-        <h2 className="visually-hidden" id="about-fragments-title">
-          Bringing fragmented reporting together
-        </h2>
-        <p>
-          Public events are often reported in fragments. India Observed brings those fragments
-          together into a record people can inspect.
-        </p>
-      </section>
 
       <StoryPrinciples
         items={principles}
