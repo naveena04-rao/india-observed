@@ -145,7 +145,6 @@ export default async function MethodologyPage() {
       <StoryClosing
         description="Open a record and compare its summary with the evidence and sources shown alongside it."
         primaryLink={{ href: "/events", label: "Explore events" }}
-        secondaryLink={{ href: "/editorial-policy", label: "Editorial policy" }}
         title="See the methodology in practice"
       />
     </StoryPage>

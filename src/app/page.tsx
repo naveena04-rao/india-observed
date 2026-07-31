@@ -317,7 +317,7 @@ export default async function HomePage() {
   const initiallySignedIn = Boolean(user);
 
   return (
-    <main id="home">
+    <main className="editorial-typography" id="home">
       <header className="site-header">
         <div className="page-shell header-inner">
           <Link className="brand" href="/" aria-label="India Observed home">

@@ -4670,6 +4670,68 @@ main .lead-panel {
 
 /* Reader-facing About and Methodology pages */
 
+.editorial-typography {
+  --editorial-text: #18201e;
+  --editorial-text-muted: #42504d;
+  color: var(--editorial-text);
+  font-family: Arial, "Helvetica Neue", system-ui, sans-serif;
+}
+
+.editorial-typography h1,
+.editorial-typography h2,
+.editorial-typography h3 {
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+.editorial-typography p,
+.editorial-typography li,
+.editorial-typography dd {
+  line-height: 1.6;
+}
+
+.editorial-typography .section-kicker,
+.editorial-typography .on-record-section > .page-shell > h2,
+.editorial-typography .coverage-heading {
+  font-family: inherit;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.editorial-typography .on-record-context h3,
+.editorial-typography .event-archive-row h2 {
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.editorial-typography .on-record-context p,
+.editorial-typography .event-row-summary,
+.editorial-typography .events-intro > p {
+  color: var(--editorial-text-muted);
+}
+
+.editorial-typography .methodology-description,
+.editorial-typography .coverage-description,
+.editorial-typography .contribute-description,
+.editorial-typography .event-row-summary {
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.editorial-typography .event-row-place,
+.editorial-typography .event-row-topic,
+.editorial-typography .event-row-dates,
+.editorial-typography .events-result-count,
+.editorial-typography .event-filters label {
+  font-family: inherit;
+  letter-spacing: normal;
+  line-height: 1.45;
+}
+
 .editorial-page {
   --editorial-muted: #42504d;
   background: var(--surface);

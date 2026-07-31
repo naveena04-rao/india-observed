@@ -5,6 +5,7 @@ import test from "node:test";
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const carousel = read("src/app/components/FeaturedRecordCarousel.tsx");
 const homepage = read("src/app/page.tsx");
+const eventsPage = read("src/app/events/page.tsx");
 const eventVisual = read("src/app/events/components/EventVisual.tsx");
 const archivePreview = read("src/app/events/components/ArchiveMediaPreview.tsx");
 const archiveShell = read("src/app/events/components/ArchiveShell.tsx");
@@ -115,7 +116,10 @@ test("About uses the reference-inspired story system and approved narrative cont
   }
   assert.match(about, /\{ href: "\/events", label: "Explore events" \}/);
   assert.match(about, /\{ href: "\/methodology", label: "How records are reviewed" \}/);
-  assert.match(editorialLayout, /<ArchiveShell authReturnTo=\{path\}>/);
+  assert.match(
+    editorialLayout,
+    /<ArchiveShell authReturnTo=\{path\} hideEditorialPolicyLink=\{path === "\/methodology"\}>/,
+  );
   assert.match(about, /<StoryRows items=\{recordRows\}/);
   assert.equal((about.match(/What stays private/g) ?? []).length, 1);
   assert.equal((about.match(/A public record is not static/g) ?? []).length, 1);
@@ -183,7 +187,10 @@ test("Methodology derives current verification labels and uses the four-stage st
     assert.match(methodology, new RegExp(heading));
   }
   assert.match(methodology, /\{ href: "\/events", label: "Explore events" \}/);
-  assert.match(methodology, /\{ href: "\/editorial-policy", label: "Editorial policy" \}/);
+  assert.doesNotMatch(methodology, /\/editorial-policy|Editorial policy/);
+  assert.match(methodology, /primaryLink=\{\{ href: "\/events", label: "Explore events" \}\}/);
+  assert.match(editorialLayout, /hideEditorialPolicyLink=\{path === "\/methodology"\}/);
+  assert.match(archiveShell, /hideEditorialPolicyLink \? null :/);
   assert.doesNotMatch(methodology, /same_event_verified|approval status|reviewer|rights_basis/i);
   for (const paragraph of [
     "We begin with public reporting, official information or a credible public lead. There must be enough reliable information to establish that the event occurred.",
@@ -298,4 +305,16 @@ test("editorial pages use one orderly reading column without artificial About vi
     assert.match(archiveShell, new RegExp(`href="${href}"`));
   }
   assert.equal((dataset.match(/internalId: "IO-CM-/g) ?? []).length, 50);
+});
+
+test("Home and Events opt into shared editorial typography without structural rewrites", () => {
+  assert.match(homepage, /<main className="editorial-typography" id="home">/);
+  assert.match(eventsPage, /className="events-archive editorial-typography"/);
+  assert.match(
+    css,
+    /\.editorial-typography\s*\{[\s\S]*?font-family: Arial, "Helvetica Neue", system-ui, sans-serif;/,
+  );
+  assert.match(css, /\.editorial-typography \.event-archive-row h2/);
+  assert.match(homepage, /href="\/events"/);
+  assert.match(eventsPage, /<EventFilters[\s\S]*<EventArchiveRow[\s\S]*<EventPagination/);
 });

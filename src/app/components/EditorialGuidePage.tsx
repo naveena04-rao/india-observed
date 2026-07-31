@@ -187,7 +187,7 @@ export function StoryClosing({
   title: string;
   description: string;
   primaryLink: { href: string; label: string };
-  secondaryLink: { href: string; label: string };
+  secondaryLink?: { href: string; label: string };
 }) {
   return (
     <section className="editorial-closing" aria-labelledby="story-closing-title">
@@ -199,9 +199,11 @@ export function StoryClosing({
         <Link className="button" href={primaryLink.href}>
           {primaryLink.label}
         </Link>
-        <Link className="editorial-secondary-link" href={secondaryLink.href}>
-          {secondaryLink.label} →
-        </Link>
+        {secondaryLink ? (
+          <Link className="editorial-secondary-link" href={secondaryLink.href}>
+            {secondaryLink.label} →
+          </Link>
+        ) : null}
       </nav>
     </section>
   );
@@ -223,7 +225,7 @@ export function StoryPage({
   children: ReactNode;
 }) {
   return (
-    <ArchiveShell authReturnTo={path}>
+    <ArchiveShell authReturnTo={path} hideEditorialPolicyLink={path === "/methodology"}>
       <article className={`editorial-page page-shell${className ? ` ${className}` : ""}`}>
         <div className="editorial-page-inner">
           <StoryHero eyebrow={eyebrow} introduction={introduction} title={title} />

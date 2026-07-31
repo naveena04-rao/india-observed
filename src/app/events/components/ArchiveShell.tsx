@@ -8,9 +8,14 @@ import { HeaderAuthControl } from "../../components/HeaderAuthControl";
 type ArchiveShellProps = {
   authReturnTo: string;
   children: ReactNode;
+  hideEditorialPolicyLink?: boolean;
 };
 
-export async function ArchiveShell({ authReturnTo, children }: ArchiveShellProps) {
+export async function ArchiveShell({
+  authReturnTo,
+  children,
+  hideEditorialPolicyLink = false,
+}: ArchiveShellProps) {
   const following = getEventFollowingAvailability();
   const supabase = following.enabled ? await createSessionSupabaseClient() : null;
   const {
@@ -92,7 +97,9 @@ export async function ArchiveShell({ authReturnTo, children }: ArchiveShellProps
                 </Link>
                 <Link href="/methodology">Methodology</Link>
                 <Link href="/#coverage">Coverage</Link>
-                <Link href="/editorial-policy">Editorial policy</Link>
+                {hideEditorialPolicyLink ? null : (
+                  <Link href="/editorial-policy">Editorial policy</Link>
+                )}
                 <Link href="/sources-verification">Sources & verification</Link>
                 <Link href="/corrections">Corrections</Link>
                 <Link href="/media-policy">Media policy</Link>

@@ -100,7 +100,7 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.ok(mobileNav);
   assert.deepEqual(navigationLinks(desktopNav), expectedNavigation);
   assert.deepEqual(navigationLinks(mobileNav), expectedNavigation);
-  assert.match(page, /<main id="home">/);
+  assert.match(page, /<main className="editorial-typography" id="home">/);
   assert.match(carousel, /id="about"/);
   assert.match(carousel, /id="events"/);
   assert.match(page, /id="methodology"/);

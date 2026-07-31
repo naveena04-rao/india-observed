@@ -87,7 +87,7 @@ export default async function EventsPage({
 
   return (
     <ArchiveShell authReturnTo={authReturnTo}>
-      <section className="events-archive" aria-labelledby="events-heading">
+      <section className="events-archive editorial-typography" aria-labelledby="events-heading">
         <div className="page-shell">
           <div className="events-intro">
             <p className="section-kicker">Reviewed civic record archive</p>
