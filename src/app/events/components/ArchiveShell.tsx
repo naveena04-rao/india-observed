@@ -12,6 +12,8 @@ type ArchiveShellProps = {
 
 export async function ArchiveShell({ authReturnTo, children }: ArchiveShellProps) {
   const following = getEventFollowingAvailability();
+  const submitLeadHref =
+    authReturnTo === "/submit-a-lead" ? "#lead-submission-form" : "/submit-a-lead";
   const supabase = following.enabled ? await createSessionSupabaseClient() : null;
   const {
     data: { user },
@@ -43,7 +45,7 @@ export async function ArchiveShell({ authReturnTo, children }: ArchiveShellProps
             {following.enabled ? (
               <HeaderAuthControl signedIn={signedIn} returnTo={authReturnTo} />
             ) : null}
-            <Link className="nav-action" href="/submit-a-lead">
+            <Link className="nav-action" href={submitLeadHref}>
               Submit a lead
             </Link>
           </nav>
@@ -60,7 +62,7 @@ export async function ArchiveShell({ authReturnTo, children }: ArchiveShellProps
               {following.enabled ? (
                 <HeaderAuthControl signedIn={signedIn} returnTo={authReturnTo} />
               ) : null}
-              <Link className="nav-action" href="/submit-a-lead">
+              <Link className="nav-action" href={submitLeadHref}>
                 Submit a lead
               </Link>
             </nav>

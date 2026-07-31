@@ -109,7 +109,7 @@ export function LeadSubmissionForm() {
     errors[name] ? { "aria-invalid": true as const, "aria-describedby": errorId(name) } : {};
 
   return (
-    <form className="lead-form" noValidate onSubmit={submit}>
+    <form className="lead-form" id="lead-submission-form" noValidate onSubmit={submit}>
       {message ? (
         <div className="lead-error-summary" ref={summaryRef} role="alert" tabIndex={-1}>
           <h2>There is a problem with the submission</h2>

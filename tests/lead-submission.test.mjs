@@ -36,7 +36,11 @@ const validLead = (overrides = {}) => ({
 
 test("footer and editorial page expose the private lead route", () => {
   assert.match(footer, /href: "\/submit-a-lead", label: "Submit a lead"/);
-  assert.equal((archiveShell.match(/href="\/submit-a-lead"/g) ?? []).length, 2);
+  assert.match(
+    archiveShell,
+    /authReturnTo === "\/submit-a-lead" \? "#lead-submission-form" : "\/submit-a-lead"/,
+  );
+  assert.equal((archiveShell.match(/href=\{submitLeadHref\}/g) ?? []).length, 2);
   assert.doesNotMatch(archiveShell, /className="nav-action" href="\/#lead"/);
   assert.match(page, /eyebrow="SUBMIT A LEAD"/);
   assert.match(page, /title="Submit a lead"/);
@@ -54,7 +58,10 @@ test("one enabled primary submit button uses native form semantics", () => {
   assert.equal((form.match(/<form\b/g) ?? []).length, 1);
   assert.equal((form.match(/<button\b/g) ?? []).length, 1);
   assert.equal((form.match(/className="lead-submit"/g) ?? []).length, 1);
-  assert.match(form, /<form className="lead-form" noValidate onSubmit=\{submit\}>/);
+  assert.match(
+    form,
+    /<form className="lead-form" id="lead-submission-form" noValidate onSubmit=\{submit\}>/,
+  );
   assert.match(form, /<button className="lead-submit" type="submit" disabled=\{submitting\}>/);
   assert.ok(form.indexOf('<button className="lead-submit"') > form.indexOf("<form "));
   assert.ok(form.indexOf('<button className="lead-submit"') < form.lastIndexOf("</form>"));
