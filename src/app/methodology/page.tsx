@@ -125,7 +125,7 @@ export default async function MethodologyPage() {
 
       <StorySection
         id="privacy-and-media"
-        title="Not every available detail should be published"
+        title="Not every available detail is published"
         tone="warm"
       >
         <p>

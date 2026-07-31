@@ -4730,6 +4730,18 @@ main .lead-panel {
   white-space: nowrap;
 }
 
+.editorial-page--methodology h1 {
+  max-width: none;
+  white-space: nowrap;
+}
+
+.editorial-page--methodology .editorial-eyebrow {
+  color: #245c52;
+  font-size: 0.875rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
 .editorial-page .editorial-hero-introduction {
   color: var(--editorial-muted);
   font-size: clamp(1rem, 1.25vw, 1.125rem);
@@ -5059,6 +5071,10 @@ main .lead-panel {
   }
 
   .editorial-page--about h1 {
+    white-space: normal;
+  }
+
+  .editorial-page--methodology h1 {
     white-space: normal;
   }
 

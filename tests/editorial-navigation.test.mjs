@@ -176,7 +176,7 @@ test("Methodology derives current verification labels and uses the four-stage st
     "Review before publication",
     "How to read verification labels",
     "A source count is not a reliability score",
-    "Not every available detail should be published",
+    "Not every available detail is published",
     "Records remain open to stronger evidence",
     "See the methodology in practice",
   ]) {
@@ -197,6 +197,15 @@ test("Methodology derives current verification labels and uses the four-stage st
     css,
     /\.editorial-page--methodology \.methodology-sequence,[\s\S]*?background: transparent;[\s\S]*?margin-inline: 0;[\s\S]*?max-width: none;[\s\S]*?width: 100%;/,
   );
+  assert.match(
+    css,
+    /\.editorial-page--methodology h1\s*\{[\s\S]*?max-width: none;[\s\S]*?white-space: nowrap;/,
+  );
+  assert.match(
+    css,
+    /\.editorial-page--methodology \.editorial-eyebrow\s*\{[\s\S]*?font-size: 0\.875rem;[\s\S]*?font-weight: 800;/,
+  );
+  assert.doesNotMatch(methodology, /Not every available detail should be published/);
 });
 
 test("editorial pages use one orderly reading column without artificial About visuals", () => {
