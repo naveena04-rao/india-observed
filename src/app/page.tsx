@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { EventStatusTag } from "./components/EventStatusTag";
 import { EventTypeTag } from "./components/EventTypeTag";
-import { FooterSocialPlaceholders } from "./components/FooterSocialPlaceholders";
+import { PublicSiteFooter } from "./components/PublicSiteFooter";
 import { FeaturedRecordCarousel, type FeaturedRecord } from "./components/FeaturedRecordCarousel";
 import { HeaderAuthControl } from "./components/HeaderAuthControl";
 import { EventFollowControl } from "./events/components/EventFollowControl";
@@ -399,7 +399,9 @@ export default async function HomePage() {
                     <h3>
                       <Link href={eventHref}>{record.title}</Link>
                     </h3>
-                    <p>{record.context}</p>
+                    <p className="on-record-description" title={record.context}>
+                      {record.context}
+                    </p>
                     <div className="on-record-footer">
                       <time dateTime="2026-07-15">Reviewed {record.reviewed}</time>
                       <EventFollowControl
@@ -508,44 +510,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <footer className="site-footer">
-        <div className="page-shell">
-          <div className="footer-grid">
-            <div className="footer-identity">
-              <span className="footer-brand">India Observed</span>
-              <p>Independent, source-linked records of civic action across India.</p>
-            </div>
-            <div className="footer-explore">
-              <h2>Explore</h2>
-              <nav aria-label="Footer navigation">
-                <a href="#home">Home</a>
-                <Link href="/events">Events</Link>
-                <Link href="/methodology">Methodology</Link>
-                <a href="#coverage">Coverage</a>
-                <Link href="/editorial-policy">Editorial policy</Link>
-                <Link href="/sources-verification">Sources & verification</Link>
-                <Link href="/corrections">Corrections</Link>
-                <Link href="/media-policy">Media policy</Link>
-                <Link href="/privacy">Privacy</Link>
-                <Link href="/terms">Terms</Link>
-                <Link href="/contact">Contact</Link>
-                <Link href="/copyright">Copyright & takedown</Link>
-                <a href="#lead">Submit a lead</a>
-              </nav>
-            </div>
-            <div className="footer-follow">
-              <h2>Follow</h2>
-              <FooterSocialPlaceholders />
-            </div>
-          </div>
-          <div className="footer-trust-strip">
-            <span>Sources linked</span>
-            <span>Human review before publication</span>
-            <span>Identities protected</span>
-            <span>© 2026 India Observed</span>
-          </div>
-        </div>
-      </footer>
+      <PublicSiteFooter />
     </main>
   );
 }

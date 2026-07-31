@@ -24,6 +24,7 @@ const eventSafety = read("src/app/events/components/EventSafety.tsx");
 const eventSources = read("src/app/events/components/EventSources.tsx");
 const shell = read("src/app/events/components/ArchiveShell.tsx");
 const homepage = read("src/app/page.tsx");
+const publicFooter = read("src/app/components/PublicSiteFooter.tsx");
 const styles = read("src/app/globals.css");
 
 const evidenceSource = evidenceDataset.slice(
@@ -645,7 +646,8 @@ test("detail pages show full public-safe records and disabled launch actions", (
 });
 
 test("homepage navigation and coverage totals are synchronized with the canonical workbook", () => {
-  assert.equal((homepage.match(/<Link href="\/events">Events<\/Link>/g) ?? []).length, 3);
+  assert.equal((homepage.match(/<Link href="\/events">Events<\/Link>/g) ?? []).length, 2);
+  assert.match(publicFooter, /\{ href: "\/events", label: "Events" \}/);
   for (const [countExpression, label] of [
     ["coverageStates", "states and Union Territories represented"],
     ["reviewedEvents.length", "reviewed event records"],
@@ -658,7 +660,8 @@ test("homepage navigation and coverage totals are synchronized with the canonica
       ),
     );
   }
-  assert.equal((shell.match(/href="\/events"/g) ?? []).length, 3);
+  assert.equal((shell.match(/href="\/events"/g) ?? []).length, 2);
+  assert.match(publicFooter, /\{ href: "\/events", label: "Events" \}/);
   assert.doesNotMatch(homepage, /Open questions|Documentation still needed|Documentation gap/);
   assert.doesNotMatch(styles, /\.open-questions/);
 });

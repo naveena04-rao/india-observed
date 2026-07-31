@@ -29,6 +29,7 @@ const homepage = read("src/app/page.tsx");
 const carousel = read("src/app/components/FeaturedRecordCarousel.tsx");
 const headerAuth = read("src/app/components/HeaderAuthControl.tsx");
 const archiveShell = read("src/app/events/components/ArchiveShell.tsx");
+const publicFooter = read("src/app/components/PublicSiteFooter.tsx");
 const documentation = read("docs/EVENT_FOLLOWING.md");
 
 test("migration registry exactly matches all 50 published application slugs", () => {
@@ -215,8 +216,9 @@ test("privacy page reflects implemented collection and public display", () => {
   }
   assert.match(privacy, /has not yet approved a public account-deletion contact channel/);
   assert.match(signIn, /href="\/privacy"/);
-  assert.match(homepage, /<Link href="\/privacy">Privacy<\/Link>/);
-  assert.match(archiveShell, /<Link href="\/privacy">Privacy<\/Link>/);
+  assert.match(homepage, /<PublicSiteFooter \/>/);
+  assert.match(archiveShell, /<PublicSiteFooter \/>/);
+  assert.match(publicFooter, /<Link href="\/privacy">Privacy<\/Link>/);
 });
 
 test("following does not alter archive or homepage editorial behavior", () => {

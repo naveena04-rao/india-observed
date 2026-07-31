@@ -116,10 +116,7 @@ test("About uses the reference-inspired story system and approved narrative cont
   }
   assert.match(about, /\{ href: "\/events", label: "Explore events" \}/);
   assert.match(about, /\{ href: "\/methodology", label: "How records are reviewed" \}/);
-  assert.match(
-    editorialLayout,
-    /<ArchiveShell authReturnTo=\{path\} hideEditorialPolicyLink=\{path === "\/methodology"\}>/,
-  );
+  assert.match(editorialLayout, /<ArchiveShell authReturnTo=\{path\}>/);
   assert.match(about, /<StoryRows items=\{recordRows\}/);
   assert.equal((about.match(/What stays private/g) ?? []).length, 1);
   assert.equal((about.match(/A public record is not static/g) ?? []).length, 1);
@@ -189,8 +186,8 @@ test("Methodology derives current verification labels and uses the four-stage st
   assert.match(methodology, /\{ href: "\/events", label: "Explore events" \}/);
   assert.doesNotMatch(methodology, /\/editorial-policy|Editorial policy/);
   assert.match(methodology, /primaryLink=\{\{ href: "\/events", label: "Explore events" \}\}/);
-  assert.match(editorialLayout, /hideEditorialPolicyLink=\{path === "\/methodology"\}/);
-  assert.match(archiveShell, /hideEditorialPolicyLink \? null :/);
+  assert.doesNotMatch(editorialLayout, /hideEditorialPolicyLink/);
+  assert.doesNotMatch(archiveShell, /hideEditorialPolicyLink/);
   assert.doesNotMatch(methodology, /same_event_verified|approval status|reviewer|rights_basis/i);
   for (const paragraph of [
     "We begin with public reporting, official information or a credible public lead. There must be enough reliable information to establish that the event occurred.",

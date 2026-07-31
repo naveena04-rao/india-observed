@@ -225,7 +225,7 @@ export function StoryPage({
   children: ReactNode;
 }) {
   return (
-    <ArchiveShell authReturnTo={path} hideEditorialPolicyLink={path === "/methodology"}>
+    <ArchiveShell authReturnTo={path}>
       <article className={`editorial-page page-shell${className ? ` ${className}` : ""}`}>
         <div className="editorial-page-inner">
           <StoryHero eyebrow={eyebrow} introduction={introduction} title={title} />

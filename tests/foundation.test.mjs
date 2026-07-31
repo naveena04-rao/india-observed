@@ -37,6 +37,7 @@ test("prototype contains core trust language", () => {
 
 test("homepage keeps the public archive safety boundaries visible", () => {
   const page = read("src/app/page.tsx");
+  const footer = read("src/app/components/PublicSiteFooter.tsx");
   const carousel = read("src/app/components/FeaturedRecordCarousel.tsx");
   const styles = read("src/app/globals.css");
   const mediaMigration = read("supabase/migrations/20260728000100_add_event_media_library.sql");
@@ -109,7 +110,7 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.match(page, /Independent records of protests and civic movements across India/i);
   assert.match(page, /Sources linked\. Identities protected\. Corrections visible\./i);
   assert.match(page, /tactical information/i);
-  assert.match(page, /Human review/i);
+  assert.match(page + footer, /Human review/i);
   const mediaGridMarkup = carousel.match(
     /const mediaStatusGrid = \(\s*(<dl className="media-status-grid">[\s\S]*?<\/dl>)\s*\);/,
   )?.[1];
@@ -602,15 +603,15 @@ test("homepage event statuses use one controlled public vocabulary", () => {
 test("homepage uses the refined section hierarchy and editorial footer", () => {
   const page = read("src/app/page.tsx");
   const styles = read("src/app/globals.css");
-  const social = read("src/app/components/FooterSocialPlaceholders.tsx");
-  const footer = page.match(/<footer className="site-footer">([\s\S]*?)<\/footer>/)?.[1];
+  const footer = read("src/app/components/PublicSiteFooter.tsx");
+  const archiveShell = read("src/app/events/components/ArchiveShell.tsx");
 
-  assert.ok(footer);
+  assert.match(page, /<PublicSiteFooter \/>/);
+  assert.match(archiveShell, /<PublicSiteFooter \/>/);
   assert.doesNotMatch(page, /Recent corrections and clarifications|Changes remain visible/);
   assert.doesNotMatch(page, /No recent record changes have been published/);
   assert.doesNotMatch(styles, /\.correction-stream|\.correction-empty-state/);
-  assert.match(footer, /href="\/corrections">Corrections/);
-  assert.doesNotMatch(footer, /href="#corrections"/i);
+  assert.match(footer, /href: "\/corrections", label: "Corrections"/);
 
   assert.match(page, /<h2 id="on-record-title">ON RECORD<\/h2>/);
   assert.match(
@@ -673,56 +674,41 @@ test("homepage uses the refined section hierarchy and editorial footer", () => {
       maxClampValue(".lead-panel .contribute-description"),
   );
 
-  assert.match(styles, /--footer-background: #173f38;/);
-  assert.match(styles, /--footer-text: #f7f2e8;/);
-  assert.match(styles, /--footer-muted: #c2d1cb;/);
-  assert.match(styles, /--footer-line: #4f726a;/);
-  assert.match(styles, /\.site-footer\s*\{\s*background: var\(--footer-background\);/);
-  for (const group of [
-    "footer-identity",
-    "footer-explore",
-    "footer-follow",
-    "footer-trust-strip",
-  ]) {
-    assert.match(footer, new RegExp(`className="${group}"`));
+  assert.match(styles, /\.public-footer\s*\{[\s\S]*?background: #f5f6f4;/);
+  assert.match(footer, /<footer className="public-footer">/);
+  assert.equal((footer.match(/<footer\b/g) ?? []).length, 1);
+  for (const group of ["Explore", "About", "Standards"]) {
+    assert.match(footer, new RegExp(`title: "${group}"`));
   }
-  const footerNav = footer.match(/<nav aria-label="Footer navigation">([\s\S]*?)<\/nav>/)?.[1];
-  assert.ok(footerNav);
-  assert.deepEqual(
-    [...footerNav.matchAll(/<(?:a|Link) href="([^"]+)">([^<]+)<\/(?:a|Link)>/g)].map(
-      ([, href, label]) => [href, label],
-    ),
-    [
-      ["#home", "Home"],
-      ["/events", "Events"],
-      ["/methodology", "Methodology"],
-      ["#coverage", "Coverage"],
-      ["/editorial-policy", "Editorial policy"],
-      ["/sources-verification", "Sources & verification"],
-      ["/corrections", "Corrections"],
-      ["/media-policy", "Media policy"],
-      ["/privacy", "Privacy"],
-      ["/terms", "Terms"],
-      ["/contact", "Contact"],
-      ["/copyright", "Copyright & takedown"],
-      ["#lead", "Submit a lead"],
-    ],
+  for (const label of [
+    "Home",
+    "Events",
+    "Methodology",
+    "Coverage",
+    "Submit a lead",
+    "About India Observed",
+    "Contact",
+    "Editorial policy",
+    "Sources & verification",
+    "Corrections",
+    "Media policy",
+    "Privacy",
+    "Terms",
+    "Copyright & takedown",
+  ]) {
+    assert.match(footer, new RegExp(label.replace("&", "&")));
+  }
+  assert.match(footer, /new Date\(\)\.getFullYear\(\)/);
+  assert.doesNotMatch(footer, /Instagram|YouTube|newsletter|donat/i);
+  assert.doesNotMatch(page + archiveShell, /site-footer|FooterSocialPlaceholders/);
+  assert.match(
+    page,
+    /<p className="on-record-description" title=\{record\.context\}>\s*\{record\.context\}\s*<\/p>/,
   );
-
-  assert.match(social, /aria-label="Planned social channels: Instagram, YouTube and X"/);
-  for (const platform of ["Instagram", "YouTube", "X"]) {
-    assert.match(social, new RegExp(`<span className="sr-only">${platform}<\\/span>`));
-  }
-  assert.equal((social.match(/<svg /g) ?? []).length, 3);
-  assert.equal((social.match(/focusable="false"/g) ?? []).length, 3);
-  assert.doesNotMatch(social, /<a\b|href=|tabIndex=|followers?|@[A-Za-z]|Coming soon/i);
-  for (const trustItem of [
-    "Sources linked",
-    "Human review before publication",
-    "Identities protected",
-  ]) {
-    assert.match(footer, new RegExp(trustItem));
-  }
+  assert.match(
+    styles,
+    /#home \.on-record-description\s*\{[\s\S]*?max-width: 100%;[\s\S]*?min-width: 0;[\s\S]*?overflow: hidden;[\s\S]*?text-overflow: ellipsis;[\s\S]*?white-space: nowrap;/,
+  );
 });
 
 test("homepage preserves the approved black header and white page surfaces", () => {
@@ -774,6 +760,6 @@ test("homepage preserves the approved black header and white page surfaces", () 
   )?.[0];
   assert.ok(whiteSurfaceRule);
   assert.doesNotMatch(whiteSurfaceRule, /#f5f2ea|#ebe6db|#fbfaf6|#f7f2e8|#fbf8f1/);
-  assert.match(activeSurfaceStyles, /\.site-footer\s*\{\s*background: var\(--footer-background\);/);
+  assert.match(styles, /\.public-footer\s*\{[\s\S]*?background: #f5f6f4;/);
   assert.doesNotMatch(read("src/app/page.tsx"), /Open questions/i);
 });
