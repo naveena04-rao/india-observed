@@ -17,13 +17,21 @@ export function LeadSubmissionForm() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [message, setMessage] = useState("");
+  const [feedbackVersion, setFeedbackVersion] = useState(0);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [startedAt] = useState(() => Date.now());
   const summaryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (message) summaryRef.current?.focus();
-  }, [message]);
+    if (!message || !summaryRef.current) return;
+    summaryRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    summaryRef.current.focus({ preventScroll: true });
+  }, [feedbackVersion, message]);
+
+  function showFeedback(nextMessage: string) {
+    setMessage(nextMessage);
+    setFeedbackVersion((version) => version + 1);
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -56,7 +64,7 @@ export function LeadSubmissionForm() {
     const parsed = leadSubmissionSchema.safeParse(payload);
     if (!parsed.success) {
       setErrors(fieldErrors(parsed.error));
-      setMessage(validationMessage);
+      showFeedback(validationMessage);
       return;
     }
 
@@ -78,14 +86,14 @@ export function LeadSubmissionForm() {
       };
       if (!response.ok || !result.ok) {
         setErrors(result.fieldErrors ?? {});
-        setMessage(result.message ?? requestFailureMessage);
+        showFeedback(result.message ?? requestFailureMessage);
         return;
       }
       setSuccess(true);
-      setMessage("Your lead has been submitted for review.");
+      showFeedback("Your lead has been submitted for review.");
       form.reset();
     } catch {
-      setMessage(requestFailureMessage);
+      showFeedback(requestFailureMessage);
     } finally {
       window.clearTimeout(timeout);
       setSubmitting(false);

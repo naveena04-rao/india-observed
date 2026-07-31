@@ -12,6 +12,7 @@ const migration = read("supabase/migrations/20260731000100_add_lead_submissions.
 const databaseTest = read("supabase/tests/database/0007_lead_submissions.test.sql");
 const footer = read("src/app/components/PublicSiteFooter.tsx");
 const archiveShell = read("src/app/events/components/ArchiveShell.tsx");
+const leadNavigation = read("src/app/components/LeadNavigationAction.tsx");
 const privacy = read("src/app/privacy/page.tsx");
 const styles = read("src/app/globals.css");
 const { leadSubmissionSchema } = await import("../src/lib/leads/validation.ts");
@@ -36,14 +37,17 @@ const validLead = (overrides = {}) => ({
 
 test("footer and editorial page expose the private lead route", () => {
   assert.match(footer, /href: "\/submit-a-lead", label: "Submit a lead"/);
-  assert.match(
-    archiveShell,
-    /authReturnTo === "\/submit-a-lead" \? "#lead-title" : "\/submit-a-lead"/,
-  );
+  assert.match(archiveShell, /const onLeadPage = authReturnTo === "\/submit-a-lead"/);
   assert.equal(
-    (archiveShell.match(/<a className="nav-action" href=\{submitLeadHref\}>/g) ?? []).length,
+    (archiveShell.match(/<LeadNavigationAction onLeadPage=\{onLeadPage\} \/>/g) ?? []).length,
     2,
   );
+  assert.match(leadNavigation, /const href = onLeadPage \? "#lead-title" : "\/submit-a-lead"/);
+  assert.match(
+    leadNavigation,
+    /titleField\.scrollIntoView\(\{ behavior: "smooth", block: "center" \}\)/,
+  );
+  assert.match(leadNavigation, /titleField\.focus\(\{ preventScroll: true \}\)/);
   assert.doesNotMatch(archiveShell, /className="nav-action" href="\/#lead"/);
   assert.match(page, /eyebrow="SUBMIT A LEAD"/);
   assert.match(page, /title="Submit a lead"/);
@@ -98,6 +102,12 @@ test("client recovers from request errors, timeouts and duplicate activation", (
     /finally \{[\s\S]*?window\.clearTimeout\(timeout\)[\s\S]*?setSubmitting\(false\)/,
   );
   assert.match(form, /setSuccess\(true\)[\s\S]*?Your lead has been submitted for review\./);
+  assert.match(
+    form,
+    /summaryRef\.current\.scrollIntoView\(\{ behavior: "smooth", block: "center" \}\)/,
+  );
+  assert.match(form, /summaryRef\.current\.focus\(\{ preventScroll: true \}\)/);
+  assert.match(form, /setFeedbackVersion\(\(version\) => version \+ 1\)/);
 });
 
 test("required fields and optional phone render in the prescribed order", () => {

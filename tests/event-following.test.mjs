@@ -319,7 +319,7 @@ test("homepage and archive navigation share gated Login or Logout controls", () 
   assert.equal((archiveShell.match(/returnTo=\{authReturnTo\}/g) ?? []).length, 2);
   assert.match(
     archiveShell,
-    /href="\/methodology">Methodology<\/Link>[\s\S]*?<HeaderAuthControl[\s\S]*?className="nav-action"/,
+    /href="\/methodology">Methodology<\/Link>[\s\S]*?<HeaderAuthControl[\s\S]*?<LeadNavigationAction/,
   );
   assert.doesNotMatch(
     homepage + archiveShell,

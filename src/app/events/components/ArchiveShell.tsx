@@ -4,6 +4,7 @@ import { getEventFollowingAvailability } from "@/lib/events/following";
 import { createSessionSupabaseClient } from "@/lib/supabase/server";
 import { PublicSiteFooter } from "../../components/PublicSiteFooter";
 import { HeaderAuthControl } from "../../components/HeaderAuthControl";
+import { LeadNavigationAction } from "../../components/LeadNavigationAction";
 
 type ArchiveShellProps = {
   authReturnTo: string;
@@ -12,7 +13,7 @@ type ArchiveShellProps = {
 
 export async function ArchiveShell({ authReturnTo, children }: ArchiveShellProps) {
   const following = getEventFollowingAvailability();
-  const submitLeadHref = authReturnTo === "/submit-a-lead" ? "#lead-title" : "/submit-a-lead";
+  const onLeadPage = authReturnTo === "/submit-a-lead";
   const supabase = following.enabled ? await createSessionSupabaseClient() : null;
   const {
     data: { user },
@@ -44,9 +45,7 @@ export async function ArchiveShell({ authReturnTo, children }: ArchiveShellProps
             {following.enabled ? (
               <HeaderAuthControl signedIn={signedIn} returnTo={authReturnTo} />
             ) : null}
-            <a className="nav-action" href={submitLeadHref}>
-              Submit a lead
-            </a>
+            <LeadNavigationAction onLeadPage={onLeadPage} />
           </nav>
 
           <details className="mobile-menu">
@@ -61,9 +60,7 @@ export async function ArchiveShell({ authReturnTo, children }: ArchiveShellProps
               {following.enabled ? (
                 <HeaderAuthControl signedIn={signedIn} returnTo={authReturnTo} />
               ) : null}
-              <a className="nav-action" href={submitLeadHref}>
-                Submit a lead
-              </a>
+              <LeadNavigationAction onLeadPage={onLeadPage} />
             </nav>
           </details>
         </div>
