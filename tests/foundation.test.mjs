@@ -37,8 +37,10 @@ test("prototype contains core trust language", () => {
 
 test("homepage keeps the public archive safety boundaries visible", () => {
   const page = read("src/app/page.tsx");
+  const footer = read("src/app/components/PublicSiteFooter.tsx");
   const carousel = read("src/app/components/FeaturedRecordCarousel.tsx");
   const styles = read("src/app/globals.css");
+  const mediaMigration = read("supabase/migrations/20260728000100_add_event_media_library.sql");
   const featuredBlock = page.match(/const featuredRecords = \[([\s\S]*?)\] as const;/)?.[1];
   const latestBlock = page.match(/const latestRecords = \[([\s\S]*?)\] as const;/)?.[1];
   const onRecordBlock = page.match(
@@ -73,10 +75,10 @@ test("homepage keeps the public archive safety boundaries visible", () => {
 
   const expectedNavigation = [
     ["#home", "Home"],
-    ["#about", "About"],
+    ["/about", "About"],
     ["/events", "Events"],
-    ["#methodology", "Methodology"],
-    ["#lead", "Submit a lead"],
+    ["/methodology", "Methodology"],
+    ["/submit-a-lead", "Submit a lead"],
   ];
   const navigationLinks = (markup) =>
     [
@@ -99,7 +101,7 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.ok(mobileNav);
   assert.deepEqual(navigationLinks(desktopNav), expectedNavigation);
   assert.deepEqual(navigationLinks(mobileNav), expectedNavigation);
-  assert.match(page, /<main id="home">/);
+  assert.match(page, /<main className="editorial-typography" id="home">/);
   assert.match(carousel, /id="about"/);
   assert.match(carousel, /id="events"/);
   assert.match(page, /id="methodology"/);
@@ -108,7 +110,7 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.match(page, /Independent records of protests and civic movements across India/i);
   assert.match(page, /Sources linked\. Identities protected\. Corrections visible\./i);
   assert.match(page, /tactical information/i);
-  assert.match(page, /Human review/i);
+  assert.match(page + footer, /Human review/i);
   const mediaGridMarkup = carousel.match(
     /const mediaStatusGrid = \(\s*(<dl className="media-status-grid">[\s\S]*?<\/dl>)\s*\);/,
   )?.[1];
@@ -136,12 +138,16 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   ]) {
     assert.doesNotMatch(carousel, new RegExp(removedCopy, "i"));
   }
-  assert.match(page, /reviewedEventsPreview\.map\(\(\{ internalId, slug, visual \}\)/);
-  assert.match(page, /getHomepageVisual\(record\.id\)/);
+  assert.match(page, /const reviewedEvents = await getReviewedEvents\(\)/);
+  assert.match(page, /events\.map\(\(\{ approvedMedia, internalId, slug, visual \}\)/);
+  assert.match(page, /getHomepageVisual\(homepageVisualsByInternalId, record\.id\)/);
   assert.doesNotMatch(page, /https?:\/\//);
-  assert.match(featuredBlock, /publicationStatus: "published_source_embed"/);
-  assert.match(featuredBlock, /rightsStatus: "permission_requested"/);
-  assert.match(featuredBlock, /sourceProvenance: "NDTV · Original publisher page/);
+  assert.doesNotMatch(featuredBlock, /publicationStatus: "published_source_embed"/);
+  assert.doesNotMatch(featuredBlock, /rightsStatus: "permission_requested"/);
+  assert.match(
+    featuredBlock,
+    /sourceProvenance: "Reviewed record sources; no approved event visual"/,
+  );
   assert.equal((featuredBlock.match(/publicationRightsStatus:/g) ?? []).length, 3);
   assert.match(carousel, /sourceProvenance: string;/);
   assert.match(carousel, /publicationRightsStatus: string;/);
@@ -176,7 +182,7 @@ test("homepage keeps the public archive safety boundaries visible", () => {
       /occurrence verified|provenance|event match|corroborated|human editorial review|verification gate|status code/i,
     );
   }
-  assert.equal((featuredBlock.match(/format: "Text record"/g) ?? []).length, 2);
+  assert.equal((featuredBlock.match(/format: "Text record"/g) ?? []).length, 3);
   assert.match(styles, /\.media-status-grid\s*\{[\s\S]*?grid-template-columns: 1fr 1fr;/);
   assert.match(
     styles,
@@ -207,12 +213,13 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.match(carousel, /visual: EventVisualData;[\s\S]*eventHref: string;/);
   assert.match(
     carousel,
-    /loadedMediaId === activeRecord\.id[\s\S]*?<iframe[\s\S]*?: \([\s\S]*?publisher-video-gate[\s\S]*?<img src=\{activeVisual\.thumbnailUrl\}/,
+    /loadedMediaId === activeRecord\.id[\s\S]*?<iframe[\s\S]*?: \([\s\S]*?publisher-video-gate event-media-activation[\s\S]*?No third-party[\s\S]*?before activation/,
   );
   assert.match(carousel, /onClick=\{\(\) => setLoadedMediaId\(activeRecord\.id\)\}/);
   assert.doesNotMatch(carousel, /autoPlay/);
   assert.doesNotMatch(featuredBlock, /thumbnailUrl|embedUrl|sourceUrl|thumbnailAlt|sourceName/);
-  assert.match(carousel, /Auto-publication remains disabled/);
+  assert.match(mediaMigration, /status public\.media_review_status not null default 'draft'/);
+  assert.match(mediaMigration, /create function public\.approve_event_media\s*\(/);
   for (const controlledStatus of [
     "candidate",
     "provenance_confirmed",
@@ -285,12 +292,17 @@ test("homepage keeps the public archive safety boundaries visible", () => {
 
   assert.match(page, /<h2 className="coverage-heading">COVERAGE<\/h2>/);
   assert.match(page, /<p className="coverage-subheading">Across India, event by event\.<\/p>/);
-  for (const [count, label] of [
-    ["20", "states and Union Territories represented"],
-    ["50", "reviewed event records"],
-    ["165", "source records linked to reviewed events"],
+  for (const [countExpression, label] of [
+    ["coverageStates", "states and Union Territories represented"],
+    ["reviewedEvents.length", "reviewed event records"],
+    ["coverageSources", "source records linked to reviewed events"],
   ]) {
-    assert.match(page, new RegExp(`<strong>${count}<\\/strong>[\\s\\S]*?${label}`));
+    assert.match(
+      page,
+      new RegExp(
+        `<strong>\\{${countExpression.replace(".", "\\.")}\\}<\\/strong>[\\s\\S]*?${label}`,
+      ),
+    );
   }
   assert.doesNotMatch(page, /live locations or participant directories published/i);
   assert.match(styles, /\.coverage-heading\s*\{[\s\S]*?font-size: clamp\(2rem, 3\.2vw, 2\.9rem\)/);
@@ -308,6 +320,8 @@ test("all nine homepage records use the central reviewed visual treatments", () 
   const page = read("src/app/page.tsx");
   const carousel = read("src/app/components/FeaturedRecordCarousel.tsx");
   const eventVisual = read("src/app/events/components/EventVisual.tsx");
+  const mediaRegistry = read("src/data/event-media-registry.ts");
+  const publicMediaLoader = read("src/lib/media/public.ts");
   const dataset = read("src/data/reviewed-events-preview.ts");
   const styles = read("src/app/globals.css");
 
@@ -321,38 +335,26 @@ test("all nine homepage records use the central reviewed visual treatments", () 
   const featuredIds = ["IO-CM-KA-0002", "IO-CM-MN-0001", "IO-CM-OD-0001"];
   const latestIds = ["IO-CM-MP-0001", "IO-CM-DL-0001", "IO-CM-MH-0001"];
   const onRecordIds = ["IO-CM-GJ-0001", "IO-CM-UP-0001", "IO-CM-AS-0001"];
-  const recordCoverIds = [
-    "IO-CM-MN-0001",
-    "IO-CM-OD-0001",
-    "IO-CM-MP-0001",
-    "IO-CM-MH-0001",
-    "IO-CM-GJ-0001",
-    "IO-CM-UP-0001",
-    "IO-CM-AS-0001",
-  ];
-
   assert.equal(new Set([...featuredIds, ...latestIds, ...onRecordIds]).size, 9);
   for (const id of [...featuredIds, ...latestIds, ...onRecordIds]) datasetBlock(id);
-  for (const id of recordCoverIds) assert.match(datasetBlock(id), /visual: recordCover\(/);
-  assert.match(datasetBlock("IO-CM-KA-0002"), /visual: publisherVideo\(\{/);
-  assert.match(datasetBlock("IO-CM-DL-0001"), /visual: publisherVideo\(\{/);
-  assert.equal(recordCoverIds.length, 7);
+  assert.doesNotMatch(dataset, /visual: (?:recordCover|publisherVideo)/);
+  assert.equal((mediaRegistry.match(/kind: "publisher_video"/g) ?? []).length, 0);
+  assert.match(mediaRegistry, /createNoApprovedMediaVisual\(event\)/);
 
   assert.match(
     page,
-    /import \{ reviewedEventsPreview \} from "\.\.\/data\/reviewed-events-preview"/,
+    /import \{ getReviewedEvents, isCandidatePreviewEnabled \} from "\.\.\/lib\/events\/getReviewedEvents"/,
   );
-  assert.match(page, /const homepageVisualsByInternalId = new Map</);
-  assert.equal((page.match(/getHomepageVisual\(record\.id\)/g) ?? []).length, 3);
+  assert.match(page, /createHomepageVisualMap\(reviewedEvents\)/);
+  assert.equal((page.match(/getHomepageVisual\(/g) ?? []).length >= 3, true);
   assert.doesNotMatch(page, /thumbnailUrl:|embedUrl:|sourceUrl:|https?:\/\//);
-  assert.doesNotMatch(carousel, /https?:\/\//);
+  assert.match(publicMediaLoader, /get_public_event_media/);
 
   assert.match(carousel, /variant="homepage-featured"/);
   assert.match(carousel, /variant="homepage-latest"/);
   assert.match(page, /variant="homepage-on-record"/);
-  assert.match(carousel, /activeVisual\.kind === "publisher_video"/);
-  assert.match(carousel, /src=\{activeVisual\.thumbnailUrl\}/);
-  assert.match(carousel, /src=\{activeVisual\.embedUrl\}/);
+  assert.match(carousel, /approvedMedia\.mediaType !== "uploaded_event_image"/);
+  assert.match(carousel, /src=\{approvedMedia\.embedUrl\}/);
   assert.match(carousel, /useState<string \| null>\(null\)/);
   assert.match(
     carousel,
@@ -368,11 +370,11 @@ test("all nine homepage records use the central reviewed visual treatments", () 
   assert.doesNotMatch(page, /instagram\.com|facebook\.com|(?:https?:\/\/)?x\.com/);
   assert.doesNotMatch(page, /<iframe/);
 
-  assert.match(eventVisual, /role="img"[\s\S]*aria-label=\{visual\.alt\}/);
-  assert.match(eventVisual, /No approved visual media/);
-  assert.match(eventVisual, /alt=\{visual\.alt\}/);
-  assert.match(eventVisual, /visual\.credit/);
-  assert.match(eventVisual, /aria-label=\{`View event record: \$\{visual\.alt\}`\}/);
+  assert.doesNotMatch(eventVisual, /EventEditorialIllustration|<svg/);
+  assert.doesNotMatch(eventVisual, /Verified event media|MediaClassificationLabel/);
+  assert.match(eventVisual, /getPublicMediaCaption\(approvedMedia\)/);
+  assert.match(eventVisual, /getPublicSourceLinkLabel\(approvedMedia\)/);
+  assert.doesNotMatch(eventVisual, /ExternalMediaImage/);
 
   assert.match(styles, /\.featured-carousel \.featured-slide[\s\S]*?height: 30rem;/);
   assert.match(
@@ -385,15 +387,15 @@ test("all nine homepage records use the central reviewed visual treatments", () 
   );
   assert.match(
     styles,
-    /\.latest-records-grid[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/,
+    /\.latest-records-grid\s*\{[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/,
   );
   assert.match(
     styles,
-    /\.latest-entry-preview[\s\S]*?grid-template-columns: minmax\(0, 70fr\) minmax\(0, 30fr\);/,
+    /\.latest-entry-preview\s*\{[\s\S]*?grid-template-columns: minmax\(0, 1fr\);[\s\S]*?grid-template-rows: auto auto;/,
   );
   assert.match(
     styles,
-    /\.on-record-context[\s\S]*?border-bottom: 1px solid var\(--ink\);[\s\S]*?border-top: 1px solid var\(--ink\);[\s\S]*?grid-template-columns: minmax\(0, 70fr\) minmax\(0, 30fr\);/,
+    /\.on-record-context[\s\S]*?border-bottom: 1px solid var\(--ink\);[\s\S]*?border-top: 1px solid var\(--ink\);[\s\S]*?grid-template-columns: minmax\(0, 58fr\) minmax\(0, 42fr\);/,
   );
   assert.match(
     styles,
@@ -601,16 +603,27 @@ test("homepage event statuses use one controlled public vocabulary", () => {
 test("homepage uses the refined section hierarchy and editorial footer", () => {
   const page = read("src/app/page.tsx");
   const styles = read("src/app/globals.css");
-  const social = read("src/app/components/FooterSocialPlaceholders.tsx");
-  const footer = page.match(/<footer className="site-footer">([\s\S]*?)<\/footer>/)?.[1];
+  const footer = read("src/app/components/PublicSiteFooter.tsx");
+  const archiveShell = read("src/app/events/components/ArchiveShell.tsx");
+  const carousel = read("src/app/components/FeaturedRecordCarousel.tsx");
+  const eventVisual = read("src/app/events/components/EventVisual.tsx");
 
-  assert.ok(footer);
+  assert.match(page, /<PublicSiteFooter \/>/);
+  assert.match(archiveShell, /<PublicSiteFooter \/>/);
   assert.doesNotMatch(page, /Recent corrections and clarifications|Changes remain visible/);
   assert.doesNotMatch(page, /No recent record changes have been published/);
   assert.doesNotMatch(styles, /\.correction-stream|\.correction-empty-state/);
-  assert.doesNotMatch(footer, /Corrections|href="#corrections"/i);
+  assert.match(footer, /href: "\/corrections", label: "Corrections"/);
 
   assert.match(page, /<h2 id="on-record-title">ON RECORD<\/h2>/);
+  assert.doesNotMatch(page, /className="trust-metrics"/);
+  assert.equal((page.match(/className="coverage-ledger"/g) ?? []).length, 1);
+  assert.ok(page.indexOf('className="coverage-ledger"') > page.indexOf("<FeaturedRecordCarousel"));
+  assert.match(carousel, /className="featured-evidence"/);
+  assert.doesNotMatch(carousel, /VerificationStatus/);
+  assert.doesNotMatch(page, /VerificationStatus/);
+  assert.match(eventVisual, /Verified visual unavailable/);
+  assert.doesNotMatch(eventVisual, /No approved event image available/);
   assert.match(
     styles,
     /\.on-record-section h2\s*\{[\s\S]*?border-top: 3px double var\(--ink\);[\s\S]*?text-align: center;/,
@@ -642,12 +655,17 @@ test("homepage uses the refined section hierarchy and editorial footer", () => {
       maxClampValue(".coverage-grid > div:first-child .coverage-description"),
   );
 
-  for (const [count, label] of [
-    ["20", "states and Union Territories represented"],
-    ["50", "reviewed event records"],
-    ["165", "source records linked to reviewed events"],
+  for (const [countExpression, label] of [
+    ["coverageStates", "states and Union Territories represented"],
+    ["reviewedEvents.length", "reviewed event records"],
+    ["coverageSources", "source records linked to reviewed events"],
   ]) {
-    assert.match(page, new RegExp(`<strong>${count}<\\/strong>[\\s\\S]*?${label}`));
+    assert.match(
+      page,
+      new RegExp(
+        `<strong>\\{${countExpression.replace(".", "\\.")}\\}<\\/strong>[\\s\\S]*?${label}`,
+      ),
+    );
   }
 
   assert.match(
@@ -666,49 +684,46 @@ test("homepage uses the refined section hierarchy and editorial footer", () => {
       maxClampValue(".lead-panel .contribute-description"),
   );
 
-  assert.match(styles, /--footer-background: #173f38;/);
-  assert.match(styles, /--footer-text: #f7f2e8;/);
-  assert.match(styles, /--footer-muted: #c2d1cb;/);
-  assert.match(styles, /--footer-line: #4f726a;/);
-  assert.match(styles, /\.site-footer\s*\{\s*background: var\(--footer-background\);/);
-  for (const group of [
-    "footer-identity",
-    "footer-explore",
-    "footer-follow",
-    "footer-trust-strip",
-  ]) {
-    assert.match(footer, new RegExp(`className="${group}"`));
-  }
-  const footerNav = footer.match(/<nav aria-label="Footer navigation">([\s\S]*?)<\/nav>/)?.[1];
-  assert.ok(footerNav);
-  assert.deepEqual(
-    [...footerNav.matchAll(/<(?:a|Link) href="([^"]+)">([^<]+)<\/(?:a|Link)>/g)].map(
-      ([, href, label]) => [href, label],
-    ),
-    [
-      ["#home", "Home"],
-      ["/events", "Events"],
-      ["#methodology", "Methodology"],
-      ["#coverage", "Coverage"],
-      ["/privacy", "Privacy"],
-      ["#lead", "Submit a lead"],
-    ],
+  assert.match(
+    styles,
+    /\.public-footer\s*\{[\s\S]*?background-color: #d9e1dc;[\s\S]*?border-top: 1px solid #b8c4be;[\s\S]*?color: var\(--ink\);/,
   );
-
-  assert.match(social, /aria-label="Planned social channels: Instagram, YouTube and X"/);
-  for (const platform of ["Instagram", "YouTube", "X"]) {
-    assert.match(social, new RegExp(`<span className="sr-only">${platform}<\\/span>`));
+  assert.match(styles, /\.public-footer__primary\s*\{[\s\S]*?padding-block: 1\.25rem;/);
+  assert.doesNotMatch(styles, /\.public-footer__(?:primary|secondary)\s*\{[^}]*background/);
+  assert.match(footer, /<footer className="public-footer">/);
+  assert.equal((footer.match(/<footer\b/g) ?? []).length, 1);
+  for (const group of ["Explore", "About", "Standards"]) {
+    assert.match(footer, new RegExp(`title: "${group}"`));
   }
-  assert.equal((social.match(/<svg /g) ?? []).length, 3);
-  assert.equal((social.match(/focusable="false"/g) ?? []).length, 3);
-  assert.doesNotMatch(social, /<a\b|href=|tabIndex=|followers?|@[A-Za-z]|Coming soon/i);
-  for (const trustItem of [
-    "Sources linked",
-    "Human review before publication",
-    "Identities protected",
+  for (const label of [
+    "Home",
+    "Events",
+    "Methodology",
+    "Coverage",
+    "Submit a lead",
+    "About India Observed",
+    "Contact",
+    "Editorial policy",
+    "Sources & verification",
+    "Corrections",
+    "Media policy",
+    "Privacy",
+    "Terms",
+    "Copyright & takedown",
   ]) {
-    assert.match(footer, new RegExp(trustItem));
+    assert.match(footer, new RegExp(label.replace("&", "&")));
   }
+  assert.match(footer, /new Date\(\)\.getFullYear\(\)/);
+  assert.doesNotMatch(footer, /Instagram|YouTube|newsletter|donat/i);
+  assert.doesNotMatch(page + archiveShell, /site-footer|FooterSocialPlaceholders/);
+  assert.match(
+    page,
+    /<p className="on-record-description" title=\{record\.context\}>\s*\{record\.context\}\s*<\/p>/,
+  );
+  assert.match(
+    styles,
+    /#home \.on-record-description\s*\{[\s\S]*?max-width: 100%;[\s\S]*?min-width: 0;[\s\S]*?overflow: hidden;[\s\S]*?text-overflow: ellipsis;[\s\S]*?white-space: nowrap;/,
+  );
 });
 
 test("homepage preserves the approved black header and white page surfaces", () => {
@@ -747,18 +762,19 @@ test("homepage preserves the approved black header and white page surfaces", () 
     ".coverage-section",
     ".participation-section",
     ".mobile-menu nav",
-    ".document-preview",
-    ".media-fallback",
   ]) {
     assert.ok(activeSurfaceStyles.includes(selector));
   }
 
-  assert.match(activeSurfaceStyles, /\.media-fallback,[\s\S]*?background: #ffffff;/);
+  assert.match(
+    styles,
+    /\.event-no-media,[\s\S]*?\.event-source-media-cover \{[\s\S]*?background: #ffffff;/,
+  );
   const whiteSurfaceRule = activeSurfaceStyles.match(
     /body,[\s\S]*?main \.lead-panel\s*\{\s*background: #ffffff;\s*\}/,
   )?.[0];
   assert.ok(whiteSurfaceRule);
   assert.doesNotMatch(whiteSurfaceRule, /#f5f2ea|#ebe6db|#fbfaf6|#f7f2e8|#fbf8f1/);
-  assert.match(activeSurfaceStyles, /\.site-footer\s*\{\s*background: var\(--footer-background\);/);
+  assert.match(styles, /\.public-footer\s*\{[\s\S]*?background-color: #d9e1dc;/);
   assert.doesNotMatch(read("src/app/page.tsx"), /Open questions/i);
 });

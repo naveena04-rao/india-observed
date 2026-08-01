@@ -2,8 +2,9 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { getEventFollowingAvailability } from "@/lib/events/following";
 import { createSessionSupabaseClient } from "@/lib/supabase/server";
-import { FooterSocialPlaceholders } from "../../components/FooterSocialPlaceholders";
+import { PublicSiteFooter } from "../../components/PublicSiteFooter";
 import { HeaderAuthControl } from "../../components/HeaderAuthControl";
+import { LeadNavigationAction } from "../../components/LeadNavigationAction";
 
 type ArchiveShellProps = {
   authReturnTo: string;
@@ -12,6 +13,7 @@ type ArchiveShellProps = {
 
 export async function ArchiveShell({ authReturnTo, children }: ArchiveShellProps) {
   const following = getEventFollowingAvailability();
+  const onLeadPage = authReturnTo === "/submit-a-lead";
   const supabase = following.enabled ? await createSessionSupabaseClient() : null;
   const {
     data: { user },
@@ -35,34 +37,30 @@ export async function ArchiveShell({ authReturnTo, children }: ArchiveShellProps
 
           <nav className="desktop-nav" aria-label="Primary navigation">
             <Link href="/">Home</Link>
-            <Link href="/#about">About</Link>
+            <Link href="/about">About</Link>
             <Link href="/events" aria-current="page">
               Events
             </Link>
-            <Link href="/#methodology">Methodology</Link>
+            <Link href="/methodology">Methodology</Link>
             {following.enabled ? (
               <HeaderAuthControl signedIn={signedIn} returnTo={authReturnTo} />
             ) : null}
-            <Link className="nav-action" href="/#lead">
-              Submit a lead
-            </Link>
+            <LeadNavigationAction onLeadPage={onLeadPage} />
           </nav>
 
           <details className="mobile-menu">
             <summary>Menu</summary>
             <nav aria-label="Mobile navigation">
               <Link href="/">Home</Link>
-              <Link href="/#about">About</Link>
+              <Link href="/about">About</Link>
               <Link href="/events" aria-current="page">
                 Events
               </Link>
-              <Link href="/#methodology">Methodology</Link>
+              <Link href="/methodology">Methodology</Link>
               {following.enabled ? (
                 <HeaderAuthControl signedIn={signedIn} returnTo={authReturnTo} />
               ) : null}
-              <Link className="nav-action" href="/#lead">
-                Submit a lead
-              </Link>
+              <LeadNavigationAction onLeadPage={onLeadPage} />
             </nav>
           </details>
         </div>
@@ -76,39 +74,7 @@ export async function ArchiveShell({ authReturnTo, children }: ArchiveShellProps
 
       {children}
 
-      <footer className="site-footer">
-        <div className="page-shell">
-          <div className="footer-grid">
-            <div className="footer-identity">
-              <span className="footer-brand">India Observed</span>
-              <p>Independent, source-linked records of civic action across India.</p>
-            </div>
-            <div className="footer-explore">
-              <h2>Explore</h2>
-              <nav aria-label="Footer navigation">
-                <Link href="/">Home</Link>
-                <Link href="/events" aria-current="page">
-                  Events
-                </Link>
-                <Link href="/#methodology">Methodology</Link>
-                <Link href="/#coverage">Coverage</Link>
-                <Link href="/privacy">Privacy</Link>
-                <Link href="/#lead">Submit a lead</Link>
-              </nav>
-            </div>
-            <div className="footer-follow">
-              <h2>Follow</h2>
-              <FooterSocialPlaceholders />
-            </div>
-          </div>
-          <div className="footer-trust-strip">
-            <span>Sources linked</span>
-            <span>Human review before publication</span>
-            <span>Identities protected</span>
-            <span>© 2026 India Observed</span>
-          </div>
-        </div>
-      </footer>
+      <PublicSiteFooter />
     </main>
   );
 }

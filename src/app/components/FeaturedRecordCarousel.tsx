@@ -1,7 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { EventVisual as EventVisualData } from "../../lib/events/types";
+import type { ApprovedEventMedia, EventVisual as EventVisualData } from "../../lib/events/types";
+import {
+  getPublicMediaCaption,
+  getPublicMediaKind,
+  getPublicSourceLinkLabel,
+} from "../../lib/media/presentation";
 import { EventFollowControl } from "../events/components/EventFollowControl";
 import { EventVisual } from "../events/components/EventVisual";
 import { EventStatusTag } from "./EventStatusTag";
@@ -73,6 +79,7 @@ export type FeaturedRecord = {
   reviewed: string;
   media: FeaturedRecordMedia;
   visual: EventVisualData;
+  approvedMedia?: ApprovedEventMedia;
   eventHref: string;
   slug: string;
 };
@@ -87,6 +94,7 @@ type LatestRecord = Pick<
   | "topic"
   | "reviewed"
   | "visual"
+  | "approvedMedia"
   | "eventHref"
   | "slug"
 >;
@@ -139,15 +147,9 @@ export function FeaturedRecordCarousel({
   const activeRecord = records[activeIndex]!;
   const activeMedia = activeRecord.media;
   const activeVisual = activeRecord.visual;
-  // Rights approval controls reuse, but can never override authenticity, event-match,
-  // integrity, privacy, safety or human-editorial gates. Auto-publication remains disabled.
+  const approvedMedia = activeRecord.approvedMedia;
   const mayDisplaySourceEmbed =
-    activeVisual.kind === "publisher_video" &&
-    "publicationStatus" in activeMedia &&
-    activeMedia.publicationStatus === "published_source_embed" &&
-    activeMedia.reviewStatus !== "candidate" &&
-    activeMedia.reviewStatus !== "rejected" &&
-    Object.values(activeMedia.gates).every(Boolean);
+    approvedMedia !== undefined && approvedMedia.mediaType !== "uploaded_event_image";
 
   const mediaStatusGrid = (
     <dl className="media-status-grid">
@@ -212,6 +214,9 @@ export function FeaturedRecordCarousel({
         key={activeRecord.slug}
         slug={activeRecord.slug}
       />
+      <Link className="featured-record-link" href={activeRecord.eventHref}>
+        View full record →
+      </Link>
       {includeIndicators ? carouselPosition : null}
     </div>
   );
@@ -238,56 +243,50 @@ export function FeaturedRecordCarousel({
           </aside>
           <div className="featured-record-content">
             {featuredRecordCopy(false)}
-            <figure
-              className={[
-                "featured-record-media",
-                activeVisual.kind === "record_cover" ? "featured-record-media--cover" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            >
+            <figure className="featured-record-media">
               {mayDisplaySourceEmbed ? (
                 <>
                   <div className="featured-record-video-frame">
                     {loadedMediaId === activeRecord.id ? (
                       <div className="publisher-video">
                         <iframe
-                          src={activeVisual.embedUrl}
-                          title={`${activeVisual.publisher} video for ${activeRecord.title}`}
+                          src={approvedMedia.embedUrl}
+                          title={`${approvedMedia.publisher ?? "Publisher"} media for ${activeRecord.title}`}
                           allow="fullscreen; picture-in-picture"
                           allowFullScreen
                           referrerPolicy="strict-origin-when-cross-origin"
                         />
                       </div>
                     ) : (
-                      <div className="publisher-video-gate">
-                        {/* Publisher metadata URL is rendered directly; the image is not reused locally. */}
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={activeVisual.thumbnailUrl} alt={activeVisual.alt} />
-                        <div className="publisher-video-gate-content">
-                          <span>Official publisher video</span>
-                          <strong>NDTV · 2:49</strong>
-                          <button type="button" onClick={() => setLoadedMediaId(activeRecord.id)}>
-                            Load video from NDTV
-                          </button>
-                          <small>Loading connects to the publisher&apos;s video player.</small>
-                        </div>
+                      <div className="publisher-video-gate event-media-activation">
+                        <span>
+                          {getPublicMediaKind(approvedMedia) === "Video"
+                            ? "Publisher-hosted video"
+                            : "Official social post"}
+                        </span>
+                        <strong>{activeRecord.title}</strong>
+                        <p>{activeRecord.place}</p>
+                        <button type="button" onClick={() => setLoadedMediaId(activeRecord.id)}>
+                          Load media from {approvedMedia.publisher ?? "the approved publisher"}
+                        </button>
+                        <small>
+                          Loading connects to the publisher&apos;s official embed. No third-party
+                          frame loads before activation.
+                        </small>
                       </div>
                     )}
                   </div>
-                  {loadedMediaId === activeRecord.id ? (
-                    <figcaption className="featured-record-caption">
-                      {activeMedia.caption} Credit: {activeVisual.publisher}.{" "}
-                      <a href={activeVisual.sourceUrl} target="_blank" rel="noreferrer">
-                        View the original publisher page
-                      </a>
-                      .
-                    </figcaption>
-                  ) : null}
+                  <figcaption className="featured-record-caption">
+                    {getPublicMediaCaption(approvedMedia)} ·{" "}
+                    <a href={approvedMedia.sourceUrl} target="_blank" rel="noreferrer">
+                      {getPublicSourceLinkLabel(approvedMedia)}
+                    </a>
+                  </figcaption>
                 </>
               ) : (
                 <div className="featured-record-video-frame">
                   <EventVisual
+                    approvedMedia={approvedMedia}
                     visual={activeVisual}
                     eventHref={activeRecord.eventHref}
                     variant="homepage-featured"
@@ -311,7 +310,9 @@ export function FeaturedRecordCarousel({
                   </div>
                   <span className="record-topic">{record.topic}</span>
                   <span className="latest-location">{record.place}</span>
-                  <strong>{record.title}</strong>
+                  <h3 className="latest-entry-title">
+                    <Link href={record.eventHref}>{record.title}</Link>
+                  </h3>
                   <div className="latest-entry-footer">
                     <time dateTime="2026-07-15">Reviewed {record.reviewed}</time>
                     <EventFollowControl
@@ -321,10 +322,15 @@ export function FeaturedRecordCarousel({
                       slug={record.slug}
                     />
                   </div>
+                  <Link className="latest-entry-record-link" href={record.eventHref}>
+                    View full record →
+                  </Link>
                 </div>
                 <EventVisual
+                  approvedMedia={record.approvedMedia}
                   visual={record.visual}
                   eventHref={record.eventHref}
+                  imageLinksToEvent
                   variant="homepage-latest"
                 />
               </article>

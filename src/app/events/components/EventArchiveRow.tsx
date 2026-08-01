@@ -7,7 +7,11 @@ export function EventArchiveRow({ event }: { event: ReviewedEventPreview }) {
   const href = `/events/${event.slug}`;
 
   return (
-    <article className="event-archive-row">
+    <article
+      className={`event-archive-row ${
+        event.approvedMedia ? "event-archive-row--with-media" : "event-archive-row--fallback"
+      }`}
+    >
       <div className="event-row-copy">
         <div className="event-tags">
           <span className="event-type-tag">{event.eventType}</span>
@@ -59,7 +63,7 @@ export function EventArchiveRow({ event }: { event: ReviewedEventPreview }) {
         </Link>
       </div>
       <div className="event-row-visual">
-        <EventVisual visual={event.visual} eventHref={href} />
+        <EventVisual approvedMedia={event.approvedMedia} visual={event.visual} eventHref={href} />
       </div>
     </article>
   );

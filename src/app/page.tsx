@@ -1,32 +1,128 @@
 import Link from "next/link";
 import { EventStatusTag } from "./components/EventStatusTag";
 import { EventTypeTag } from "./components/EventTypeTag";
-import { FooterSocialPlaceholders } from "./components/FooterSocialPlaceholders";
-import { FeaturedRecordCarousel } from "./components/FeaturedRecordCarousel";
+import { PublicSiteFooter } from "./components/PublicSiteFooter";
+import { FeaturedRecordCarousel, type FeaturedRecord } from "./components/FeaturedRecordCarousel";
 import { HeaderAuthControl } from "./components/HeaderAuthControl";
 import { EventFollowControl } from "./events/components/EventFollowControl";
 import { EventVisual } from "./events/components/EventVisual";
 import type { EventStatus } from "./eventStatuses";
 import { eventTypes, type EventType } from "./eventTypes";
-import { reviewedEventsPreview } from "../data/reviewed-events-preview";
 import { getEventFollowingAvailability } from "../lib/events/following";
-import type { EventVisual as EventVisualData } from "../lib/events/types";
+import { getReviewedEvents, isCandidatePreviewEnabled } from "../lib/events/getReviewedEvents";
+import type {
+  ApprovedEventMedia,
+  EventVisual as EventVisualData,
+  ReviewedEventPreview,
+} from "../lib/events/types";
 import { createSessionSupabaseClient } from "../lib/supabase/server";
 
-const homepageVisualsByInternalId = new Map<
-  string,
-  { eventHref: string; slug: string; visual: EventVisualData }
->(
-  reviewedEventsPreview.map(({ internalId, slug, visual }) => [
-    internalId,
-    { eventHref: `/events/${slug}`, slug, visual },
-  ]),
-);
+type HomepageVisual = {
+  approvedMedia?: ApprovedEventMedia;
+  eventHref: string;
+  slug: string;
+  visual: EventVisualData;
+};
 
-function getHomepageVisual(internalId: string) {
+function getHomepageVisual(
+  homepageVisualsByInternalId: ReadonlyMap<string, HomepageVisual>,
+  internalId: string,
+) {
   const homepageVisual = homepageVisualsByInternalId.get(internalId);
   if (!homepageVisual) throw new Error(`Missing reviewed visual for homepage record ${internalId}`);
   return homepageVisual;
+}
+
+function createHomepageVisualMap(
+  events: Awaited<ReturnType<typeof getReviewedEvents>>,
+): Map<string, HomepageVisual> {
+  return new Map(
+    events.map(({ approvedMedia, internalId, slug, visual }) => [
+      internalId,
+      { approvedMedia, eventHref: `/events/${slug}`, slug, visual },
+    ]),
+  );
+}
+
+const homepageEventTypes: Record<ReviewedEventPreview["eventType"], EventType> = {
+  "Multi-form civic protest": "protest",
+  Demonstration: "demonstration",
+  March: "march",
+  "Civic campaign": "protest",
+  Strike: "strike",
+  "Sit-in / Dharna": "dharna",
+  "Sit-in": "sit_in",
+  Shutdown: "shutdown",
+  Rally: "rally",
+  "Hunger strike": "hunger_strike",
+};
+
+const homepageEventStatuses: Record<ReviewedEventPreview["eventStatus"], EventStatus> = {
+  Ongoing: "ongoing",
+  Concluded: "concluded",
+  "Outcome pending": "outcome_pending",
+};
+
+function formatHomepageDate(value: string) {
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${value}T00:00:00Z`));
+}
+
+function createMediaReadyFeaturedRecord(event: ReviewedEventPreview): FeaturedRecord {
+  if (!event.approvedMedia) throw new Error(`Missing approved media for ${event.slug}`);
+  return {
+    id: event.internalId,
+    eventType: homepageEventTypes[event.eventType],
+    eventStatus: homepageEventStatuses[event.eventStatus],
+    directedAt: event.directedAt,
+    title: event.title,
+    place: event.publicLocation.includes(event.stateOrUnionTerritory)
+      ? event.publicLocation
+      : `${event.publicLocation}, ${event.stateOrUnionTerritory}`,
+    topic: event.primaryTopic,
+    description: event.summary,
+    verification: event.eventVerification,
+    note: "Publisher media documents this event",
+    reviewed: formatHomepageDate(event.lastReviewed),
+    media: {
+      format:
+        event.approvedMedia.mediaType === "publisher_video_embed"
+          ? "Publisher-hosted video"
+          : "Official source-linked post",
+      sourceProvenance: event.approvedMedia.publisher ?? "Approved source",
+      eventVerification: "Source documents this event",
+      publicationRightsStatus: "Official publisher embed",
+    },
+    visual: event.visual,
+    approvedMedia: event.approvedMedia,
+    eventHref: `/events/${event.slug}`,
+    slug: event.slug,
+  };
+}
+
+function getApprovedHomepageMediaDisclosure(
+  approvedMedia: ApprovedEventMedia | undefined,
+  fallback: FeaturedRecord["media"],
+): FeaturedRecord["media"] {
+  if (!approvedMedia) return fallback;
+  return {
+    format:
+      approvedMedia.mediaType === "uploaded_event_image"
+        ? "Exact-event source photograph"
+        : approvedMedia.mediaType === "publisher_video_embed"
+          ? "Publisher-hosted video"
+          : "Official source-linked post",
+    sourceProvenance: approvedMedia.publisher ?? "Approved source",
+    eventVerification: "Source documents this event",
+    publicationRightsStatus:
+      approvedMedia.rightsBasis === "official_embed"
+        ? "Official publisher embed"
+        : "Publisher credited · Original source linked",
+  };
 }
 
 const featuredRecords = [
@@ -44,23 +140,10 @@ const featuredRecords = [
     note: "Some details remain disputed",
     reviewed: "15 July 2026",
     media: {
-      format: "Publisher-hosted video (2:49)",
-      sourceProvenance: "NDTV · Original publisher page · 30 June 2026",
+      format: "Text record",
+      sourceProvenance: "Reviewed record sources; no approved event visual",
       eventVerification: "Event confirmed",
-      publicationRightsStatus: "Official source embed · Reuse permission pending",
-      caption:
-        "NDTV's report depicts a public protest in Bidadi concerning the proposed AI City project; it does not independently resolve disputed land-acquisition details.",
-      reviewStatus: "event_match_confirmed",
-      rightsStatus: "permission_requested",
-      publicationStatus: "published_source_embed",
-      gates: {
-        authenticity: true,
-        eventMatch: true,
-        integrity: true,
-        privacy: true,
-        safety: true,
-        humanEditorialApproval: true,
-      },
+      publicationRightsStatus: "Text fallback · No visual media published",
     },
   },
   {
@@ -105,11 +188,6 @@ const featuredRecords = [
   },
 ] as const;
 
-const featuredRecordsWithVisuals = featuredRecords.map((record) => ({
-  ...record,
-  ...getHomepageVisual(record.id),
-}));
-
 const latestRecords = [
   {
     id: "IO-CM-MP-0001",
@@ -141,10 +219,6 @@ const latestRecords = [
   },
 ] as const;
 
-const latestRecordsWithVisuals = latestRecords.map((record) => ({
-  ...record,
-  ...getHomepageVisual(record.id),
-}));
 type OnRecord = {
   id: string;
   eventType: EventType;
@@ -206,6 +280,35 @@ const processSteps = [
 ] as const;
 
 export default async function HomePage() {
+  const reviewedEvents = await getReviewedEvents();
+  const candidatePreviewEnabled = isCandidatePreviewEnabled();
+  const mediaReadyEvents = reviewedEvents.filter((event) => event.approvedMedia);
+  const homepageVisualsByInternalId = createHomepageVisualMap(reviewedEvents);
+  const featuredRecordsWithVisuals = candidatePreviewEnabled
+    ? featuredRecords.map((record) => {
+        const homepageVisual = getHomepageVisual(homepageVisualsByInternalId, record.id);
+        return {
+          ...record,
+          ...homepageVisual,
+          media: getApprovedHomepageMediaDisclosure(homepageVisual.approvedMedia, record.media),
+        };
+      })
+    : mediaReadyEvents.slice(0, 1).map(createMediaReadyFeaturedRecord);
+  const featuredSlugs = new Set(featuredRecordsWithVisuals.map((record) => record.slug));
+  const latestRecordsWithVisuals = candidatePreviewEnabled
+    ? latestRecords.map((record) => ({
+        ...record,
+        ...getHomepageVisual(homepageVisualsByInternalId, record.id),
+      }))
+    : mediaReadyEvents
+        .filter((event) => !featuredSlugs.has(event.slug))
+        .slice(0, 3)
+        .map(createMediaReadyFeaturedRecord);
+  const coverageStates = new Set(reviewedEvents.map((event) => event.stateOrUnionTerritory)).size;
+  const coverageSources = reviewedEvents.reduce(
+    (total, event) => total + event.approvedSourceCount,
+    0,
+  );
   const following = getEventFollowingAvailability();
   const supabase = following.enabled ? await createSessionSupabaseClient() : null;
   const {
@@ -214,7 +317,7 @@ export default async function HomePage() {
   const initiallySignedIn = Boolean(user);
 
   return (
-    <main id="home">
+    <main className="editorial-typography" id="home">
       <header className="site-header">
         <div className="page-shell header-inner">
           <Link className="brand" href="/" aria-label="India Observed home">
@@ -230,30 +333,30 @@ export default async function HomePage() {
 
           <nav className="desktop-nav" aria-label="Primary navigation">
             <a href="#home">Home</a>
-            <a href="#about">About</a>
+            <Link href="/about">About</Link>
             <Link href="/events">Events</Link>
-            <a href="#methodology">Methodology</a>
+            <Link href="/methodology">Methodology</Link>
             {following.enabled ? (
               <HeaderAuthControl signedIn={initiallySignedIn} returnTo="/" />
             ) : null}
-            <a className="nav-action" href="#lead">
+            <Link className="nav-action" href="/submit-a-lead">
               Submit a lead
-            </a>
+            </Link>
           </nav>
 
           <details className="mobile-menu">
             <summary>Menu</summary>
             <nav aria-label="Mobile navigation">
               <a href="#home">Home</a>
-              <a href="#about">About</a>
+              <Link href="/about">About</Link>
               <Link href="/events">Events</Link>
-              <a href="#methodology">Methodology</a>
+              <Link href="/methodology">Methodology</Link>
               {following.enabled ? (
                 <HeaderAuthControl signedIn={initiallySignedIn} returnTo="/" />
               ) : null}
-              <a className="nav-action" href="#lead">
+              <Link className="nav-action" href="/submit-a-lead">
                 Submit a lead
-              </a>
+              </Link>
             </nav>
           </details>
         </div>
@@ -277,8 +380,10 @@ export default async function HomePage() {
           <h2 id="on-record-title">ON RECORD</h2>
 
           <div className="on-record-list">
-            {onRecords.map((record) => {
-              const { eventHref, slug, visual } = getHomepageVisual(record.id);
+            {onRecords.flatMap((record) => {
+              const homepageVisual = homepageVisualsByInternalId.get(record.id);
+              if (!homepageVisual) return [];
+              const { approvedMedia, eventHref, slug, visual } = homepageVisual;
 
               return (
                 <article className="on-record-context" key={record.id}>
@@ -288,12 +393,15 @@ export default async function HomePage() {
                         <EventTypeTag eventType={record.eventType} />
                         <EventStatusTag eventStatus={record.eventStatus} />
                       </div>
-                      <span>{record.id}</span>
                       <span>{record.topic}</span>
                       <span>{record.place}</span>
                     </div>
-                    <h3>{record.title}</h3>
-                    <p>{record.context}</p>
+                    <h3>
+                      <Link href={eventHref}>{record.title}</Link>
+                    </h3>
+                    <p className="on-record-description" title={record.context}>
+                      {record.context}
+                    </p>
                     <div className="on-record-footer">
                       <time dateTime="2026-07-15">Reviewed {record.reviewed}</time>
                       <EventFollowControl
@@ -303,8 +411,16 @@ export default async function HomePage() {
                         slug={slug}
                       />
                     </div>
+                    <Link className="on-record-record-link" href={eventHref}>
+                      View full record →
+                    </Link>
                   </div>
-                  <EventVisual visual={visual} eventHref={eventHref} variant="homepage-on-record" />
+                  <EventVisual
+                    approvedMedia={approvedMedia}
+                    visual={visual}
+                    eventHref={eventHref}
+                    variant="homepage-on-record"
+                  />
                 </article>
               );
             })}
@@ -354,21 +470,22 @@ export default async function HomePage() {
             <h2 className="coverage-heading">COVERAGE</h2>
             <p className="coverage-subheading">Across India, event by event.</p>
             <p className="coverage-description">
-              The reviewed repository currently contains event records from 20 states and Union
-              Territories, supported by source-linked documentation.
+              The public media-ready repository currently contains event records from{" "}
+              {coverageStates} states and Union Territories, supported by source-linked
+              documentation.
             </p>
           </div>
           <div className="coverage-ledger" aria-label="Coverage notes">
             <div>
-              <strong>20</strong>
+              <strong>{coverageStates}</strong>
               <span>states and Union Territories represented</span>
             </div>
             <div>
-              <strong>50</strong>
+              <strong>{reviewedEvents.length}</strong>
               <span>reviewed event records</span>
             </div>
             <div>
-              <strong>165</strong>
+              <strong>{coverageSources}</strong>
               <span>source records linked to reviewed events</span>
             </div>
           </div>
@@ -386,44 +503,14 @@ export default async function HomePage() {
               Share a public source link, approximate date and broad location. Do not submit private
               documents, participant lists or tactical information.
             </p>
-            <a className="button button-light" href="#lead">
+            <Link className="button button-light" href="/submit-a-lead">
               Submit a public lead
-            </a>
+            </Link>
           </div>
         </div>
       </section>
 
-      <footer className="site-footer">
-        <div className="page-shell">
-          <div className="footer-grid">
-            <div className="footer-identity">
-              <span className="footer-brand">India Observed</span>
-              <p>Independent, source-linked records of civic action across India.</p>
-            </div>
-            <div className="footer-explore">
-              <h2>Explore</h2>
-              <nav aria-label="Footer navigation">
-                <a href="#home">Home</a>
-                <Link href="/events">Events</Link>
-                <a href="#methodology">Methodology</a>
-                <a href="#coverage">Coverage</a>
-                <Link href="/privacy">Privacy</Link>
-                <a href="#lead">Submit a lead</a>
-              </nav>
-            </div>
-            <div className="footer-follow">
-              <h2>Follow</h2>
-              <FooterSocialPlaceholders />
-            </div>
-          </div>
-          <div className="footer-trust-strip">
-            <span>Sources linked</span>
-            <span>Human review before publication</span>
-            <span>Identities protected</span>
-            <span>© 2026 India Observed</span>
-          </div>
-        </div>
-      </footer>
+      <PublicSiteFooter />
     </main>
   );
 }

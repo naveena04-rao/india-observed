@@ -17,6 +17,14 @@ const privacy = read("src/app/privacy/page.tsx");
 const featureGate = read("src/lib/events/following.ts");
 const returnPath = read("src/lib/auth/returnPath.ts");
 const sameOrigin = read("src/lib/http/sameOrigin.ts");
+const sameOriginModule = await import(
+  `data:text/javascript,${encodeURIComponent(
+    sameOrigin
+      .replace('import "server-only";', "")
+      .replace("value: string | null", "value")
+      .replaceAll("request: Request", "request"),
+  )}`
+);
 const proxy = read("src/proxy.ts");
 const proxyClient = read("src/lib/supabase/proxy.ts");
 const envExample = read(".env.example");
@@ -29,6 +37,7 @@ const homepage = read("src/app/page.tsx");
 const carousel = read("src/app/components/FeaturedRecordCarousel.tsx");
 const headerAuth = read("src/app/components/HeaderAuthControl.tsx");
 const archiveShell = read("src/app/events/components/ArchiveShell.tsx");
+const publicFooter = read("src/app/components/PublicSiteFooter.tsx");
 const documentation = read("docs/EVENT_FOLLOWING.md");
 
 test("migration registry exactly matches all 50 published application slugs", () => {
@@ -98,12 +107,32 @@ test("follow API validates published events and verifies every mutation", () => 
   assert.match(route, /export async function DELETE/);
 });
 
-test("same-origin helper rejects missing origins and derives the forwarded host", () => {
+test("same-origin helper accepts safe preview aliases and rejects missing origins", () => {
   assert.match(sameOrigin, /request\.headers\.get\("origin"\)/);
-  assert.match(sameOrigin, /if \(!suppliedOrigin \|\| !expectedOrigin\) return false/);
+  assert.match(sameOrigin, /if \(!suppliedOrigin\) return false/);
   assert.match(sameOrigin, /x-forwarded-host/);
   assert.match(sameOrigin, /x-forwarded-proto/);
-  assert.match(sameOrigin, /new URL\(suppliedOrigin\)\.origin === expectedOrigin/);
+  assert.match(sameOrigin, /const allowedOrigins = new Set\(\[new URL\(request\.url\)\.origin\]\)/);
+  assert.match(sameOrigin, /if \(forwardedHost\) allowedOrigins\.add/);
+  assert.match(sameOrigin, /if \(host\) allowedOrigins\.add/);
+  assert.match(sameOrigin, /allowedOrigins\.has\(new URL\(suppliedOrigin\)\.origin\)/);
+
+  const previewRequest = new Request("https://canonical-deployment.vercel.app/api/leads", {
+    method: "POST",
+    headers: {
+      host: "preview-branch.example.vercel.app",
+      origin: "https://preview-branch.example.vercel.app",
+      "x-forwarded-host": "canonical-deployment.vercel.app",
+      "x-forwarded-proto": "https",
+    },
+  });
+  assert.equal(sameOriginModule.isSameOriginMutation(previewRequest), true);
+  assert.equal(
+    sameOriginModule.isSameOriginMutation(
+      new Request(previewRequest, { headers: { origin: "https://attacker.example" } }),
+    ),
+    false,
+  );
 });
 
 test("event pages show one compact accessible Follow control without visible clutter", () => {
@@ -215,8 +244,9 @@ test("privacy page reflects implemented collection and public display", () => {
   }
   assert.match(privacy, /has not yet approved a public account-deletion contact channel/);
   assert.match(signIn, /href="\/privacy"/);
-  assert.match(homepage, /<Link href="\/privacy">Privacy<\/Link>/);
-  assert.match(archiveShell, /<Link href="\/privacy">Privacy<\/Link>/);
+  assert.match(homepage, /<PublicSiteFooter \/>/);
+  assert.match(archiveShell, /<PublicSiteFooter \/>/);
+  assert.match(publicFooter, /<Link href="\/privacy">Privacy<\/Link>/);
 });
 
 test("following does not alter archive or homepage editorial behavior", () => {
@@ -243,13 +273,16 @@ test("all nine homepage definitions resolve to published slugs and render compac
   assert.equal(new Set(homepageIds).size, 9);
   for (const id of homepageIds)
     assert.ok(reviewedSlugs.has(id), `missing published slug for ${id}`);
-  assert.match(homepage, /\{ eventHref: `\/events\/\$\{slug\}`, slug, visual \}/);
-  assert.match(homepage, /getHomepageVisual\(record\.id\)[\s\S]*?slug=\{slug\}/);
+  assert.match(
+    homepage,
+    /approvedMedia,[\s\S]*?eventHref: `\/events\/\$\{slug\}`,[\s\S]*?slug,[\s\S]*?visual/,
+  );
+  assert.match(homepage, /getHomepageVisual\([\s\S]*?record\.id[\s\S]*?slug=\{slug\}/);
   assert.equal((carousel.match(/<EventFollowControl/g) ?? []).length, 2);
   assert.equal((homepage.match(/<EventFollowControl/g) ?? []).length, 1);
   assert.match(carousel, /key=\{activeRecord\.slug\}[\s\S]*?slug=\{activeRecord\.slug\}/);
   assert.match(carousel, /latestRecords\.map[\s\S]*?slug=\{record\.slug\}/);
-  assert.match(homepage, /onRecords\.map[\s\S]*?className="on-record-footer"/);
+  assert.match(homepage, /onRecords\.flatMap[\s\S]*?className="on-record-footer"/);
 });
 
 test("shared header authentication uses safe return paths and secure sign-out", () => {
@@ -271,7 +304,7 @@ test("homepage and archive navigation share gated Login or Logout controls", () 
   assert.equal((homepage.match(/returnTo="\/"/g) ?? []).length, 2);
   assert.match(
     homepage,
-    /href="#methodology">Methodology<\/a>[\s\S]*?<HeaderAuthControl[\s\S]*?className="nav-action"/,
+    /href="\/methodology">Methodology<\/Link>[\s\S]*?<HeaderAuthControl[\s\S]*?className="nav-action"/,
   );
   assert.equal((homepage.match(/following\.enabled \? \(/g) ?? []).length, 2);
 
@@ -286,7 +319,7 @@ test("homepage and archive navigation share gated Login or Logout controls", () 
   assert.equal((archiveShell.match(/returnTo=\{authReturnTo\}/g) ?? []).length, 2);
   assert.match(
     archiveShell,
-    /href="\/#methodology">Methodology<\/Link>[\s\S]*?<HeaderAuthControl[\s\S]*?className="nav-action"/,
+    /href="\/methodology">Methodology<\/Link>[\s\S]*?<HeaderAuthControl[\s\S]*?<LeadNavigationAction/,
   );
   assert.doesNotMatch(
     homepage + archiveShell,

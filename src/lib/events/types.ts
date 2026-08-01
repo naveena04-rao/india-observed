@@ -25,49 +25,70 @@ export type PrimaryTopic =
   | "Governance & transparency"
   | "Infrastructure & public services";
 
-export type EventVisual =
-  | {
-      kind: "publisher_image";
-      sourceUrl: string;
-      imageUrl: string;
-      alt: string;
-      credit: string;
-    }
-  | {
-      kind: "publisher_video";
-      publisher: "NDTV";
-      sourceUrl: string;
-      embedUrl: string;
-      thumbnailUrl: string;
-      thumbnailSource: "og:image" | "twitter:image";
-      alt: string;
-      credit: string;
-      duration?: string;
-    }
-  | {
-      kind: "document_preview";
-      sourceUrl: string;
-      title: string;
-      publisher: string;
-      alt: string;
-    }
-  | {
-      kind: "record_cover";
-      title: string;
-      location: string;
-      dateLabel: string;
-      alt: string;
-    };
+export type MediaEvidenceClass = "verified_event_media" | "no_approved_event_media";
 
-export type EventDetailMedia = {
-  kind: "instagram_embed";
-  platform: "Instagram";
+export type MediaRightsBasis =
+  | "explicit_permission"
+  | "official_reuse_terms"
+  | "official_embed"
+  | "cc_by"
+  | "cc_by_sa"
+  | "cc0"
+  | "public_domain"
+  | "owned_original"
+  | "editorial_fair_dealing_current_events";
+
+export type ApprovedMediaType =
+  "uploaded_event_image" | "publisher_video_embed" | "official_social_embed";
+
+export type PublicMediaDisplayKind = "photograph" | "video" | "post" | "source_document_preview";
+
+type ApprovedEventMediaBase = {
+  eventSlug: string;
+  mediaType: ApprovedMediaType;
+  publicDisplayKind: PublicMediaDisplayKind;
   sourceUrl: string;
-  embedUrl: string;
-  alt: string;
-  credit: string;
-  previewOnly: true;
+  publisher: string | null;
+  creator: string | null;
+  rightsHolder: string | null;
+  creditLine: string;
+  rightsBasis: MediaRightsBasis;
+  licenceName: string | null;
+  licenceUrl: string | null;
+  altText: string;
+  focalPosition: string;
+  approvedAt: string;
 };
+
+export type ApprovedUploadedEventImage = ApprovedEventMediaBase & {
+  mediaType: "uploaded_event_image";
+  publicDisplayKind: "photograph" | "source_document_preview";
+  publicUrl: string;
+};
+
+export type ApprovedEventEmbed = ApprovedEventMediaBase & {
+  mediaType: "publisher_video_embed" | "official_social_embed";
+  publicDisplayKind: "video" | "post";
+  embedUrl: string;
+  previewImageUrl?: string;
+  previewImageStoragePath?: string;
+  previewAltText?: string;
+  previewFocalPosition?: string;
+};
+
+export type ApprovedEventMedia = ApprovedUploadedEventImage | ApprovedEventEmbed;
+
+export type NoApprovedEventMediaVisual = {
+  kind: "no_approved_event_media";
+  evidenceClass: "no_approved_event_media";
+  title: string;
+  location: string;
+  dateOrStatus: string;
+  sourceCount: number;
+  sourceHref: string;
+};
+
+export type EventVisual = NoApprovedEventMediaVisual;
 
 export type EventSourceRole =
   | "Lead"
@@ -140,7 +161,7 @@ export type ReviewedEventPreview = {
   safetyIncidents: readonly EventSafetyIncident[];
   latestOfficialResponse?: string;
   visual: EventVisual;
-  detailMedia?: EventDetailMedia;
+  approvedMedia?: ApprovedEventMedia;
 };
 
 export type ArchiveSort = "latest" | "reviewed" | "oldest";

@@ -2,14 +2,17 @@ import "server-only";
 import { headers } from "next/headers";
 
 function isAllowedHost(host: string) {
-  return (
-    host === "localhost:3000" ||
-    host === "india-observed.vercel.app" ||
-    host.endsWith("-india-observed.vercel.app")
-  );
+  const configuredHost = process.env.NEXT_PUBLIC_SITE_URL
+    ? new URL(process.env.NEXT_PUBLIC_SITE_URL).host
+    : "";
+  const deploymentHost = process.env.VERCEL_URL ?? "";
+  return host === "localhost:3000" || host === configuredHost || host === deploymentHost;
 }
 
 export async function getAuthenticationOrigin() {
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return new URL(process.env.NEXT_PUBLIC_SITE_URL).origin;
+  }
   const requestHeaders = await headers();
   const host = (requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "")
     .split(",")[0]

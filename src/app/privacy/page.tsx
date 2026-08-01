@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { ArchiveShell } from "@/app/events/components/ArchiveShell";
+import { getPublicContactEmail } from "@/lib/site";
 
 export const metadata = {
   title: "Privacy | India Observed",
-  description: "How India Observed handles authentication and private event follows.",
+  description: "How India Observed handles reader accounts, event follows and submitted leads.",
 };
 
 export default function PrivacyPage() {
+  const contactEmail = getPublicContactEmail();
   return (
     <ArchiveShell authReturnTo="/privacy">
       <article className="privacy-page page-shell">
@@ -48,6 +50,19 @@ export default function PrivacyPage() {
         </section>
 
         <section>
+          <h2>Information submitted as a lead</h2>
+          <p>
+            A lead may include event details, public source links, an email address and an optional
+            phone number. Submissions are held privately for editorial review and do not create a
+            public event record automatically.
+          </p>
+          <p>
+            Contact details are used only to review or follow up on the submission. They are not
+            published or used for marketing.
+          </p>
+        </section>
+
+        <section>
           <h2>Use and retention</h2>
           <p>
             Follower data is used to authenticate the reader, record and remove an event-follow
@@ -68,6 +83,20 @@ export default function PrivacyPage() {
             Production following remains disabled until that channel and its handling process are
             approved and published.
           </p>
+        </section>
+
+        <section>
+          <h2>Privacy contact</h2>
+          {contactEmail ? (
+            <p>
+              Email: <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
+            </p>
+          ) : (
+            <p>
+              The public privacy contact is not yet configured. Production launch remains blocked
+              when contact configuration is required.
+            </p>
+          )}
         </section>
 
         <p className="privacy-back-link">

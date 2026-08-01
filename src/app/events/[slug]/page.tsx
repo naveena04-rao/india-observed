@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatEventDate, formatEventDateRange } from "../../../lib/events/archive";
 import {
@@ -19,6 +20,12 @@ type EventPageProps = {
   params: Promise<{ slug: string }>;
 };
 
+const contributionActions = [
+  { label: "Add a public source", type: "public-source" },
+  { label: "Suggest a correction", type: "correction" },
+  { label: "Submit an official response", type: "official-response" },
+] as const;
+
 async function findEvent(slug: string) {
   const events = await getReviewedEvents();
   return events.find((event) => event.slug === slug);
@@ -28,7 +35,30 @@ export async function generateMetadata({ params }: EventPageProps): Promise<Meta
   const { slug } = await params;
   const event = await findEvent(slug);
   return event
-    ? { title: `${event.title} | India Observed`, description: event.summary }
+    ? {
+        title: event.title,
+        description: event.summary,
+        alternates: { canonical: `/events/${event.slug}` },
+        openGraph: {
+          type: "article",
+          title: event.title,
+          description: event.summary,
+          url: `/events/${event.slug}`,
+          images:
+            event.approvedMedia?.mediaType === "uploaded_event_image"
+              ? [event.approvedMedia.publicUrl]
+              : ["/opengraph-image"],
+        },
+        twitter: {
+          card: "summary_large_image",
+          title: event.title,
+          description: event.summary,
+          images:
+            event.approvedMedia?.mediaType === "uploaded_event_image"
+              ? [event.approvedMedia.publicUrl]
+              : ["/opengraph-image"],
+        },
+      }
     : { title: "Event record unavailable | India Observed" };
 }
 
@@ -38,8 +68,6 @@ export default async function EventRecordPage({ params }: EventPageProps) {
   if (!event) notFound();
   const candidatePreviewEnabled = isCandidatePreviewEnabled();
   const showCandidateNotice = candidatePreviewEnabled && event.publicationStatus === "candidate";
-  const detailMedia =
-    candidatePreviewEnabled || !event.detailMedia?.previewOnly ? event.detailMedia : undefined;
   const following = getEventFollowingAvailability();
   const followingEnabled = following.enabled && event.publicationStatus === "published";
   const supabase = followingEnabled ? await createSessionSupabaseClient() : null;
@@ -79,7 +107,7 @@ export default async function EventRecordPage({ params }: EventPageProps) {
           </header>
 
           <div className="event-record-visual">
-            <EventDetailMedia visual={event.visual} detailMedia={detailMedia} />
+            <EventDetailMedia approvedMedia={event.approvedMedia} visual={event.visual} />
           </div>
 
           <dl className="event-record-facts">
@@ -117,14 +145,15 @@ export default async function EventRecordPage({ params }: EventPageProps) {
           <section className="event-record-actions" aria-labelledby="record-actions-heading">
             <h2 id="record-actions-heading">Contribute to this record</h2>
             <div>
-              {["Add a public source", "Suggest a correction", "Submit an official response"].map(
-                (label) => (
-                  <button key={label} type="button" disabled>
-                    <span>{label}</span>
-                    <small>Available after public launch</small>
-                  </button>
-                ),
-              )}
+              {contributionActions.map(({ label, type }) => (
+                <Link
+                  key={type}
+                  href={`/submit-a-lead?event=${encodeURIComponent(event.slug)}&contribution=${type}`}
+                >
+                  <span>{label}</span>
+                  <small>Send privately for editorial review</small>
+                </Link>
+              ))}
             </div>
           </section>
         </div>
