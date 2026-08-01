@@ -1,0 +1,251 @@
+[
+  {
+    "id": "en-new",
+    "language": "English",
+    "text": "Farm workers began a district march and protest over unpaid wages.",
+    "relevant": true,
+    "safety": false
+  },
+  {
+    "id": "hi-new",
+    "language": "Hindi",
+    "text": "किसानों ने भूमि अधिग्रहण के विरोध में धरना और प्रदर्शन किया।",
+    "relevant": true,
+    "safety": false
+  },
+  {
+    "id": "bn-new",
+    "language": "Bengali",
+    "text": "শ্রমিকরা মজুরির দাবিতে ধর্মঘট ও প্রতিবাদ শুরু করেছেন।",
+    "relevant": true,
+    "safety": false
+  },
+  {
+    "id": "mr-new",
+    "language": "Marathi",
+    "text": "कामगारांनी वेतनासाठी संप आणि मोर्चा काढला।",
+    "relevant": true,
+    "safety": false
+  },
+  {
+    "id": "ta-new",
+    "language": "Tamil",
+    "text": "தொழிலாளர்கள் ஊதியத்திற்காக போராட்டம் நடத்தினர்.",
+    "relevant": true,
+    "safety": false
+  },
+  {
+    "id": "te-new",
+    "language": "Telugu",
+    "text": "ఉద్యోగులు వేతనాల కోసం సమ్మె మరియు నిరసన చేపట్టారు.",
+    "relevant": true,
+    "safety": false
+  },
+  {
+    "id": "kn-new",
+    "language": "Kannada",
+    "text": "ಕಾರ್ಮಿಕರು ವೇತನಕ್ಕಾಗಿ ಮುಷ್ಕರ ಮತ್ತು ಪ್ರತಿಭಟನೆ ನಡೆಸಿದರು.",
+    "relevant": true,
+    "safety": false
+  },
+  {
+    "id": "ml-new",
+    "language": "Malayalam",
+    "text": "തൊഴിലാളികൾ വേതനത്തിനായി പണിമുടക്കും പ്രതിഷേധവും നടത്തി.",
+    "relevant": true,
+    "safety": false
+  },
+  {
+    "id": "gu-new",
+    "language": "Gujarati",
+    "text": "કામદારોએ પગાર માટે હડતાળ અને વિરોધ કર્યો.",
+    "relevant": true,
+    "safety": false
+  },
+  {
+    "id": "pa-new",
+    "language": "Punjabi",
+    "text": "ਮਜ਼ਦੂਰਾਂ ਨੇ ਤਨਖਾਹ ਲਈ ਹੜਤਾਲ ਅਤੇ ਵਿਰੋਧ ਕੀਤਾ।",
+    "relevant": true,
+    "safety": false
+  },
+  {
+    "id": "or-new",
+    "language": "Odia",
+    "text": "ଶ୍ରମିକମାନେ ମଜୁରି ପାଇଁ ଧର୍ମଘଟ ଓ ପ୍ରତିବାଦ କରିଥିଲେ।",
+    "relevant": true,
+    "safety": false
+  },
+  {
+    "id": "as-new",
+    "language": "Assamese",
+    "text": "শ্ৰমিকসকলে মজুৰিৰ বাবে ধৰ্মঘট আৰু প্ৰতিবাদ কৰে।",
+    "relevant": true,
+    "safety": false
+  },
+  {
+    "id": "ur-new",
+    "language": "Urdu",
+    "text": "مزدوروں نے اجرت کے لیے ہڑتال اور احتجاج کیا۔",
+    "relevant": true,
+    "safety": false
+  },
+  {
+    "id": "irrelevant-weather",
+    "language": "English",
+    "text": "The weather office forecasts rain across the district this weekend.",
+    "relevant": false,
+    "safety": false
+  },
+  {
+    "id": "irrelevant-sport",
+    "language": "English",
+    "text": "The local team won its league match by two goals.",
+    "relevant": false,
+    "safety": false
+  },
+  {
+    "id": "irrelevant-market",
+    "language": "English",
+    "text": "Markets closed higher after technology stocks gained.",
+    "relevant": false,
+    "safety": false
+  },
+  {
+    "id": "child-flag",
+    "language": "English",
+    "text": "School students described as minors joined a protest near the campus.",
+    "relevant": true,
+    "safety": true
+  },
+  {
+    "id": "witness-flag",
+    "language": "English",
+    "text": "A witness gave a private phone number during the demonstration.",
+    "relevant": true,
+    "safety": true
+  },
+  {
+    "id": "location-flag",
+    "language": "English",
+    "text": "Protest organisers said assemble now and shared a live location.",
+    "relevant": true,
+    "safety": true
+  },
+  {
+    "id": "allegation-flag",
+    "language": "English",
+    "text": "A rally speaker alleged corruption by a named private contractor.",
+    "relevant": true,
+    "safety": true
+  },
+  {
+    "id": "update-bundelkhand",
+    "language": "English",
+    "text": "Bundelkhand project-affected communities continued their rehabilitation and compensation protest in Chhatarpur, Madhya Pradesh.",
+    "relevant": true,
+    "safety": false,
+    "candidateType": "event_update",
+    "eventSlug": "bundelkhand-rehabilitation-compensation-protest",
+    "state": "Madhya Pradesh",
+    "district": "Chhatarpur",
+    "publisher": "Benchmark Regional News"
+  },
+  {
+    "id": "response-bundelkhand",
+    "language": "English",
+    "text": "The Madhya Pradesh government issued an official response on negotiations over the Bundelkhand rehabilitation protest in Chhatarpur.",
+    "relevant": true,
+    "safety": false,
+    "candidateType": "official_response",
+    "eventSlug": "bundelkhand-rehabilitation-compensation-protest",
+    "state": "Madhya Pradesh",
+    "district": "Chhatarpur",
+    "publisher": "Government of Madhya Pradesh"
+  },
+  {
+    "id": "outcome-bidadi",
+    "language": "English",
+    "text": "Bidadi farmers said negotiations concluded and the land acquisition protest was called off in Bengaluru South, Karnataka.",
+    "relevant": true,
+    "safety": false,
+    "candidateType": "event_update",
+    "eventSlug": "bidadi-farmers-land-acquisition",
+    "state": "Karnataka",
+    "district": "Bengaluru South",
+    "publisher": "Benchmark Local Desk"
+  },
+  {
+    "id": "duplicate-wire-a",
+    "language": "English",
+    "text": "Transport workers begin strike over wages in Delhi",
+    "relevant": true,
+    "safety": false,
+    "duplicateGroup": "wire-transport-delhi",
+    "publisher": "Wire Service A"
+  },
+  {
+    "id": "duplicate-wire-b",
+    "language": "English",
+    "text": "Transport workers begin strike over wages in Delhi.",
+    "relevant": true,
+    "safety": false,
+    "duplicateGroup": "wire-transport-delhi",
+    "publisher": "Syndicated Outlet B"
+  },
+  {
+    "id": "government-notice",
+    "language": "English",
+    "text": "The Assam district administration notice records an official response to the ongoing land protest.",
+    "relevant": true,
+    "safety": false,
+    "candidateType": "official_response",
+    "state": "Assam",
+    "publisher": "Assam district administration"
+  },
+  {
+    "id": "video-candidate",
+    "language": "English",
+    "text": "Video footage shows the public rally in Chennai, Tamil Nadu; event identity still requires review.",
+    "relevant": true,
+    "safety": false,
+    "candidateType": "media_evidence",
+    "state": "Tamil Nadu",
+    "district": "Chennai",
+    "media": true,
+    "publisher": "Benchmark Video Channel"
+  },
+  {
+    "id": "photo-candidate",
+    "language": "English",
+    "text": "A photograph is offered as evidence of a farmers protest in Punjab.",
+    "relevant": true,
+    "safety": false,
+    "candidateType": "media_evidence",
+    "state": "Punjab",
+    "media": true,
+    "publisher": "Benchmark Photo Desk"
+  },
+  {
+    "id": "conflicting-source-a",
+    "language": "English",
+    "text": "Union representatives said the strike continued in Kerala.",
+    "relevant": true,
+    "safety": false,
+    "duplicateGroup": "conflict-kerala-strike",
+    "conflict": true,
+    "state": "Kerala",
+    "publisher": "Union statement"
+  },
+  {
+    "id": "conflicting-source-b",
+    "language": "English",
+    "text": "The administration said the Kerala strike had concluded.",
+    "relevant": true,
+    "safety": false,
+    "duplicateGroup": "conflict-kerala-strike",
+    "conflict": true,
+    "state": "Kerala",
+    "publisher": "Administration statement"
+  }
+]
