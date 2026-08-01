@@ -1,4 +1,7 @@
 import { StoryPage } from "@/app/components/EditorialGuidePage";
+import { getReviewedEvents } from "@/lib/events/getReviewedEvents";
+import { currentEventValues } from "@/lib/leads/eventFieldMap";
+import { notFound } from "next/navigation";
 import { LeadSubmissionForm } from "./LeadSubmissionForm";
 
 export const metadata = {
@@ -11,17 +14,27 @@ type SubmitALeadPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-const contributionTypes = ["new-lead", "public-source", "correction", "official-response"] as const;
+const contributionTypes = [
+  "new-event",
+  "public-source",
+  "correction",
+  "official-response",
+] as const;
 
 export default async function SubmitALeadPage({ searchParams }: SubmitALeadPageProps) {
   const query = await searchParams;
   const event = typeof query.event === "string" ? query.event : "";
-  const requestedType = typeof query.contribution === "string" ? query.contribution : "new-lead";
+  const requestedType = typeof query.contribution === "string" ? query.contribution : "new-event";
   const contributionType = contributionTypes.includes(
     requestedType as (typeof contributionTypes)[number],
   )
     ? (requestedType as (typeof contributionTypes)[number])
-    : "new-lead";
+    : "new-event";
+  const relatedEvent = event
+    ? (await getReviewedEvents()).find((candidate) => candidate.slug === event)
+    : undefined;
+  if (event && !relatedEvent) notFound();
+  if (relatedEvent && contributionType === "new-event") notFound();
 
   return (
     <StoryPage
@@ -45,7 +58,13 @@ export default async function SubmitALeadPage({ searchParams }: SubmitALeadPageP
         </p>
       </section>
 
-      <LeadSubmissionForm contributionType={contributionType} relatedEventSlug={event} />
+      <LeadSubmissionForm
+        contributionType={contributionType}
+        relatedEventSlug={relatedEvent?.slug}
+        relatedEventId={relatedEvent?.internalId}
+        relatedEventTitle={relatedEvent?.title}
+        currentValues={relatedEvent ? currentEventValues(relatedEvent) : undefined}
+      />
 
       <section className="lead-next-steps" aria-labelledby="lead-next-title">
         <h2 id="lead-next-title">What happens next</h2>

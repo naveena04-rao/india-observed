@@ -2,6 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { isSameOriginMutation } from "@/lib/http/sameOrigin";
+import { getReviewedEvents } from "@/lib/events/getReviewedEvents";
 import { consumeLeadSubmissionAttempt } from "@/lib/leads/rateLimit";
 import {
   fieldErrors,
@@ -46,6 +47,14 @@ export async function POST(request: Request) {
   }
 
   const lead = parsed.data;
+  if (lead.submissionMode === "existing-event") {
+    const target = (await getReviewedEvents()).find(
+      (event) => event.slug === lead.relatedEventSlug,
+    );
+    if (!target || target.internalId !== lead.relatedEventId) {
+      return NextResponse.json({ ok: false, message: validationMessage }, { status: 400 });
+    }
+  }
   const elapsed = Date.now() - lead.formStartedAt;
   if (lead.website) {
     return NextResponse.json({ ok: true });
@@ -68,14 +77,15 @@ export async function POST(request: Request) {
   const fingerprint = createHash("sha256")
     .update(
       JSON.stringify({
-        title: lead.title,
-        description: lead.description,
-        location: lead.location,
-        eventDate: lead.eventDate,
         contactEmail: lead.contactEmail,
-        sourceLinks: lead.sourceLinks,
-        mediaType: lead.mediaType,
+        contactPhone: lead.contactPhone,
+        submissionMode: lead.submissionMode,
+        proposals: lead.proposals,
+        sources: lead.sources,
+        media: lead.media,
+        editorialNotes: lead.editorialNotes,
         relatedEventSlug: lead.relatedEventSlug,
+        relatedEventId: lead.relatedEventId,
         contributionType: lead.contributionType,
       }),
     )
@@ -83,19 +93,17 @@ export async function POST(request: Request) {
 
   let error: { code?: string } | null;
   try {
-    ({ error } = await supabase.rpc("submit_lead", {
-      p_additional_context: lead.additionalContext || null,
+    ({ error } = await supabase.rpc("submit_structured_lead", {
       p_contact_email: lead.contactEmail,
       p_contact_phone: normalisePhone(lead.contactPhone),
-      p_date_precision: lead.datePrecision,
-      p_description: lead.description,
-      p_event_date: lead.eventDate || null,
-      p_location: lead.location,
-      p_media_type: lead.mediaType,
+      p_editorial_notes: lead.editorialNotes || null,
+      p_media: lead.media,
+      p_proposals: lead.proposals,
       p_related_event_slug: lead.relatedEventSlug || null,
-      p_source_links: lead.sourceLinks,
+      p_related_event_id: lead.relatedEventId || null,
+      p_sources: lead.sources,
+      p_submission_mode: lead.submissionMode,
       p_submission_fingerprint: fingerprint,
-      p_title: lead.title,
       p_contribution_type: lead.contributionType,
     }));
   } catch {

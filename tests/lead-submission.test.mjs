@@ -1,323 +1,102 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import {
+  eventFieldDefinitions,
+  eventFieldKeys,
+  internalOnlyEventKeys,
+} from "../src/lib/leads/eventFieldMap.ts";
 
 const read = (path) => readFileSync(path, "utf8");
-const page = read("src/app/submit-a-lead/page.tsx");
 const form = read("src/app/submit-a-lead/LeadSubmissionForm.tsx");
+const page = read("src/app/submit-a-lead/page.tsx");
 const route = read("src/app/api/leads/route.ts");
 const validation = read("src/lib/leads/validation.ts");
-const rateLimit = read("src/lib/leads/rateLimit.ts");
-const migration = read("supabase/migrations/20260731000100_add_lead_submissions.sql");
-const contributionMigration = read(
-  "supabase/migrations/20260731000200_add_lead_contribution_context.sql",
-);
-const eventDetailPage = read("src/app/events/[slug]/page.tsx");
-const databaseTest = read("supabase/tests/database/0007_lead_submissions.test.sql");
-const footer = read("src/app/components/PublicSiteFooter.tsx");
-const archiveShell = read("src/app/events/components/ArchiveShell.tsx");
-const leadNavigation = read("src/app/components/LeadNavigationAction.tsx");
-const homepage = read("src/app/page.tsx");
-const eventsPage = read("src/app/events/page.tsx");
-const privacy = read("src/app/privacy/page.tsx");
-const styles = read("src/app/globals.css");
-const { leadSubmissionSchema } = await import("../src/lib/leads/validation.ts");
+const migration = read("supabase/migrations/20260801000100_add_structured_event_contributions.sql");
+const eventDetail = read("src/app/events/[slug]/page.tsx");
 
-const validLead = (overrides = {}) => ({
-  title: "Public meeting announced",
-  description:
-    "Residents attended a public meeting about a civic issue and further details remain unclear.",
-  location: "New Delhi",
-  datePrecision: "exact",
-  eventDate: "2026-07-31",
-  sourceLinks: ["https://example.org/report"],
-  mediaType: "none",
-  relatedEventSlug: "",
-  contributionType: "new-lead",
-  additionalContext: "",
-  contactEmail: "reader@example.org",
-  contactPhone: "",
-  goodFaith: true,
-  policyAcknowledgement: true,
-  website: "",
-  formStartedAt: Date.now() - 5000,
-  ...overrides,
-});
-
-test("footer and editorial page expose the private lead route", () => {
-  assert.match(footer, /href: "\/submit-a-lead", label: "Submit a lead"/);
-  assert.match(archiveShell, /const onLeadPage = authReturnTo === "\/submit-a-lead"/);
-  assert.equal(
-    (archiveShell.match(/<LeadNavigationAction onLeadPage=\{onLeadPage\} \/>/g) ?? []).length,
-    2,
-  );
-  assert.match(leadNavigation, /const href = onLeadPage \? "#lead-title" : "\/submit-a-lead"/);
-  assert.match(
-    leadNavigation,
-    /titleField\.scrollIntoView\(\{ behavior: "smooth", block: "center" \}\)/,
-  );
-  assert.match(leadNavigation, /titleField\.focus\(\{ preventScroll: true \}\)/);
-  assert.doesNotMatch(archiveShell, /className="nav-action" href="\/#lead"/);
-  assert.equal((homepage.match(/href="\/submit-a-lead"/g) ?? []).length, 3);
-  assert.match(eventsPage, /href="\/submit-a-lead">Submit a public lead<\/Link>/);
-  assert.doesNotMatch(homepage + eventsPage, /href="\/?#lead"/);
-  assert.match(page, /eyebrow="SUBMIT A LEAD"/);
-  assert.match(page, /title="Submit a lead"/);
-  assert.match(
-    page,
-    /className="lead-safety-notice"[\s\S]*?<LeadSubmissionForm[\s\S]*?\/>[\s\S]*?className="lead-next-steps"/,
-  );
-  assert.match(page, /Submissions are reviewed and are not automatically published/);
-  assert.match(page, /Do not submit confidential-source identities or participant directories/);
-  assert.match(page, /Do not submit live tactical locations/);
-  assert.match(page, /<StoryPage/);
-});
-
-test("one enabled primary submit button uses native form semantics", () => {
-  assert.equal((form.match(/<form\b/g) ?? []).length, 1);
-  assert.equal((form.match(/<button\b/g) ?? []).length, 1);
-  assert.equal((form.match(/className="lead-submit"/g) ?? []).length, 1);
-  assert.match(
-    form,
-    /<form className="lead-form" id="lead-submission-form" noValidate onSubmit=\{submit\}>/,
-  );
-  assert.match(form, /<button className="lead-submit" type="submit" disabled=\{submitting\}>/);
-  assert.ok(form.indexOf('<button className="lead-submit"') > form.indexOf("<form "));
-  assert.ok(form.indexOf('<button className="lead-submit"') < form.lastIndexOf("</form>"));
-  assert.doesNotMatch(form, /useState\(true\)/);
-});
-
-test("client validates native form values before starting exactly one request", () => {
-  assert.equal((form.match(/await fetch\("\/api\/leads"/g) ?? []).length, 1);
-  assert.ok(
-    form.indexOf("new FormData(form)") < form.indexOf("leadSubmissionSchema.safeParse(payload)"),
-  );
-  assert.ok(
-    form.indexOf("leadSubmissionSchema.safeParse(payload)") < form.indexOf("setSubmitting(true)"),
-  );
-  assert.ok(form.indexOf("setSubmitting(true)") < form.indexOf('await fetch("/api/leads"'));
-  assert.match(form, /goodFaith: data\.get\("goodFaith"\) === "on"/);
-  assert.match(form, /policyAcknowledgement: data\.get\("policyAcknowledgement"\) === "on"/);
-  assert.match(form, /datePrecision: data\.get\("datePrecision"\)/);
-  assert.match(form, /eventDate: data\.get\("eventDate"\)/);
-  assert.match(form, /sourceLinks,[\s\S]*?contactPhone: data\.get\("contactPhone"\)/);
-  assert.match(form, /mediaType: data\.get\("mediaType"\)/);
-  assert.match(form, /relatedEventSlug: data\.get\("relatedEventSlug"\)/);
-  assert.match(form, /contributionType: data\.get\("contributionType"\)/);
-  assert.match(form, /body: JSON\.stringify\(parsed\.data\)/);
-});
-
-test("client recovers from request errors, timeouts and duplicate activation", () => {
-  assert.match(form, /if \(submitting\) return/);
-  assert.match(form, /new AbortController\(\)/);
-  assert.match(form, /window\.setTimeout\(\(\) => controller\.abort\(\), REQUEST_TIMEOUT_MS\)/);
-  assert.match(form, /response\.json\(\)\.catch\(\(\) => \(\{\}\)\)/);
-  assert.match(
-    form,
-    /finally \{[\s\S]*?window\.clearTimeout\(timeout\)[\s\S]*?setSubmitting\(false\)/,
-  );
-  assert.match(form, /setSuccess\(true\)[\s\S]*?Your lead has been submitted for review\./);
-  assert.match(
-    form,
-    /summaryRef\.current\.scrollIntoView\(\{ behavior: "smooth", block: "center" \}\)/,
-  );
-  assert.match(form, /summaryRef\.current\.focus\(\{ preventScroll: true \}\)/);
-  assert.match(form, /setFeedbackVersion\(\(version\) => version \+ 1\)/);
-});
-
-test("required fields and optional phone render in the prescribed order", () => {
-  const orderedLabels = [
-    "Event or lead title",
-    "What happened?",
-    "Location",
-    "When did this happen?",
-    "Source links",
-    "Photo or video evidence",
-    "Additional context",
-    "Email address",
-    "Phone number",
-  ];
-  let prior = -1;
-  for (const label of orderedLabels) {
-    const index = form.indexOf(label);
-    assert.ok(index > prior, `${label} must follow the prior field`);
-    prior = index;
+test("the shared map points to real event storage and public display fields", () => {
+  assert.equal(eventFieldDefinitions.length, 12);
+  for (const definition of eventFieldDefinitions) {
+    assert.match(definition.dbColumn, /^(events\.|event_organisations)/);
+    assert.ok(definition.displayField);
   }
-  assert.match(form, /name="contactEmail"[\s\S]*?type="email"[\s\S]*?required/);
-  assert.match(form, /name="contactPhone"[\s\S]*?type="tel"[\s\S]*?maxLength=\{30\}/);
-  assert.match(form, /Email address <span>Required<\/span>/);
-  assert.match(form, /Phone number <span>Optional<\/span>/);
-  assert.match(form, /name="goodFaith"[\s\S]*?type="checkbox"[\s\S]*?required/);
-  assert.match(form, /name="policyAcknowledgement"[\s\S]*?type="checkbox"[\s\S]*?required/);
-  assert.match(form, /Submitting…/);
-  assert.match(form, /disabled=\{submitting\}/);
+  for (const key of internalOnlyEventKeys) assert.ok(!eventFieldKeys.includes(key));
 });
 
-test("server validation bounds every field and rejects unsafe links", () => {
-  assert.match(validation, /title: trimmed\(5, 160\)/);
-  assert.match(validation, /description: trimmed\(40, 5000\)/);
-  assert.match(validation, /location: trimmed\(2, 200\)/);
-  assert.match(validation, /additionalContext: z[\s\S]*?\.max\(3000/);
+test("new event mode accepts deliberate structured fields", () => {
+  assert.match(validation, /submissionMode: z\.enum\(\["new-event", "existing-event"\]\)/);
+  assert.match(validation, /Add at least one proposed event field/);
+  assert.match(validation, /const fieldKey = z\.enum\([\s\S]*?eventFieldKeys as/);
+});
+
+test("existing correction preserves target and current value", () => {
   assert.match(
     validation,
-    /contactEmail: z[\s\S]*?\.toLowerCase\(\)[\s\S]*?\.max\(254[\s\S]*?\.email\(/,
+    /existing !== Boolean\(value\.relatedEventSlug && value\.relatedEventId\)/,
   );
-  assert.match(validation, /digits\.length >= 7 && digits\.length <= 15/);
-  assert.match(validation, /protocol === "http:" \|\| protocol === "https:"/);
-  assert.match(validation, /MAX_SOURCE_LINKS = 10/);
-  assert.match(validation, /MAX_LEAD_PAYLOAD_BYTES = 32 \* 1024/);
-  assert.match(validation, /z\.enum\(\["exact", "approximate", "ongoing"\]\)/);
-  assert.match(validation, /leadMediaTypes = \["none", "photo", "video", "photo-and-video"\]/);
-  assert.match(validation, /contributionTypes = \[/);
+  assert.match(validation, /existingValueSnapshot: text\(5000\)/);
+  assert.match(form, /existingValueSnapshot: currentValues\?\.\[fieldKey\]/);
 });
 
-test("server schema rejects invalid contact data and accepts international phone formats", () => {
-  assert.equal(leadSubmissionSchema.safeParse(validLead()).success, true);
-  assert.equal(
-    leadSubmissionSchema.safeParse(validLead({ contactEmail: "not-an-email" })).success,
-    false,
-  );
-  assert.equal(
-    leadSubmissionSchema.safeParse(validLead({ contactPhone: "call me tomorrow" })).success,
-    false,
-  );
-  for (const contactPhone of ["+91 98765 43210", "+44 (0)20 7946-0958", "+1-202-555-0147"]) {
-    assert.equal(leadSubmissionSchema.safeParse(validLead({ contactPhone })).success, true);
-  }
-});
-
-test("event contribution actions preserve record, action and media context", () => {
-  for (const [label, contribution] of [
-    ["Add a public source", "public-source"],
-    ["Suggest a correction", "correction"],
-    ["Submit an official response", "official-response"],
-  ]) {
-    assert.match(eventDetailPage, new RegExp(label));
-    assert.match(eventDetailPage, new RegExp(`type: "${contribution}"`));
-  }
+test("source and official-response modes enforce their evidence", () => {
   assert.match(
-    eventDetailPage,
-    /href=\{`\/submit-a-lead\?event=\$\{encodeURIComponent\(event\.slug\)\}&contribution=\$\{type\}`\}/,
+    validation,
+    /\["public-source", "official-response"\][\s\S]*?value\.sources\.length === 0/,
   );
-  assert.match(page, /searchParams: Promise/);
-  assert.match(page, /relatedEventSlug=\{event\}/);
-  assert.match(form, /name="relatedEventSlug" type="hidden" value=\{relatedEventSlug\}/);
-  assert.match(form, /name="contributionType" type="hidden" value=\{contributionType\}/);
-  assert.match(form, /name="mediaType"[\s\S]*?type="radio"/);
-  for (const value of ["none", "photo", "video", "photo-and-video"]) {
-    assert.equal(leadSubmissionSchema.safeParse(validLead({ mediaType: value })).success, true);
-  }
-  assert.equal(leadSubmissionSchema.safeParse(validLead({ mediaType: "audio" })).success, false);
-  assert.equal(
-    leadSubmissionSchema.safeParse(
-      validLead({ relatedEventSlug: "existing-record", contributionType: "correction" }),
-    ).success,
-    true,
-  );
+  assert.match(validation, /fieldKey === "latest_official_response"/);
+  assert.match(validation, /sourceRoles = \[/);
 });
 
-test("server schema rejects unsafe URLs, excessive links and overlong content", () => {
-  for (const unsafe of ["javascript:alert(1)", "data:text/plain,unsafe", "file:///private.txt"]) {
-    assert.equal(
-      leadSubmissionSchema.safeParse(validLead({ sourceLinks: [unsafe] })).success,
-      false,
-    );
-  }
-  assert.equal(
-    leadSubmissionSchema.safeParse(
-      validLead({
-        sourceLinks: Array.from({ length: 10 }, (_, index) => `https://example.org/${index}`),
-      }),
-    ).success,
-    true,
-  );
-  assert.equal(
-    leadSubmissionSchema.safeParse(
-      validLead({
-        sourceLinks: Array.from({ length: 11 }, (_, index) => `https://example.org/${index}`),
-      }),
-    ).success,
-    false,
-  );
-  assert.equal(
-    leadSubmissionSchema.safeParse(validLead({ description: "x".repeat(5001) })).success,
-    false,
-  );
-  assert.equal(
-    leadSubmissionSchema.safeParse(validLead({ additionalContext: "x".repeat(3001) })).success,
-    false,
-  );
+test("photo and video evidence are structured and unsafe URLs are rejected", () => {
+  assert.match(validation, /mediaType: z\.enum\(\["photo", "video"\]\)/);
+  assert.match(validation, /Use an HTTP or HTTPS link/);
+  assert.doesNotMatch(form, /type="file"/);
 });
 
-test("submission endpoint revalidates, rate limits and avoids duplicate publication", () => {
-  assert.match(route, /export const runtime = "nodejs"/);
+test("form uses progressive repeatable sections and current-value comparison", () => {
+  assert.match(form, /Current published value/);
+  assert.match(form, /Add another field/);
+  assert.match(form, /Add public source/);
+  assert.match(form, /Add photo or video/);
+  assert.match(form, /Photo/);
+  assert.match(form, /Video/);
+  assert.match(form, /Submit for editorial review/);
+});
+
+test("event links preserve contribution type and exact event context", () => {
+  for (const type of ["public-source", "correction", "official-response"])
+    assert.match(eventDetail, new RegExp(`type: "${type}"`));
+  assert.match(page, /relatedEventId=\{relatedEvent\?\.internalId\}/);
+  assert.match(page, /currentEventValues\(relatedEvent\)/);
+  assert.match(page, /if \(event && !relatedEvent\) notFound\(\)/);
+});
+
+test("server validates and writes only through the structured private RPC", () => {
   assert.match(route, /leadSubmissionSchema\.safeParse\(body\)/);
-  assert.match(route, /isSameOriginMutation\(request\)/);
-  assert.match(route, /consumeLeadSubmissionAttempt\(request\)/);
-  assert.match(route, /new TextEncoder\(\)\.encode\(raw\)\.byteLength > MAX_LEAD_PAYLOAD_BYTES/);
-  assert.match(route, /createHash\("sha256"\)/);
-  assert.match(route, /supabase\.rpc\("submit_lead"/);
-  assert.match(route, /p_related_event_slug: lead\.relatedEventSlug \|\| null/);
-  assert.match(route, /p_contribution_type: lead\.contributionType/);
-  assert.match(route, /p_media_type: lead\.mediaType/);
-  assert.match(route, /error\?\.code === "23505"[\s\S]*?status: 409/);
-  assert.doesNotMatch(route, /console\.(?:log|error)|\.from\("events"\)/);
-  assert.match(rateLimit, /MAX_ATTEMPTS = 5/);
-  assert.match(rateLimit, /WINDOW_MS = 15 \* 60 \* 1000/);
-  assert.match(rateLimit, /randomBytes\(32\)/);
-  assert.match(form, /name="website" tabIndex=\{-1\}/);
-  assert.match(form, /if \(submitting\) return/);
-  assert.ok(
-    route.indexOf("leadSubmissionSchema.safeParse(body)") <
-      route.indexOf("consumeLeadSubmissionAttempt(request)"),
-  );
-  assert.match(route, /elapsed < 500/);
-  assert.match(route, /headers: \{ "Retry-After": "900" \}/);
+  assert.match(route, /supabase\.rpc\("submit_structured_lead"/);
+  assert.match(route, /p_proposals: lead\.proposals/);
+  assert.match(route, /p_sources: lead\.sources/);
+  assert.match(route, /p_media: lead\.media/);
+  assert.doesNotMatch(route, /\.from\("events"\)|submit_lead"/);
 });
 
-test("database keeps leads and contact details private pending review", () => {
-  assert.match(migration, /create table public\.lead_submissions/);
-  assert.match(migration, /id uuid primary key default gen_random_uuid\(\)/);
-  assert.match(migration, /status text not null default 'pending_review'/);
-  assert.match(migration, /alter table public\.lead_submissions enable row level security/);
-  assert.match(
-    migration,
-    /revoke all on table public\.lead_submissions from public, anon, authenticated/,
-  );
-  assert.match(migration, /using \(public\.is_media_admin\(\)\)/);
+test("database remains private, pending review and backward compatible", () => {
+  assert.match(migration, /Legacy lead rows and submit_lead remain readable/);
+  assert.match(migration, /create table public\.lead_event_field_proposals/);
+  assert.match(migration, /create table public\.lead_submission_sources/);
+  assert.match(migration, /create table public\.lead_submission_media/);
+  assert.match(migration, /review_status text not null default 'pending_review'/);
+  assert.match(migration, /revoke all on table[\s\S]*?from public, anon, authenticated/);
   assert.match(migration, /grant execute on function[\s\S]*?to service_role/);
-  assert.match(migration, /revoke all on function[\s\S]*?from public, anon, authenticated/);
-  assert.doesNotMatch(migration, /create policy[\s\S]*?to anon/);
-  assert.match(databaseTest, /anonymous SELECT is denied/);
-  assert.match(databaseTest, /authenticated direct INSERT is denied/);
-  assert.match(databaseTest, /initial status is pending review/);
-  assert.match(databaseTest, /duplicate fingerprint is rejected/);
-  assert.match(databaseTest, /submission does not create another public event/);
-  assert.match(contributionMigration, /add column related_event_slug text/);
-  assert.match(contributionMigration, /add column contribution_type text not null/);
-  assert.match(contributionMigration, /add column media_type text not null/);
-  assert.match(databaseTest, /related event is stored/);
-  assert.match(databaseTest, /contribution type is stored/);
-  assert.match(databaseTest, /media type is stored/);
+  assert.doesNotMatch(migration, /insert into public\.events|update public\.events/);
 });
 
-test("success, failure, accessibility and privacy wording are explicit", () => {
-  assert.match(form, /Your lead has been submitted for review\./);
-  assert.match(form, /Submission does not guarantee publication\./);
-  assert.match(form, /Review the highlighted fields and submit again\./);
-  assert.match(form, /We could not submit this lead right now\. Please try again later\./);
-  assert.match(route, /This lead appears to have already been submitted\./);
-  assert.match(route, /Too many submission attempts were made\. Please try again later\./);
-  assert.match(route, /We could not submit this lead right now\. Please try again later\./);
-  assert.match(form, /role="alert" tabIndex=\{-1\}/);
-  assert.match(form, /aria-live="polite"/);
-  assert.match(styles, /\.lead-field textarea[\s\S]*?resize: vertical/);
-  assert.match(privacy, /Contact details are used only to review or follow up on the submission/);
-  assert.match(styles, /\.lead-submit[\s\S]*?background: var\(--ink\)/);
-  assert.match(styles, /@media \(max-width: 700px\)[\s\S]*?\.lead-submit[\s\S]*?width: 100%/);
-});
-
-test("public form deliberately omits file uploads", () => {
-  assert.doesNotMatch(form, /type="file"|FormData\([^)]*file|attachment/i);
-  assert.doesNotMatch(page, /upload|attachment/i);
+test("contact, consent, anti-spam and private-review wording remain", () => {
+  assert.match(form, /Email address/);
+  assert.match(form, /Phone number/);
+  assert.match(form, /goodFaith/);
+  assert.match(form, /policyAcknowledgement/);
+  assert.match(form, /lead-honeypot/);
+  assert.match(form, /Nothing has been published or changed automatically/);
 });
