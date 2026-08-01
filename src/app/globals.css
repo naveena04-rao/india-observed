@@ -3486,53 +3486,6 @@ h3 {
   width: 100%;
 }
 
-.lead-repeat-section {
-  border-top: 1px solid var(--line-dark);
-  margin-bottom: 2rem;
-  padding-top: 1.5rem;
-}
-
-.lead-repeat-section > h2 {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.55rem;
-  margin: 0 0 0.5rem;
-}
-
-.lead-repeat-card {
-  border: 1px solid var(--line-dark);
-  margin: 1rem 0;
-  min-width: 0;
-  padding: 1rem;
-}
-
-.lead-repeat-card > legend {
-  font-weight: 800;
-  padding-inline: 0.35rem;
-}
-
-.lead-repeat-card .lead-field {
-  margin-bottom: 1rem;
-}
-
-.lead-current-value {
-  background: #f3f1ec;
-  border-left: 3px solid #d8d4cb;
-  margin-bottom: 1rem;
-  padding: 0.75rem;
-}
-
-.lead-current-value p {
-  margin: 0.3rem 0 0;
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
-}
-
-.lead-two-column {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
 .lead-secondary-button {
   background: #ffffff;
   border: 1px solid var(--ink);
@@ -3546,6 +3499,65 @@ h3 {
 
 .lead-secondary-button:hover {
   text-decoration: underline;
+}
+
+.lead-form-section {
+  border-top: 1px solid var(--line-dark);
+  padding-block: 1.5rem 0.4rem;
+}
+
+.lead-form-section > h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.55rem;
+  line-height: 1.2;
+  margin: 0 0 1.25rem;
+}
+
+.lead-reader-form .lead-field {
+  margin-bottom: 1.35rem;
+}
+
+.lead-plain-fieldset {
+  border: 0;
+  margin: 0 0 1.35rem;
+  min-width: 0;
+  padding: 0;
+}
+
+.lead-nested-field {
+  margin-top: 0.8rem;
+  max-width: 18rem;
+}
+
+.lead-input-label {
+  color: var(--ink);
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1.35;
+  margin-bottom: 0.45rem;
+}
+
+.lead-link-row {
+  align-items: start;
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-bottom: 0.65rem;
+}
+
+.lead-link-remove {
+  background: #ffffff;
+  border: 1px solid var(--line-dark);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  min-height: 2.75rem;
+  padding-inline: 0.75rem;
+}
+
+.lead-simple-links .lead-secondary-button {
+  margin-top: 0.1rem;
 }
 
 .lead-field textarea {
@@ -3690,8 +3702,12 @@ h3 {
     min-height: 2.75rem;
   }
 
-  .lead-two-column {
+  .lead-link-row {
     grid-template-columns: 1fr;
+  }
+
+  .lead-link-remove {
+    justify-self: start;
   }
 
   .lead-submit {

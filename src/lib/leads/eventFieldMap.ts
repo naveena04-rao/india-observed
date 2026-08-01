@@ -102,6 +102,16 @@ export const eventFieldDefinitions = [
 export type EventFieldKey = (typeof eventFieldDefinitions)[number]["key"];
 export const eventFieldKeys = eventFieldDefinitions.map(({ key }) => key) as EventFieldKey[];
 
+export const editorialProposalKeys = [
+  "editorial_mapping",
+  "correction_request",
+  "outcome_or_follow_up",
+  "public_participants",
+] as const;
+export type EditorialProposalKey = (typeof editorialProposalKeys)[number];
+export const structuredProposalKeys = [...eventFieldKeys, ...editorialProposalKeys] as const;
+export type StructuredProposalKey = (typeof structuredProposalKeys)[number];
+
 export const internalOnlyEventKeys = [
   "id",
   "internal_id",

@@ -1,6 +1,5 @@
 import { StoryPage } from "@/app/components/EditorialGuidePage";
 import { getReviewedEvents } from "@/lib/events/getReviewedEvents";
-import { currentEventValues } from "@/lib/leads/eventFieldMap";
 import { notFound } from "next/navigation";
 import { LeadSubmissionForm } from "./LeadSubmissionForm";
 
@@ -63,7 +62,6 @@ export default async function SubmitALeadPage({ searchParams }: SubmitALeadPageP
         relatedEventSlug={relatedEvent?.slug}
         relatedEventId={relatedEvent?.internalId}
         relatedEventTitle={relatedEvent?.title}
-        currentValues={relatedEvent ? currentEventValues(relatedEvent) : undefined}
       />
 
       <section className="lead-next-steps" aria-labelledby="lead-next-title">

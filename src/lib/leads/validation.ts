@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eventFieldKeys } from "./eventFieldMap";
+import { eventFieldKeys, structuredProposalKeys } from "./eventFieldMap";
 
 export const MAX_LEAD_PAYLOAD_BYTES = 64 * 1024;
 export const MAX_PROPOSALS = 20;
@@ -74,6 +74,12 @@ const optionalDate = text(10).refine(
   "Enter a valid date.",
 );
 const fieldKey = z.enum(
+  structuredProposalKeys as unknown as [
+    (typeof structuredProposalKeys)[number],
+    ...(typeof structuredProposalKeys)[number][],
+  ],
+);
+const sourceFieldKey = z.enum(
   eventFieldKeys as [(typeof eventFieldKeys)[number], ...typeof eventFieldKeys],
 );
 
@@ -117,7 +123,7 @@ export const sourceSchema = z.object({
   publicationDate: optionalDate,
   language: text(80),
   summary: text(1500),
-  supportedFieldKey: fieldKey.or(z.literal("")),
+  supportedFieldKey: sourceFieldKey.or(z.literal("")),
 });
 export const mediaSchema = z.object({
   mediaType: z.enum(["photo", "video"]),
@@ -199,6 +205,88 @@ export const leadSubmissionSchema = z
   });
 
 export type LeadSubmissionInput = z.infer<typeof leadSubmissionSchema>;
+
+export const publicLeadSubmissionSchema = z
+  .object({
+    submissionMode: z.enum(["new-event", "existing-event"]),
+    contributionType: z.enum(contributionTypes),
+    relatedEventSlug: text(120),
+    relatedEventId: text(24),
+    whatHappened: text(5000),
+    location: text(300),
+    datePrecision: z.enum(["", "exact", "approximate", "ongoing"]),
+    eventDate: text(10),
+    eventType: z.enum(["", ...eventTypes]),
+    publicParticipants: text(1000),
+    mainIssues: text(3000),
+    authorityResponse: text(3000),
+    outcome: text(3000),
+    sourceLinks: z.array(httpUrl).max(MAX_SOURCES, `Add no more than ${MAX_SOURCES} links.`),
+    sourceExplanation: text(2000),
+    correctionIncorrect: text(3000),
+    correctionReplacement: text(3000),
+    correctionReason: text(2000),
+    authorityName: text(500),
+    officialName: text(500),
+    responseDate: optionalDate,
+    officialResponse: text(5000),
+    responseAddresses: text(2000),
+    mediaChoice: z.enum(["none", "photo", "video", "photo-and-video"]),
+    photoUrls: z.array(httpUrl).max(MAX_MEDIA, `Add no more than ${MAX_MEDIA} photo links.`),
+    videoUrls: z.array(httpUrl).max(MAX_MEDIA, `Add no more than ${MAX_MEDIA} video links.`),
+    editorialNotes: text(3000),
+    contactEmail: text(254).toLowerCase().email("Enter a valid email address."),
+    contactPhone: phone,
+    goodFaith: z.literal(true, { error: "Confirm that the submission is made in good faith." }),
+    policyAcknowledgement: z.literal(true, { error: "Confirm that you have read the policies." }),
+    website: text(200).default(""),
+    formStartedAt: z.number().int().positive(),
+  })
+  .superRefine((value, context) => {
+    const issue = (path: string, message: string) =>
+      context.addIssue({ code: "custom", path: [path], message });
+    const existing = value.submissionMode === "existing-event";
+    if (existing !== Boolean(value.relatedEventSlug && value.relatedEventId))
+      issue("relatedEventSlug", "This event could not be identified.");
+    if (
+      (!existing && value.contributionType !== "new-event") ||
+      (existing && value.contributionType === "new-event")
+    )
+      issue("contributionType", "Choose a valid contribution type.");
+
+    if (value.contributionType === "new-event") {
+      if (!value.whatHappened) issue("whatHappened", "Describe what happened.");
+      if (!value.location) issue("location", "Enter a location.");
+      if (!value.datePrecision) issue("datePrecision", "Choose when the event happened.");
+      if (!value.eventType) issue("eventType", "Choose the kind of event.");
+      if (
+        ["exact", "approximate"].includes(value.datePrecision) &&
+        !/^\d{4}-\d{2}-\d{2}$/.test(value.eventDate)
+      )
+        issue("eventDate", "Enter the event date.");
+    }
+    if (value.contributionType === "public-source" && value.sourceLinks.length === 0)
+      issue("sourceLinks", "Add at least one public source link.");
+    if (value.contributionType === "correction") {
+      if (!value.correctionIncorrect)
+        issue("correctionIncorrect", "Explain what information should be corrected.");
+      if (!value.correctionReplacement)
+        issue("correctionReplacement", "Enter what the record should say instead.");
+    }
+    if (value.contributionType === "official-response") {
+      if (!value.authorityName) issue("authorityName", "Enter the authority or organisation name.");
+      if (!value.responseDate) issue("responseDate", "Enter the response date.");
+      if (!value.officialResponse) issue("officialResponse", "Enter the official response.");
+      if (value.sourceLinks.length === 0)
+        issue("sourceLinks", "Add at least one official statement or source link.");
+    }
+    if (["photo", "photo-and-video"].includes(value.mediaChoice) && value.photoUrls.length === 0)
+      issue("photoUrls", "Add a public photo link.");
+    if (["video", "photo-and-video"].includes(value.mediaChoice) && value.videoUrls.length === 0)
+      issue("videoUrls", "Add a public video link.");
+  });
+
+export type PublicLeadSubmissionInput = z.infer<typeof publicLeadSubmissionSchema>;
 export function normalisePhone(value: string) {
   return value.trim().replace(/\s+/g, " ") || null;
 }

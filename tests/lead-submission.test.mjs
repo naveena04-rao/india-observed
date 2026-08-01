@@ -1,102 +1,155 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import {
-  eventFieldDefinitions,
-  eventFieldKeys,
-  internalOnlyEventKeys,
-} from "../src/lib/leads/eventFieldMap.ts";
 
 const read = (path) => readFileSync(path, "utf8");
 const form = read("src/app/submit-a-lead/LeadSubmissionForm.tsx");
 const page = read("src/app/submit-a-lead/page.tsx");
 const route = read("src/app/api/leads/route.ts");
 const validation = read("src/lib/leads/validation.ts");
-const migration = read("supabase/migrations/20260801000100_add_structured_event_contributions.sql");
+const mapping = read("src/lib/leads/publicMapping.ts");
+const fieldMap = read("src/lib/leads/eventFieldMap.ts");
+const migration = read(
+  "supabase/migrations/20260801000200_add_editorial_mapping_proposal_categories.sql",
+);
 const eventDetail = read("src/app/events/[slug]/page.tsx");
+const styles = read("src/app/globals.css");
 
-test("the shared map points to real event storage and public display fields", () => {
-  assert.equal(eventFieldDefinitions.length, 12);
-  for (const definition of eventFieldDefinitions) {
-    assert.match(definition.dbColumn, /^(events\.|event_organisations)/);
-    assert.ok(definition.displayField);
-  }
-  for (const key of internalOnlyEventKeys) assert.ok(!eventFieldKeys.includes(key));
+test("new-event mode asks only plain reader-facing questions", () => {
+  for (const question of [
+    "What happened?",
+    "Where did it happen?",
+    "When did it happen?",
+    "What kind of event was it?",
+    "Who organised or took part publicly?",
+    "What were the main demands or issues?",
+    "How did authorities respond?",
+    "What happened afterward?",
+  ])
+    assert.match(form, new RegExp(question.replace(/[?]/g, "\\?")));
+  assert.match(form, /contributionType === "new-event"/);
+  assert.match(form, /Describe the event in your own words/);
+  assert.match(form, /Protest using several forms of action/);
 });
 
-test("new event mode accepts deliberate structured fields", () => {
-  assert.match(validation, /submissionMode: z\.enum\(\["new-event", "existing-event"\]\)/);
-  assert.match(validation, /Add at least one proposed event field/);
-  assert.match(validation, /const fieldKey = z\.enum\([\s\S]*?eventFieldKeys as/);
+test("source mode shows only source-focused contribution questions", () => {
+  assert.match(form, /contributionType === "public-source"/);
+  assert.match(form, /What does this source help confirm or explain\?/);
+  assert.match(form, /Public source links/);
+  assert.match(validation, /Add at least one public source link\./);
 });
 
-test("existing correction preserves target and current value", () => {
-  assert.match(
-    validation,
-    /existing !== Boolean\(value\.relatedEventSlug && value\.relatedEventId\)/,
+test("correction mode uses three plain-language correction questions", () => {
+  assert.match(form, /contributionType === "correction"/);
+  assert.match(form, /What information appears incorrect\?/);
+  assert.match(form, /What should it say instead\?/);
+  assert.match(form, /Why do you believe it should change\?/);
+  assert.match(form, /Supporting source links/);
+  assert.match(validation, /Explain what information should be corrected\./);
+});
+
+test("official-response mode exposes only relevant response fields", () => {
+  assert.match(form, /contributionType === "official-response"/);
+  for (const label of [
+    "Name of authority or organisation",
+    "Name or public role of the official",
+    "Date of response",
+    "What was the official response?",
+    "What part of the event does this response address?",
+    "Official statement or source links",
+  ])
+    assert.match(form, new RegExp(label.replace(/[?]/g, "\\?")));
+});
+
+test("technical event editing controls are not rendered publicly", () => {
+  assert.doesNotMatch(form, /eventFieldDefinitions|fieldKey|existingValueSnapshot/);
+  assert.doesNotMatch(
+    form,
+    /Current published value|Proposed record changes|Event field|Source role|Source type|Supported field/i,
   );
-  assert.match(validation, /existingValueSnapshot: text\(5000\)/);
-  assert.match(form, /existingValueSnapshot: currentValues\?\.\[fieldKey\]/);
+  for (const internal of [
+    "verification_status",
+    "publication_status",
+    "internal_notes",
+    "reviewer_id",
+  ])
+    assert.doesNotMatch(form, new RegExp(internal));
+  assert.match(fieldMap, /internalOnlyEventKeys/);
 });
 
-test("source and official-response modes enforce their evidence", () => {
-  assert.match(
-    validation,
-    /\["public-source", "official-response"\][\s\S]*?value\.sources\.length === 0/,
-  );
-  assert.match(validation, /fieldKey === "latest_official_response"/);
-  assert.match(validation, /sourceRoles = \[/);
+test("simple answers map into structured proposal categories", () => {
+  for (const mappingRule of [
+    'proposal("neutral_summary", input.whatHappened)',
+    'proposal("general_location", input.location)',
+    'proposal("event_type", input.eventType)',
+    'proposal("main_issue", input.mainIssues)',
+    'proposal("latest_official_response", input.authorityResponse)',
+    'proposal("outcome_or_follow_up", input.outcome)',
+    '"correction_request",',
+  ])
+    assert.ok(mapping.includes(mappingRule), `missing mapping: ${mappingRule}`);
+  assert.match(migration, /editorial_mapping/);
+  assert.match(migration, /correction_request/);
+  assert.match(migration, /never mutates public events/);
 });
 
-test("photo and video evidence are structured and unsafe URLs are rejected", () => {
-  assert.match(validation, /mediaType: z\.enum\(\["photo", "video"\]\)/);
-  assert.match(validation, /Use an HTTP or HTTPS link/);
+test("simple source and media links become normalized records", () => {
+  assert.match(mapping, /const sources = input\.sourceLinks\.map/);
+  assert.match(mapping, /sourceRole:/);
+  assert.match(mapping, /sourceType:/);
+  assert.match(mapping, /input\.photoUrls\.map/);
+  assert.match(mapping, /input\.videoUrls\.map/);
+  assert.match(mapping, /mediaType: "photo"/);
+  assert.match(mapping, /mediaType: "video"/);
   assert.doesNotMatch(form, /type="file"/);
 });
 
-test("form uses progressive repeatable sections and current-value comparison", () => {
-  assert.match(form, /Current published value/);
-  assert.match(form, /Add another field/);
-  assert.match(form, /Add public source/);
-  assert.match(form, /Add photo or video/);
-  assert.match(form, /Photo/);
-  assert.match(form, /Video/);
-  assert.match(form, /Submit for editorial review/);
-});
-
-test("event links preserve contribution type and exact event context", () => {
+test("event context and contribution action remain server-verified", () => {
+  assert.match(page, /relatedEventSlug=\{relatedEvent\?\.slug\}/);
+  assert.match(page, /relatedEventId=\{relatedEvent\?\.internalId\}/);
+  assert.match(page, /relatedEventTitle=\{relatedEvent\?\.title\}/);
+  assert.match(route, /target\.internalId !== lead\.relatedEventId/);
+  assert.match(form, /For: \{relatedEventTitle\}/);
   for (const type of ["public-source", "correction", "official-response"])
     assert.match(eventDetail, new RegExp(`type: "${type}"`));
-  assert.match(page, /relatedEventId=\{relatedEvent\?\.internalId\}/);
-  assert.match(page, /currentEventValues\(relatedEvent\)/);
-  assert.match(page, /if \(event && !relatedEvent\) notFound\(\)/);
 });
 
-test("server validates and writes only through the structured private RPC", () => {
-  assert.match(route, /leadSubmissionSchema\.safeParse\(body\)/);
-  assert.match(route, /supabase\.rpc\("submit_structured_lead"/);
-  assert.match(route, /p_proposals: lead\.proposals/);
-  assert.match(route, /p_sources: lead\.sources/);
-  assert.match(route, /p_media: lead\.media/);
-  assert.doesNotMatch(route, /\.from\("events"\)|submit_lead"/);
-});
-
-test("database remains private, pending review and backward compatible", () => {
-  assert.match(migration, /Legacy lead rows and submit_lead remain readable/);
-  assert.match(migration, /create table public\.lead_event_field_proposals/);
-  assert.match(migration, /create table public\.lead_submission_sources/);
-  assert.match(migration, /create table public\.lead_submission_media/);
-  assert.match(migration, /review_status text not null default 'pending_review'/);
-  assert.match(migration, /revoke all on table[\s\S]*?from public, anon, authenticated/);
-  assert.match(migration, /grant execute on function[\s\S]*?to service_role/);
-  assert.doesNotMatch(migration, /insert into public\.events|update public\.events/);
-});
-
-test("contact, consent, anti-spam and private-review wording remain", () => {
-  assert.match(form, /Email address/);
-  assert.match(form, /Phone number/);
-  assert.match(form, /goodFaith/);
-  assert.match(form, /policyAcknowledgement/);
+test("reader validation remains private, bounded and plain-language", () => {
+  assert.match(validation, /publicLeadSubmissionSchema/);
+  assert.match(validation, /Describe what happened\./);
+  assert.match(validation, /Enter a location\./);
+  assert.match(validation, /Choose when the event happened\./);
+  assert.match(validation, /Enter a valid email address\./);
+  assert.match(validation, /Use an HTTP or HTTPS link\./);
+  assert.match(validation, /MAX_LEAD_PAYLOAD_BYTES = 64 \* 1024/);
+  assert.match(route, /consumeLeadSubmissionAttempt/);
   assert.match(form, /lead-honeypot/);
-  assert.match(form, /Nothing has been published or changed automatically/);
+});
+
+test("contact, confirmation and media disclosure remain accessible", () => {
+  assert.match(form, /Email address <span>Required<\/span>/);
+  assert.match(form, /Phone number <span>Optional<\/span>/);
+  assert.match(form, /Your contact details will be used only/);
+  assert.match(form, /not be published\./);
+  assert.match(form, /made in\s+good faith/);
+  assert.match(form, /Privacy policy/);
+  assert.match(form, /No photo or video/);
+  assert.match(form, /Photo and video/);
+  assert.match(styles, /\.lead-choice-row label[\s\S]*?min-height: 2\.75rem/);
+});
+
+test("API validates public input, maps it, then uses only the private RPC", () => {
+  assert.ok(
+    route.indexOf("publicLeadSubmissionSchema.safeParse(body)") <
+      route.indexOf("mapPublicLeadSubmission(publicLead)"),
+  );
+  assert.ok(
+    route.indexOf("mapPublicLeadSubmission(publicLead)") <
+      route.indexOf('supabase.rpc("submit_structured_lead"'),
+  );
+  assert.doesNotMatch(route, /\.from\("events"\)|insert into public\.events/);
+  assert.match(route, /submissionMode/);
+  assert.match(route, /proposals/);
+  assert.match(route, /sources/);
+  assert.match(route, /media/);
 });

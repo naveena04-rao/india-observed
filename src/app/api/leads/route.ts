@@ -4,11 +4,13 @@ import { NextResponse } from "next/server";
 import { isSameOriginMutation } from "@/lib/http/sameOrigin";
 import { getReviewedEvents } from "@/lib/events/getReviewedEvents";
 import { consumeLeadSubmissionAttempt } from "@/lib/leads/rateLimit";
+import { mapPublicLeadSubmission } from "@/lib/leads/publicMapping";
 import {
   fieldErrors,
   leadSubmissionSchema,
   MAX_LEAD_PAYLOAD_BYTES,
   normalisePhone,
+  publicLeadSubmissionSchema,
 } from "@/lib/leads/validation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -38,15 +40,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, message: validationMessage }, { status: 400 });
   }
 
-  const parsed = leadSubmissionSchema.safeParse(body);
-  if (!parsed.success) {
+  const publicParsed = publicLeadSubmissionSchema.safeParse(body);
+  if (!publicParsed.success) {
     return NextResponse.json(
-      { ok: false, message: validationMessage, fieldErrors: fieldErrors(parsed.error) },
+      { ok: false, message: validationMessage, fieldErrors: fieldErrors(publicParsed.error) },
       { status: 400 },
     );
   }
 
-  const lead = parsed.data;
+  const publicLead = publicParsed.data;
+  const mapped = leadSubmissionSchema.safeParse(mapPublicLeadSubmission(publicLead));
+  if (!mapped.success) {
+    return NextResponse.json({ ok: false, message: validationMessage }, { status: 400 });
+  }
+  const lead = mapped.data;
   if (lead.submissionMode === "existing-event") {
     const target = (await getReviewedEvents()).find(
       (event) => event.slug === lead.relatedEventSlug,
@@ -55,8 +62,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, message: validationMessage }, { status: 400 });
     }
   }
-  const elapsed = Date.now() - lead.formStartedAt;
-  if (lead.website) {
+  const elapsed = Date.now() - publicLead.formStartedAt;
+  if (publicLead.website) {
     return NextResponse.json({ ok: true });
   }
   if (elapsed < 500 || elapsed > 24 * 60 * 60 * 1000) {
