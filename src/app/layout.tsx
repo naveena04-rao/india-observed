@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AuthFragmentCallback } from "@/app/components/AuthFragmentCallback";
 import { assertProductionLaunchConfiguration, getPublicSiteUrl } from "@/lib/site";
 import "./globals.css";
 
@@ -35,7 +36,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   assertProductionLaunchConfiguration();
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AuthFragmentCallback />
+        {children}
+      </body>
     </html>
   );
 }
