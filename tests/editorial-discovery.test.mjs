@@ -21,6 +21,7 @@ const freeConnectors = read("src/lib/discovery/connectors/freeConnectors.ts");
 const queryStrategy = read("src/lib/discovery/queryStrategy.ts");
 const keywords = JSON.parse(read("data/discovery-keywords.json"));
 const leadInputs = read("src/lib/discovery/leadInputs.ts");
+const sourceDiscovery = read("src/lib/discovery/sourceDiscovery.ts");
 
 test("production scheduling and all external effects default off", () => {
   assert.match(workflow, /scheduler_enabled boolean not null default false/);
@@ -138,6 +139,20 @@ test("query budgets, rotations and reviewed multilingual dictionaries are bounde
   assert.match(geography, /ongoingEventLocalities/);
   assert.match(geography, /weakCoverageStates/);
   assert.match(geography, /recentItemLocalities/);
+});
+
+test("manual dry runs enforce the first-rollout source, item and candidate stops", () => {
+  assert.match(orchestrator, /maximumSources: 20/);
+  assert.match(orchestrator, /maximumItemsPerSource: 20/);
+  assert.match(orchestrator, /maximumFetchedItems: 300/);
+  assert.match(orchestrator, /maximumCandidates: 100/);
+  assert.match(orchestrator, /maximumGdeltSearches: 20/);
+  assert.match(orchestrator, /controlledManualDryRun/);
+  assert.match(orchestrator, /youtube: controlledManualDryRun \? 0 : 100/);
+  assert.match(orchestrator, /bluesky: controlledManualDryRun \? 0 : 500/);
+  assert.match(orchestrator, /status: "skipped"/);
+  assert.match(orchestrator, /limitReached/);
+  assert.match(sourceDiscovery, /maximumItems/);
 });
 
 test("private lead discovery excludes contributor contact details", () => {

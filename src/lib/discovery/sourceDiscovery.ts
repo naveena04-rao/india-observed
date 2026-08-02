@@ -48,8 +48,10 @@ export async function discoverSourceItems(input: {
   source: ScannerSource;
   supabase: SupabaseClient;
   budget: QueryBudget;
+  maximumItems?: number;
 }): Promise<DiscoveryResult> {
   const { source } = input;
+  const maximumItems = Math.max(0, input.maximumItems ?? Number.MAX_SAFE_INTEGER);
   if (["rss", "atom"].includes(source.scan_method)) {
     const response = await fetchApprovedSource(source.scan_url, {
       etag: source.last_etag,
@@ -64,7 +66,7 @@ export async function discoverSourceItems(input: {
       };
     return {
       items: parseFeed(response.body, response.finalUrl)
-        .slice(0, source.daily_request_limit * 50)
+        .slice(0, Math.min(source.daily_request_limit * 50, maximumItems))
         .map((item) => virtualItem(item.url, item.title)),
       etag: response.etag,
       lastModified: response.lastModified,
@@ -78,7 +80,7 @@ export async function discoverSourceItems(input: {
       maximumChildSitemaps: Math.min(source.daily_request_limit - 1, 8),
     });
     return {
-      items: items.map((item) => virtualItem(item.url, item.title)),
+      items: items.slice(0, maximumItems).map((item) => virtualItem(item.url, item.title)),
       etag: null,
       lastModified: null,
       requestCount: Math.min(source.daily_request_limit, 9),
@@ -94,6 +96,7 @@ export async function discoverSourceItems(input: {
     return {
       items: adapter
         .parse(response.body, response.finalUrl)
+        .slice(0, maximumItems)
         .map((item) => virtualItem(item.url, item.title)),
       etag: response.etag,
       lastModified: response.lastModified,
@@ -109,7 +112,7 @@ export async function discoverSourceItems(input: {
       domain: configString(source, "domain") ?? undefined,
     });
     return {
-      items: items.map((item) => virtualItem(item.url, item.title)),
+      items: items.slice(0, maximumItems).map((item) => virtualItem(item.url, item.title)),
       etag: null,
       lastModified: null,
       requestCount: 1,
@@ -128,7 +131,7 @@ export async function discoverSourceItems(input: {
       relevanceLanguage: configString(source, "relevanceLanguage") ?? "en",
     });
     return {
-      items: items.map((item) => virtualItem(item.url, item.title)),
+      items: items.slice(0, maximumItems).map((item) => virtualItem(item.url, item.title)),
       etag: null,
       lastModified: null,
       requestCount: 1,
@@ -140,7 +143,7 @@ export async function discoverSourceItems(input: {
     if (!query) throw new Error("bluesky_query_required");
     const items = await fetchBlueskyCandidates({ query });
     return {
-      items: items.map((item) => virtualItem(item.url, item.title)),
+      items: items.slice(0, maximumItems).map((item) => virtualItem(item.url, item.title)),
       etag: null,
       lastModified: null,
       requestCount: 1,
@@ -149,12 +152,14 @@ export async function discoverSourceItems(input: {
   if (source.scan_method === "lead_submission") {
     const leads = await getPrivateLeadDiscoveryInputs(input.supabase);
     return {
-      items: leads.map((lead) =>
-        virtualItem(
-          `https://india-observed.invalid/private-lead/${lead.id}`,
-          `${lead.title} ${lead.description} ${lead.location}`,
+      items: leads
+        .slice(0, maximumItems)
+        .map((lead) =>
+          virtualItem(
+            `https://india-observed.invalid/private-lead/${lead.id}`,
+            `${lead.title} ${lead.description} ${lead.location}`,
+          ),
         ),
-      ),
       etag: null,
       lastModified: null,
       requestCount: 0,

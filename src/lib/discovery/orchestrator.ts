@@ -6,6 +6,14 @@ import { QueryBudget } from "./queryStrategy";
 import { discoverSourceItems, type ScannerSource } from "./sourceDiscovery";
 import type { SafeFetchedSource } from "./types";
 
+export const manualDryRunLimits = {
+  maximumSources: 20,
+  maximumItemsPerSource: 20,
+  maximumFetchedItems: 300,
+  maximumCandidates: 100,
+  maximumGdeltSearches: 20,
+} as const;
+
 function safeError(error: unknown) {
   const code = error instanceof Error ? error.message : "discovery_error";
   return {
@@ -117,13 +125,15 @@ export async function runDiscoveryScan(input: {
   scheduledFor?: string | null;
   dryRun?: boolean;
 }) {
+  const dryRun = input.dryRun ?? true;
+  const controlledManualDryRun = input.trigger === "manual" && dryRun;
   const day = input.scheduledFor ?? new Date().toISOString().slice(0, 10);
   const idempotencyKey = `${input.trigger}:${day}:discovery-v1`;
   const { data: runId, error: startError } = await input.supabase.rpc("start_scan_run", {
     p_trigger_type: input.trigger,
     p_idempotency_key: idempotencyKey,
     p_scheduled_for: input.scheduledFor ?? null,
-    p_dry_run: input.dryRun ?? true,
+    p_dry_run: dryRun,
   });
   if (startError || !runId) throw new Error("scan_run_start_failed");
   const { data, error } = await input.supabase
@@ -132,19 +142,36 @@ export async function runDiscoveryScan(input: {
       "id,name,scan_url,scan_method,state,compliance_registry_id,last_etag,last_modified_header,connector_config,daily_request_limit,compliance_registry!inner(production_enabled,legal_review_status,review_expires_at)",
     )
     .eq("enabled", true)
-    .eq("compliance_registry.production_enabled", true);
+    .eq("compliance_registry.production_enabled", true)
+    .order("name");
   if (error) throw new Error("scan_source_query_failed");
-  const sources = (data ?? []) as unknown as ScannerSource[];
-  const budget = new QueryBudget({ gdelt: 60, youtube: 100, bluesky: 500 });
+  const eligibleSources = (data ?? []) as unknown as ScannerSource[];
+  const sources = controlledManualDryRun
+    ? eligibleSources.slice(0, manualDryRunLimits.maximumSources)
+    : eligibleSources;
+  const budget = new QueryBudget({
+    gdelt: controlledManualDryRun ? manualDryRunLimits.maximumGdeltSearches : 60,
+    youtube: controlledManualDryRun ? 0 : 100,
+    bluesky: controlledManualDryRun ? 0 : 500,
+  });
   let successes = 0;
   let failures = 0;
   let candidates = 0;
+  let itemsFetched = 0;
+  let limitReached: "fetched_item_limit" | "candidate_limit" | null = null;
   await input.supabase
     .from("scan_runs")
     .update({ status: "running", source_count: sources.length })
     .eq("id", runId);
 
   for (const source of sources) {
+    const remainingFetchedItems = controlledManualDryRun
+      ? manualDryRunLimits.maximumFetchedItems - itemsFetched
+      : undefined;
+    if (remainingFetchedItems !== undefined && remainingFetchedItems <= 0) {
+      limitReached = "fetched_item_limit";
+      break;
+    }
     const { data: job } = await input.supabase
       .from("scan_jobs")
       .update({ status: "running", attempt_count: 1, started_at: new Date().toISOString() })
@@ -153,11 +180,27 @@ export async function runDiscoveryScan(input: {
       .select("id")
       .single();
     try {
-      const discovered = await discoverSourceItems({ source, supabase: input.supabase, budget });
+      const discovered = await discoverSourceItems({
+        source,
+        supabase: input.supabase,
+        budget,
+        maximumItems: controlledManualDryRun
+          ? Math.min(manualDryRunLimits.maximumItemsPerSource, remainingFetchedItems!)
+          : undefined,
+      });
+      itemsFetched += discovered.items.length;
       let itemCount = 0;
-      for (const fetched of discovered.items)
+      for (const fetched of discovered.items) {
+        if (
+          controlledManualDryRun &&
+          candidates + itemCount >= manualDryRunLimits.maximumCandidates
+        ) {
+          limitReached = "candidate_limit";
+          break;
+        }
         if (await persistCandidate({ supabase: input.supabase, runId, source, fetched }))
           itemCount += 1;
+      }
       candidates += itemCount;
       successes += 1;
       await input.supabase
@@ -181,6 +224,9 @@ export async function runDiscoveryScan(input: {
           last_modified_header: discovered.lastModified,
         })
         .eq("id", source.id);
+      if (controlledManualDryRun && itemsFetched >= manualDryRunLimits.maximumFetchedItems)
+        limitReached = "fetched_item_limit";
+      if (limitReached) break;
     } catch (error) {
       failures += 1;
       const safe = safeError(error);
@@ -203,11 +249,37 @@ export async function runDiscoveryScan(input: {
         .eq("id", source.id);
     }
   }
-  const status = failures && !successes ? "failed" : failures ? "incomplete" : "completed";
+  if (controlledManualDryRun && eligibleSources.length > sources.length)
+    await input.supabase
+      .from("scan_jobs")
+      .update({ status: "skipped", completed_at: new Date().toISOString() })
+      .eq("scan_run_id", runId)
+      .eq("status", "queued");
+  if (limitReached)
+    await input.supabase
+      .from("scan_jobs")
+      .update({ status: "skipped", completed_at: new Date().toISOString() })
+      .eq("scan_run_id", runId)
+      .eq("status", "queued");
+  const status =
+    limitReached || (controlledManualDryRun && eligibleSources.length > sources.length)
+      ? "incomplete"
+      : failures && !successes
+        ? "failed"
+        : failures
+          ? "incomplete"
+          : "completed";
   const { count: duplicateCount } = await input.supabase
     .from("discovery_duplicate_observations")
     .select("id", { count: "exact", head: true })
     .eq("scan_run_id", runId);
+  const quotaUsage = {
+    ...budget.snapshot(),
+    controlledManualDryRun,
+    itemsFetched,
+    limits: controlledManualDryRun ? manualDryRunLimits : null,
+    limitReached,
+  };
   await input.supabase
     .from("scan_runs")
     .update({
@@ -217,7 +289,8 @@ export async function runDiscoveryScan(input: {
       failure_count: failures,
       new_event_candidate_count: candidates,
       duplicate_candidate_count: duplicateCount ?? 0,
-      quota_usage: budget.snapshot(),
+      quota_usage: quotaUsage,
+      error_summary: limitReached,
     })
     .eq("id", runId);
   return {
@@ -227,7 +300,9 @@ export async function runDiscoveryScan(input: {
     successes,
     failures,
     candidates,
-    quotaUsage: budget.snapshot(),
+    itemsFetched,
+    limitReached,
+    quotaUsage,
     fingerprint: createHash("sha256").update(idempotencyKey).digest("hex"),
   };
 }
