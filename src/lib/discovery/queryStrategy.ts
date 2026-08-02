@@ -1,5 +1,6 @@
 import { reviewedEventsPreview } from "@/data/reviewed-events-preview";
 import { getReviewedTerms, updateTerms } from "./termConfiguration";
+import { discoveryLanguages } from "./queries";
 export { buildPriorityLocalities, reviewedLocalitiesByState } from "./geography";
 
 export const indiaStatesAndTerritories = [
@@ -112,4 +113,52 @@ export function rotatingCoverageBatch<T>(values: readonly T[], dayNumber: number
     { length: Math.min(size, values.length) },
     (_, index) => values[(dayNumber * size + index) % values.length]!,
   );
+}
+
+export type ManualGdeltQuery = {
+  query: string;
+  stateHint: string | null;
+  languageHint: string | null;
+  family: "national" | "state" | "language" | "response" | "ongoing";
+};
+
+export function buildManualGdeltDryRunQueries(): ManualGdeltQuery[] {
+  const english = orGroup(getReviewedTerms("English"));
+  const queries: ManualGdeltQuery[] = [
+    { query: `${english} India`, stateHint: null, languageHint: "English", family: "national" },
+    ...indiaStatesAndTerritories.map((state) => ({
+      query: `${english} "${state}" India`,
+      stateHint: state,
+      languageHint: "English",
+      family: "state" as const,
+    })),
+    ...discoveryLanguages.map((language) => ({
+      query: `${orGroup(getReviewedTerms(language))} India`,
+      stateHint: null,
+      languageHint: language,
+      family: "language" as const,
+    })),
+    {
+      query: `${english} India ${orGroup(updateTerms)}`,
+      stateHint: null,
+      languageHint: "English",
+      family: "response",
+    },
+    {
+      query: `${english} India ("official response" OR settlement OR "court order" OR "government action")`,
+      stateHint: null,
+      languageHint: "English",
+      family: "response",
+    },
+    ...reviewedEventsPreview
+      .filter((event) => event.publicationStatus === "published" && event.eventStatus === "Ongoing")
+      .slice(0, 8)
+      .map((event) => ({
+        query: `"${event.title}" ${orGroup(updateTerms)}`,
+        stateHint: event.stateOrUnionTerritory,
+        languageHint: "English",
+        family: "ongoing" as const,
+      })),
+  ];
+  return queries.slice(0, 60);
 }

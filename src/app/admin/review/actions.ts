@@ -58,7 +58,7 @@ export async function startManualDryRunAction() {
   const supabase = await editor();
   await runDiscoveryScan({
     supabase,
-    trigger: "manual",
+    trigger: "manual_gdelt_dry_run",
     dryRun: true,
     scheduledFor: null,
   });

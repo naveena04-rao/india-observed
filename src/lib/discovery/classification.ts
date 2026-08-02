@@ -78,11 +78,11 @@ export function classifyDiscoveredItem(input: {
   }
 
   return {
-    candidateType: "manual_review",
+    candidateType: "irrelevant",
     targetEventSlug: null,
     state: null,
     confidence: 0.25,
     priority: "low",
-    reason: "The item does not safely match a reviewed event or a deterministic civic-event rule.",
+    reason: "The metadata does not match a reviewed event or a deterministic civic-event rule.",
   };
 }
