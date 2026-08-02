@@ -29,7 +29,8 @@ test("fragment credentials are removed before they are exchanged or redirected",
   assert.doesNotMatch(callback, /console\.|localStorage|sessionStorage/);
 });
 
-test("token-hash confirmation and strict production CSP remain intact", () => {
+test("PKCE and token-hash confirmation paths keep strict production CSP intact", () => {
+  assert.match(confirmRoute, /exchangeCodeForSession\(code\)/);
   assert.match(confirmRoute, /verifyOtp\(\{ token_hash: tokenHash, type: "email" \}\)/);
   assert.match(nextConfig, /nodeEnv === "development" \? " 'unsafe-eval'" : ""/);
   assert.doesNotMatch(

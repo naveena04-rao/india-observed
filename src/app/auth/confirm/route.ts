@@ -5,10 +5,16 @@ import { createSessionSupabaseClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
   const returnTo = safeReturnPath(request.nextUrl.searchParams.get("returnTo"));
+  const code = request.nextUrl.searchParams.get("code");
   const tokenHash = request.nextUrl.searchParams.get("token_hash");
   const type = request.nextUrl.searchParams.get("type");
   const { enabled } = getAuthenticationAvailability(returnTo);
   const supabase = enabled ? await createSessionSupabaseClient() : null;
+
+  if (supabase && code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) return NextResponse.redirect(new URL(returnTo, request.url));
+  }
 
   if (supabase && tokenHash && type === "email") {
     const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: "email" });
