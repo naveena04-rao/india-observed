@@ -2,10 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { ArchiveShell } from "@/app/events/components/ArchiveShell";
+import { getAuthenticationAvailability } from "@/lib/auth/availability";
 import { getAuthenticationOrigin } from "@/lib/auth/origin";
 import { safeReturnPath } from "@/lib/auth/returnPath";
-import { getEventFollowingAvailability } from "@/lib/events/following";
-import { getMediaLibraryAvailability } from "@/lib/media/config";
 import { createSessionSupabaseClient } from "@/lib/supabase/server";
 
 const emailSchema = z.string().trim().email().max(254);
@@ -15,12 +14,9 @@ async function requestMagicLink(formData: FormData) {
 
   const returnTo = safeReturnPath(String(formData.get("returnTo") ?? ""));
   const email = emailSchema.safeParse(formData.get("email"));
-  const { enabled } = getEventFollowingAvailability();
-  const mediaAuthenticationEnabled =
-    returnTo.startsWith("/admin/media") && getMediaLibraryAvailability().enabled;
+  const { enabled } = getAuthenticationAvailability(returnTo);
   const origin = await getAuthenticationOrigin();
-  const supabase =
-    enabled || mediaAuthenticationEnabled ? await createSessionSupabaseClient() : null;
+  const supabase = enabled ? await createSessionSupabaseClient() : null;
 
   if (!email.success) {
     redirect(`/auth/sign-in?invalid=1&returnTo=${encodeURIComponent(returnTo)}`);
@@ -53,10 +49,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   const invalid = query.invalid === "1";
   const unavailable = query.unavailable === "1";
   const invalidLink = query.status === "invalid-link";
-  const { enabled } = getEventFollowingAvailability();
-  const mediaAuthenticationEnabled =
-    returnTo.startsWith("/admin/media") && getMediaLibraryAvailability().enabled;
-  const authenticationEnabled = enabled || mediaAuthenticationEnabled;
+  const { enabled: authenticationEnabled } = getAuthenticationAvailability(returnTo);
 
   return (
     <ArchiveShell authReturnTo={returnTo}>
