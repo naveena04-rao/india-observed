@@ -189,10 +189,11 @@ test("required explanatory copy remains on sign-in, Privacy and documentation on
   );
 });
 
-test("passwordless token-hash flow preserves only safe internal return paths", () => {
+test("passwordless confirmation flows preserve only safe internal return paths", () => {
   assert.match(signIn, /signInWithOtp/);
   assert.match(signIn, /shouldCreateUser: true/);
   assert.doesNotMatch(signIn, /password|google|github/i);
+  assert.match(confirm, /exchangeCodeForSession\(code\)/);
   assert.match(confirm, /verifyOtp\(\{ token_hash: tokenHash, type: "email" \}\)/);
   assert.match(returnPath, /!value\.startsWith\("\/"\)/);
   assert.match(returnPath, /value\.startsWith\("\/\/"\)/);
