@@ -16,6 +16,7 @@ const signOut = read("src/app/auth/sign-out/route.ts");
 const privacy = read("src/app/privacy/page.tsx");
 const featureGate = read("src/lib/events/following.ts");
 const returnPath = read("src/lib/auth/returnPath.ts");
+const authenticationAvailability = read("src/lib/auth/availability.ts");
 const sameOrigin = read("src/lib/http/sameOrigin.ts");
 const sameOriginModule = await import(
   `data:text/javascript,${encodeURIComponent(
@@ -198,6 +199,15 @@ test("passwordless token-hash flow preserves only safe internal return paths", (
   assert.match(returnPath, /return fallbackReturnPath/);
   assert.match(signOut, /auth\.signOut\(\{ scope: "local" \}\)/);
   assert.doesNotMatch(signOut, /unfollow_event|event_follows/);
+});
+
+test("editor authentication remains available independently of reader feature flags", () => {
+  assert.match(authenticationAvailability, /returnTo === "\/admin\/review"/);
+  assert.match(authenticationAvailability, /returnTo\.startsWith\("\/admin\/review\/"\)/);
+  assert.match(authenticationAvailability, /configured && isEditorialAdminReturnPath\(returnTo\)/);
+  assert.match(signIn, /getAuthenticationAvailability\(returnTo\)/);
+  assert.match(confirm, /getAuthenticationAvailability\(returnTo\)/);
+  assert.doesNotMatch(signIn + confirm, /SUPABASE_SERVICE_ROLE_KEY/);
 });
 
 test("Production gate rejects the known development project and fails closed", () => {
