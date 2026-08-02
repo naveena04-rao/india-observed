@@ -29,4 +29,13 @@ export type SafeFetchedSource = {
   etag: string | null;
   lastModified: string | null;
   notModified: boolean;
+  discoveryMetadata?: {
+    publisher?: string | null;
+    publishedAt?: string | null;
+    detectedLanguage?: string | null;
+    stateHint?: string | null;
+    queryFamily?: string | null;
+    queryIndex?: number;
+    metadataOnly?: boolean;
+  };
 };

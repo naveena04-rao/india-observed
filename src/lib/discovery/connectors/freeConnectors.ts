@@ -147,10 +147,22 @@ export function gdeltDocUrl(input: {
   return url.toString();
 }
 
-export async function fetchGdeltCandidates(input: { query: string; domain?: string }) {
+export async function fetchGdeltCandidates(input: {
+  query: string;
+  domain?: string;
+  minutes?: number;
+  maxRecords?: number;
+}) {
   const response = await fetchApprovedSource(gdeltDocUrl(input));
   const payload = JSON.parse(response.body) as {
-    articles?: Array<{ url?: string; title?: string; seendate?: string }>;
+    articles?: Array<{
+      url?: string;
+      title?: string;
+      seendate?: string;
+      domain?: string;
+      language?: string;
+      sourcecountry?: string;
+    }>;
   };
   return (payload.articles ?? []).flatMap((item) =>
     item.url
@@ -159,6 +171,9 @@ export async function fetchGdeltCandidates(input: { query: string; domain?: stri
             url: item.url,
             title: item.title ?? null,
             publishedAt: item.seendate ?? null,
+            publisher: item.domain ?? null,
+            language: item.language ?? null,
+            sourceCountry: item.sourcecountry ?? null,
             sourceKind: "api" as const,
           },
         ]

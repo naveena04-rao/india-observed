@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getServerEnvironment } from "@/lib/env";
 import { fetchApprovedSource } from "./fetchSafety";
 import { getPrivateLeadDiscoveryInputs } from "./leadInputs";
-import { QueryBudget } from "./queryStrategy";
+import { buildManualGdeltDryRunQueries, QueryBudget } from "./queryStrategy";
 import {
   fetchBlueskyCandidates,
   fetchGdeltCandidates,
@@ -32,7 +32,11 @@ type DiscoveryResult = {
   lastModified: string | null;
   requestCount: number;
 };
-const virtualItem = (url: string, title: string | null): SafeFetchedSource => ({
+const virtualItem = (
+  url: string,
+  title: string | null,
+  discoveryMetadata?: SafeFetchedSource["discoveryMetadata"],
+): SafeFetchedSource => ({
   finalUrl: url,
   contentType: "text/plain",
   body: title ?? new URL(url).pathname.replaceAll("/", " "),
@@ -40,6 +44,7 @@ const virtualItem = (url: string, title: string | null): SafeFetchedSource => ({
   etag: null,
   lastModified: null,
   notModified: false,
+  discoveryMetadata,
 });
 const configString = (source: ScannerSource, key: string) =>
   typeof source.connector_config[key] === "string" ? String(source.connector_config[key]) : null;
@@ -104,18 +109,52 @@ export async function discoverSourceItems(input: {
     };
   }
   if (source.scan_method === "gdelt") {
-    if (!input.budget.take("gdelt")) throw new Error("gdelt_daily_quota_reached");
-    const query = configString(source, "query");
-    if (!query) throw new Error("gdelt_query_required");
-    const items = await fetchGdeltCandidates({
-      query,
-      domain: configString(source, "domain") ?? undefined,
-    });
+    const plannedQueries =
+      configString(source, "queryMode") === "manual_civic_metadata"
+        ? buildManualGdeltDryRunQueries()
+        : [
+            {
+              query: configString(source, "query") ?? "",
+              stateHint: source.state,
+              languageHint: null,
+              family: "national" as const,
+            },
+          ];
+    if (!plannedQueries[0]?.query) throw new Error("gdelt_query_required");
+    const items: SafeFetchedSource[] = [];
+    const seen = new Set<string>();
+    let requestCount = 0;
+    for (const [queryIndex, planned] of plannedQueries.entries()) {
+      if (items.length >= maximumItems) break;
+      if (!input.budget.take("gdelt")) break;
+      requestCount += 1;
+      const results = await fetchGdeltCandidates({
+        query: planned.query,
+        domain: configString(source, "domain") ?? undefined,
+        minutes: 2880,
+        maxRecords: Math.min(20, maximumItems - items.length),
+      });
+      for (const item of results) {
+        if (items.length >= maximumItems || seen.has(item.url)) continue;
+        seen.add(item.url);
+        items.push(
+          virtualItem(item.url, item.title, {
+            publisher: item.publisher,
+            publishedAt: item.publishedAt,
+            detectedLanguage: item.language ?? planned.languageHint,
+            stateHint: planned.stateHint,
+            queryFamily: planned.family,
+            queryIndex,
+            metadataOnly: true,
+          }),
+        );
+      }
+    }
     return {
-      items: items.slice(0, maximumItems).map((item) => virtualItem(item.url, item.title)),
+      items,
       etag: null,
       lastModified: null,
-      requestCount: 1,
+      requestCount,
     };
   }
   if (source.scan_method === "youtube_api") {

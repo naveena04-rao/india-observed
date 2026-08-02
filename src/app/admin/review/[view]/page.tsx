@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { ArchiveShell } from "@/app/events/components/ArchiveShell";
 import { connectorManifests } from "@/lib/discovery/connectors/registry";
 import { getEditorialAdminSession } from "@/lib/editorial/admin";
+import { groupCandidatesByState } from "@/lib/editorial/candidateGrouping";
 import { startManualDryRunAction } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +37,7 @@ type Candidate = {
   corroboration_status: string;
   independent_source_count: number;
   review_status: string;
-  created_at: string;
+  discovery_time: string;
   target_event_slug: string | null;
 };
 type Compliance = {
@@ -76,9 +77,9 @@ export default async function EditorialReviewPage({
     session.supabase
       .from("editorial_candidates")
       .select(
-        "id,candidate_type,suggested_title,state,district_or_region,priority,confidence,corroboration_status,independent_source_count,review_status,created_at,target_event_slug",
+        "id,candidate_type,suggested_title,state,district_or_region,priority,confidence,corroboration_status,independent_source_count,review_status,discovery_time,target_event_slug",
       )
-      .order("created_at", { ascending: false })
+      .order("discovery_time", { ascending: false })
       .limit(100),
     session.supabase
       .from("scan_runs")
@@ -212,6 +213,7 @@ export default async function EditorialReviewPage({
 }
 
 function CandidateList({ candidates }: { candidates: Candidate[] }) {
+  const groups = groupCandidatesByState(candidates);
   return (
     <section aria-labelledby="candidate-heading">
       <h2 id="candidate-heading">Review queue</h2>
@@ -220,49 +222,56 @@ function CandidateList({ candidates }: { candidates: Candidate[] }) {
           No candidates in this view. Production scanning is disabled.
         </p>
       ) : (
-        <ol className="editor-review__list">
-          {candidates.map((item) => (
-            <li key={item.id}>
-              <div>
-                <span className="editor-review__badge">
-                  {item.candidate_type.replaceAll("_", " ")}
-                </span>
-                <span>{item.priority}</span>
-              </div>
-              <h3>
-                <Link href={`/admin/review/candidates/${item.id}`}>
-                  {item.suggested_title ?? "Untitled candidate"}
-                </Link>
-              </h3>
-              <p>
-                {[item.state, item.district_or_region, item.target_event_slug]
-                  .filter(Boolean)
-                  .join(" · ") || "Location or event match requires review"}
-              </p>
-              <dl>
-                <div>
-                  <dt>Confidence</dt>
-                  <dd>
-                    {item.confidence === null
-                      ? "Not scored"
-                      : `${Math.round(item.confidence * 100)}%`}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Corroboration</dt>
-                  <dd>
-                    {item.corroboration_status.replaceAll("_", " ")} (
-                    {item.independent_source_count})
-                  </dd>
-                </div>
-                <div>
-                  <dt>Status</dt>
-                  <dd>{item.review_status.replaceAll("_", " ")}</dd>
-                </div>
-              </dl>
-            </li>
+        <div className="editor-review__state-groups">
+          {groups.map((group) => (
+            <section key={group.state} aria-labelledby={`state-${group.state}`}>
+              <h3 id={`state-${group.state}`}>{group.state}</h3>
+              <ol className="editor-review__list">
+                {group.items.map((item) => (
+                  <li key={item.id}>
+                    <div>
+                      <span className="editor-review__badge">
+                        {item.candidate_type.replaceAll("_", " ")}
+                      </span>
+                      <span>{item.priority}</span>
+                    </div>
+                    <h3>
+                      <Link href={`/admin/review/candidates/${item.id}`}>
+                        {item.suggested_title ?? "Untitled candidate"}
+                      </Link>
+                    </h3>
+                    <p>
+                      {[item.state, item.district_or_region, item.target_event_slug]
+                        .filter(Boolean)
+                        .join(" · ") || "Location or event match requires review"}
+                    </p>
+                    <dl>
+                      <div>
+                        <dt>Confidence</dt>
+                        <dd>
+                          {item.confidence === null
+                            ? "Not scored"
+                            : `${Math.round(item.confidence * 100)}%`}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Corroboration</dt>
+                        <dd>
+                          {item.corroboration_status.replaceAll("_", " ")} (
+                          {item.independent_source_count})
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Status</dt>
+                        <dd>{item.review_status.replaceAll("_", " ")}</dd>
+                      </div>
+                    </dl>
+                  </li>
+                ))}
+              </ol>
+            </section>
           ))}
-        </ol>
+        </div>
       )}
     </section>
   );
@@ -364,7 +373,7 @@ function SettingsView() {
         </li>
       </ul>
       <form action={startManualDryRunAction}>
-        <button type="submit">Start manual dry run</button>
+        <button type="submit">Start one-time GDELT metadata dry run</button>
       </form>
     </section>
   );

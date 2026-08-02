@@ -22,6 +22,9 @@ const queryStrategy = read("src/lib/discovery/queryStrategy.ts");
 const keywords = JSON.parse(read("data/discovery-keywords.json"));
 const leadInputs = read("src/lib/discovery/leadInputs.ts");
 const sourceDiscovery = read("src/lib/discovery/sourceDiscovery.ts");
+const controlledGdelt = read(
+  "supabase/migrations/20260802000100_add_controlled_gdelt_metadata_dry_run.sql",
+);
 
 test("production scheduling and all external effects default off", () => {
   assert.match(workflow, /scheduler_enabled boolean not null default false/);
@@ -146,7 +149,7 @@ test("manual dry runs enforce the first-rollout source, item and candidate stops
   assert.match(orchestrator, /maximumItemsPerSource: 20/);
   assert.match(orchestrator, /maximumFetchedItems: 300/);
   assert.match(orchestrator, /maximumCandidates: 100/);
-  assert.match(orchestrator, /maximumGdeltSearches: 20/);
+  assert.match(orchestrator, /maximumGdeltSearches: 60/);
   assert.match(orchestrator, /controlledManualDryRun/);
   assert.match(orchestrator, /youtube: controlledManualDryRun \? 0 : 100/);
   assert.match(orchestrator, /bluesky: controlledManualDryRun \? 0 : 500/);
@@ -160,4 +163,15 @@ test("private lead discovery excludes contributor contact details", () => {
   assert.match(select, /title,description,location/);
   assert.doesNotMatch(select, /contact_email|contact_phone/);
   assert.match(leadInputs, /pending_review/);
+});
+
+test("controlled GDELT run is metadata-only, single-use and never scheduled", () => {
+  assert.match(controlledGdelt, /manual_gdelt_dry_run/);
+  assert.match(controlledGdelt, /manual_dry_run_only/);
+  assert.match(controlledGdelt, /manual_run_consumed_at/);
+  assert.match(controlledGdelt, /fullArticleFetching.*false/);
+  assert.match(controlledGdelt, /mediaFetching.*false/);
+  assert.match(controlledGdelt, /enabled = false/);
+  assert.match(orchestrator, /approved_for_controlled_metadata_dry_run/);
+  assert.match(sourceDiscovery, /buildManualGdeltDryRunQueries/);
 });

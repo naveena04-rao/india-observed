@@ -11,7 +11,7 @@ export const manualDryRunLimits = {
   maximumItemsPerSource: 20,
   maximumFetchedItems: 300,
   maximumCandidates: 100,
-  maximumGdeltSearches: 20,
+  maximumGdeltSearches: 60,
 } as const;
 
 function safeError(error: unknown) {
@@ -80,13 +80,24 @@ async function persistCandidate(input: {
         canonical_url: processed.canonicalUrl,
         title: processed.title,
         original_language: processed.originalLanguage,
-        original_text: processed.originalText.slice(0, 32000),
+        original_text: input.fetched.discoveryMetadata?.metadataOnly
+          ? null
+          : processed.originalText.slice(0, 32000),
+        published_at: input.fetched.discoveryMetadata?.publishedAt ?? null,
         translated_text: null,
         language_confidence: processed.languageConfidence,
         source_metadata: {
           bytesRead: input.fetched.bytesRead,
           safetyFlags: processed.safetyFlags,
           pipelineTrace: processed.pipelineTrace,
+          publisher: input.fetched.discoveryMetadata?.publisher ?? input.source.name,
+          detectedLanguage: input.fetched.discoveryMetadata?.detectedLanguage ?? null,
+          stateHint: input.fetched.discoveryMetadata?.stateHint ?? null,
+          queryFamily: input.fetched.discoveryMetadata?.queryFamily ?? null,
+          queryIndex: input.fetched.discoveryMetadata?.queryIndex ?? null,
+          collectionBoundary: input.fetched.discoveryMetadata?.metadataOnly
+            ? "metadata_and_canonical_link_only"
+            : "approved_source",
         },
         content_fingerprint: processed.fingerprint,
         normalized_title_fingerprint: normalizedTitleFingerprint,
@@ -105,7 +116,7 @@ async function persistCandidate(input: {
     candidate_type: manualReview ? "manual_review" : classification.candidateType,
     target_event_slug: classification.targetEventSlug,
     suggested_title: processed.title,
-    state: classification.state ?? input.source.state,
+    state: classification.state ?? input.fetched.discoveryMetadata?.stateHint ?? input.source.state,
     priority:
       processed.safetyFlags.possibleChild || processed.safetyFlags.liveTacticalLocation
         ? "urgent_editor_attention"
@@ -120,13 +131,15 @@ async function persistCandidate(input: {
 
 export async function runDiscoveryScan(input: {
   supabase: SupabaseClient;
-  trigger: "manual" | "scheduled" | "retry";
+  trigger: "manual" | "manual_gdelt_dry_run" | "scheduled" | "retry";
   requestedBy?: string | null;
   scheduledFor?: string | null;
   dryRun?: boolean;
 }) {
   const dryRun = input.dryRun ?? true;
-  const controlledManualDryRun = input.trigger === "manual" && dryRun;
+  const controlledManualDryRun =
+    ["manual", "manual_gdelt_dry_run"].includes(input.trigger) && dryRun;
+  const controlledGdeltRun = input.trigger === "manual_gdelt_dry_run" && dryRun;
   const day = input.scheduledFor ?? new Date().toISOString().slice(0, 10);
   const idempotencyKey = `${input.trigger}:${day}:discovery-v1`;
   const { data: runId, error: startError } = await input.supabase.rpc("start_scan_run", {
@@ -136,14 +149,22 @@ export async function runDiscoveryScan(input: {
     p_dry_run: dryRun,
   });
   if (startError || !runId) throw new Error("scan_run_start_failed");
-  const { data, error } = await input.supabase
+  let sourceQuery = input.supabase
     .from("scan_sources")
     .select(
-      "id,name,scan_url,scan_method,state,compliance_registry_id,last_etag,last_modified_header,connector_config,daily_request_limit,compliance_registry!inner(production_enabled,legal_review_status,review_expires_at)",
+      "id,name,scan_url,scan_method,state,compliance_registry_id,last_etag,last_modified_header,connector_config,daily_request_limit,manual_dry_run_only,manual_run_consumed_at,compliance_registry!inner(production_enabled,legal_review_status,review_expires_at)",
     )
-    .eq("enabled", true)
     .eq("compliance_registry.production_enabled", true)
     .order("name");
+  sourceQuery = controlledGdeltRun
+    ? sourceQuery
+        .eq("enabled", false)
+        .eq("manual_dry_run_only", true)
+        .eq("scan_method", "gdelt")
+        .is("manual_run_consumed_at", null)
+        .eq("compliance_registry.legal_review_status", "approved_for_controlled_metadata_dry_run")
+    : sourceQuery.eq("enabled", true);
+  const { data, error } = await sourceQuery;
   if (error) throw new Error("scan_source_query_failed");
   const eligibleSources = (data ?? []) as unknown as ScannerSource[];
   const sources = controlledManualDryRun
@@ -185,7 +206,9 @@ export async function runDiscoveryScan(input: {
         supabase: input.supabase,
         budget,
         maximumItems: controlledManualDryRun
-          ? Math.min(manualDryRunLimits.maximumItemsPerSource, remainingFetchedItems!)
+          ? controlledGdeltRun
+            ? remainingFetchedItems
+            : Math.min(manualDryRunLimits.maximumItemsPerSource, remainingFetchedItems!)
           : undefined,
       });
       itemsFetched += discovered.items.length;
@@ -273,6 +296,12 @@ export async function runDiscoveryScan(input: {
     .from("discovery_duplicate_observations")
     .select("id", { count: "exact", head: true })
     .eq("scan_run_id", runId);
+  const { data: candidateCounts } = await input.supabase
+    .from("editorial_candidates")
+    .select("candidate_type,discovered_items!inner(first_scan_run_id)")
+    .eq("discovered_items.first_scan_run_id", runId);
+  const countType = (type: string) =>
+    (candidateCounts ?? []).filter((candidate) => candidate.candidate_type === type).length;
   const quotaUsage = {
     ...budget.snapshot(),
     controlledManualDryRun,
@@ -287,12 +316,22 @@ export async function runDiscoveryScan(input: {
       completed_at: new Date().toISOString(),
       success_count: successes,
       failure_count: failures,
-      new_event_candidate_count: candidates,
+      new_event_candidate_count: countType("new_event"),
+      update_candidate_count: countType("event_update"),
+      official_response_candidate_count: countType("official_response"),
       duplicate_candidate_count: duplicateCount ?? 0,
       quota_usage: quotaUsage,
       error_summary: limitReached,
     })
     .eq("id", runId);
+  if (controlledGdeltRun && sources.length)
+    await input.supabase
+      .from("scan_sources")
+      .update({ manual_run_consumed_at: new Date().toISOString() })
+      .in(
+        "id",
+        sources.map((source) => source.id),
+      );
   return {
     runId,
     status,
