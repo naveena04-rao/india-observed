@@ -17,6 +17,14 @@ export const manualDryRunLimits = {
   maximumBlueskyRequests: 100,
 } as const;
 
+export const pibRssDryRunLimits = {
+  maximumSources: 1,
+  maximumItemsPerSource: 20,
+  maximumFetchedItems: 20,
+  maximumCandidates: 15,
+  timeWindowHours: 72,
+} as const;
+
 function safeError(error: unknown, source: ScannerSource) {
   const code =
     error instanceof Error && ["AbortError", "TimeoutError"].includes(error.name)
@@ -172,16 +180,29 @@ async function persistCandidate(input: {
 
 export async function runDiscoveryScan(input: {
   supabase: SupabaseClient;
-  trigger: "manual" | "manual_gdelt_dry_run" | "manual_fallback_dry_run" | "scheduled" | "retry";
+  trigger:
+    | "manual"
+    | "manual_gdelt_dry_run"
+    | "manual_fallback_dry_run"
+    | "manual_pib_rss_dry_run"
+    | "scheduled"
+    | "retry";
   requestedBy?: string | null;
   scheduledFor?: string | null;
   dryRun?: boolean;
 }) {
   const dryRun = input.dryRun ?? true;
   const controlledManualDryRun =
-    ["manual", "manual_gdelt_dry_run", "manual_fallback_dry_run"].includes(input.trigger) && dryRun;
+    [
+      "manual",
+      "manual_gdelt_dry_run",
+      "manual_fallback_dry_run",
+      "manual_pib_rss_dry_run",
+    ].includes(input.trigger) && dryRun;
   const controlledGdeltRun = input.trigger === "manual_gdelt_dry_run" && dryRun;
   const controlledFallbackRun = input.trigger === "manual_fallback_dry_run" && dryRun;
+  const controlledPibRssRun = input.trigger === "manual_pib_rss_dry_run" && dryRun;
+  const activeLimits = controlledPibRssRun ? pibRssDryRunLimits : manualDryRunLimits;
   const day = input.scheduledFor ?? new Date().toISOString().slice(0, 10);
   const idempotencyKey = `${input.trigger}:${day}:discovery-v1`;
   const { data: runId, error: startError } = controlledGdeltRun
@@ -192,12 +213,16 @@ export async function runDiscoveryScan(input: {
       ? await input.supabase.rpc("claim_manual_fallback_dry_run", {
           p_idempotency_key: idempotencyKey,
         })
-      : await input.supabase.rpc("start_scan_run", {
-          p_trigger_type: input.trigger,
-          p_idempotency_key: idempotencyKey,
-          p_scheduled_for: input.scheduledFor ?? null,
-          p_dry_run: dryRun,
-        });
+      : controlledPibRssRun
+        ? await input.supabase.rpc("claim_manual_pib_rss_dry_run", {
+            p_idempotency_key: idempotencyKey,
+          })
+        : await input.supabase.rpc("start_scan_run", {
+            p_trigger_type: input.trigger,
+            p_idempotency_key: idempotencyKey,
+            p_scheduled_for: input.scheduledFor ?? null,
+            p_dry_run: dryRun,
+          });
   if (startError) {
     if (startError.message.includes("dry_scan_already_running"))
       throw new Error("dry_scan_already_running");
@@ -220,7 +245,15 @@ export async function runDiscoveryScan(input: {
         .eq("scan_method", "gdelt")
         .is("manual_run_consumed_at", null)
         .eq("compliance_registry.legal_review_status", "approved_for_controlled_metadata_dry_run")
-    : sourceQuery.eq("enabled", true);
+    : controlledPibRssRun
+      ? sourceQuery
+          .eq("name", "Press Information Bureau RSS")
+          .eq("enabled", false)
+          .eq("manual_dry_run_only", true)
+          .eq("scan_method", "rss")
+          .is("manual_run_consumed_at", null)
+          .eq("compliance_registry.legal_review_status", "approved_for_controlled_metadata_dry_run")
+      : sourceQuery.eq("enabled", true);
   if (controlledFallbackRun) sourceQuery = sourceQuery.neq("scan_method", "gdelt");
   const { data, error } = await sourceQuery;
   if (error) throw new Error("scan_source_query_failed");
@@ -234,14 +267,15 @@ export async function runDiscoveryScan(input: {
           (fallbackSourcePriority[right.scan_method] ?? 99) || left.name.localeCompare(right.name),
     );
   const sources = controlledManualDryRun
-    ? eligibleSources.slice(0, manualDryRunLimits.maximumSources)
+    ? eligibleSources.slice(0, activeLimits.maximumSources)
     : eligibleSources;
   const budget = new QueryBudget({
-    gdelt: controlledFallbackRun
-      ? 0
-      : controlledManualDryRun
-        ? manualDryRunLimits.maximumGdeltSearches
-        : 60,
+    gdelt:
+      controlledFallbackRun || controlledPibRssRun
+        ? 0
+        : controlledManualDryRun
+          ? manualDryRunLimits.maximumGdeltSearches
+          : 60,
     youtube: controlledFallbackRun ? manualDryRunLimits.maximumYoutubeSearches : 0,
     bluesky: controlledFallbackRun ? manualDryRunLimits.maximumBlueskyRequests : 0,
   });
@@ -270,7 +304,7 @@ export async function runDiscoveryScan(input: {
     });
     connector.sources += 1;
     const remainingFetchedItems = controlledManualDryRun
-      ? manualDryRunLimits.maximumFetchedItems - itemsFetched
+      ? activeLimits.maximumFetchedItems - itemsFetched
       : undefined;
     if (remainingFetchedItems !== undefined && remainingFetchedItems <= 0) {
       limitReached = "fetched_item_limit";
@@ -291,17 +325,14 @@ export async function runDiscoveryScan(input: {
         maximumItems: controlledManualDryRun
           ? controlledGdeltRun
             ? remainingFetchedItems
-            : Math.min(manualDryRunLimits.maximumItemsPerSource, remainingFetchedItems!)
+            : Math.min(activeLimits.maximumItemsPerSource, remainingFetchedItems!)
           : undefined,
       });
       itemsFetched += discovered.items.length;
       connector.items += discovered.items.length;
       let itemCount = 0;
       for (const fetched of discovered.items) {
-        if (
-          controlledManualDryRun &&
-          candidates + itemCount >= manualDryRunLimits.maximumCandidates
-        ) {
+        if (controlledManualDryRun && candidates + itemCount >= activeLimits.maximumCandidates) {
           limitReached = "candidate_limit";
           break;
         }
@@ -333,7 +364,7 @@ export async function runDiscoveryScan(input: {
           last_modified_header: discovered.lastModified,
         })
         .eq("id", source.id);
-      if (controlledManualDryRun && itemsFetched >= manualDryRunLimits.maximumFetchedItems)
+      if (controlledManualDryRun && itemsFetched >= activeLimits.maximumFetchedItems)
         limitReached = "fetched_item_limit";
       if (limitReached) break;
     } catch (error) {
@@ -396,7 +427,7 @@ export async function runDiscoveryScan(input: {
     connectorResults,
     controlledManualDryRun,
     itemsFetched,
-    limits: controlledManualDryRun ? manualDryRunLimits : null,
+    limits: controlledManualDryRun ? activeLimits : null,
     limitReached,
   };
   await input.supabase
@@ -414,7 +445,7 @@ export async function runDiscoveryScan(input: {
       error_summary: limitReached,
     })
     .eq("id", runId);
-  if (controlledGdeltRun && sources.length)
+  if ((controlledGdeltRun || controlledPibRssRun) && sources.length)
     await input.supabase
       .from("scan_sources")
       .update({ manual_run_consumed_at: new Date().toISOString() })

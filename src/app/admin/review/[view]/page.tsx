@@ -7,6 +7,7 @@ import { getEditorialAdminSession } from "@/lib/editorial/admin";
 import { groupCandidatesByState } from "@/lib/editorial/candidateGrouping";
 import { ManualGdeltDryRunControl } from "../ManualGdeltDryRunControl";
 import { ManualFallbackDryRunControl } from "../ManualFallbackDryRunControl";
+import { ManualPibRssDryRunControl } from "../ManualPibRssDryRunControl";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -187,6 +188,25 @@ export default async function EditorialReviewPage({
       run.trigger_type === "manual_fallback_dry_run" &&
       (run.status === "queued" || run.status === "running"),
   );
+  const approvedPibRssSources = sources.filter((source) => {
+    const review = compliance.find((record) => record.id === source.compliance_registry_id);
+    return (
+      source.name === "Press Information Bureau RSS" &&
+      source.scan_method === "rss" &&
+      source.enabled === false &&
+      source.manual_dry_run_only &&
+      source.manual_run_consumed_at === null &&
+      source.connector_config?.status === "approved_for_one_manual_metadata_dry_run_only" &&
+      review?.production_enabled === true &&
+      review.legal_review_status === "approved_for_controlled_metadata_dry_run" &&
+      Boolean(review.review_expires_at && new Date(review.review_expires_at) > new Date())
+    );
+  });
+  const activePibRssRun = (scanResult.data ?? []).some(
+    (run) =>
+      run.trigger_type === "manual_pib_rss_dry_run" &&
+      (run.status === "queued" || run.status === "running"),
+  );
   const dryRunDisabledReason = activeManualRun
     ? "A dry scan is already running."
     : approvedManualSources.length === 0
@@ -196,6 +216,11 @@ export default async function EditorialReviewPage({
     ? "A fallback dry scan is already running."
     : approvedFallbackSources.length === 0
       ? "No approved non-GDELT production source is currently available."
+      : null;
+  const pibRssDisabledReason = activePibRssRun
+    ? "A PIB RSS dry scan is already running."
+    : approvedPibRssSources.length === 0
+      ? "The approved one-time PIB RSS dry scan is not currently available."
       : null;
   const filtered = candidates.filter((candidate) =>
     view === "new-events"
@@ -263,6 +288,7 @@ export default async function EditorialReviewPage({
           <>
             <ManualGdeltDryRunControl disabledReason={dryRunDisabledReason} />
             <ManualFallbackDryRunControl disabledReason={fallbackDisabledReason} />
+            <ManualPibRssDryRunControl disabledReason={pibRssDisabledReason} />
           </>
         ) : null}
         {view === "compliance" ? (

@@ -39,19 +39,28 @@ export function classifyDiscoveredItem(input: {
     .sort((left, right) => right.score - left.score);
   const best = ranked[0];
   const content = `${input.title} ${input.text}`.toLowerCase();
+  const pibSource = new URL(input.sourceUrl).hostname.toLowerCase().endsWith("pib.gov.in");
   const officialResponse =
     /\b(official response|government response|court order|administration said|minister announced)\b/.test(
+      content,
+    ) ||
+    (pibSource && /\b(government announced|ministry announced|cabinet approved)\b/.test(content));
+  const outcomeOrStatusChange =
+    pibSource &&
+    /\b(settlement|settled|agreement reached|resolved|concluded|withdrawn|called off|court order|court directed|approved|decision|status change)\b/.test(
       content,
     );
   const mediaEvidence = /\b(video|photograph|photo|footage|livestream)\b/.test(content);
 
   if (best && best.score >= 0.22) {
     return {
-      candidateType: officialResponse
-        ? "official_response"
-        : mediaEvidence
-          ? "media_evidence"
-          : "event_update",
+      candidateType: outcomeOrStatusChange
+        ? "outcome_status_change"
+        : officialResponse
+          ? "official_response"
+          : mediaEvidence
+            ? "media_evidence"
+            : "event_update",
       targetEventSlug: best.event.slug,
       state: best.event.stateOrUnionTerritory,
       confidence: Math.min(0.95, Number((0.55 + best.score).toFixed(4))),
