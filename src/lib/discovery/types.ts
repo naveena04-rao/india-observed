@@ -2,6 +2,7 @@ export const candidateTypes = [
   "new_event",
   "event_update",
   "official_response",
+  "outcome_status_change",
   "new_source",
   "media_evidence",
   "duplicate",

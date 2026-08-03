@@ -143,6 +143,7 @@ export async function fetchApprovedSource(
     resolver?: typeof lookup;
     maximumBytes?: number;
     timeoutMs?: number;
+    maximumRedirects?: number;
     etag?: string | null;
     lastModified?: string | null;
   } = {},
@@ -150,9 +151,10 @@ export async function fetchApprovedSource(
   const fetchImpl = options.fetchImpl ?? fetch;
   const maximumBytes = options.maximumBytes ?? MAX_SOURCE_BYTES;
   const timeoutMs = options.timeoutMs ?? SOURCE_TIMEOUT_MS;
+  const maximumRedirects = Math.max(0, Math.min(options.maximumRedirects ?? MAX_REDIRECTS, 10));
   let current = validateSourceUrl(value);
 
-  for (let redirect = 0; redirect <= MAX_REDIRECTS; redirect += 1) {
+  for (let redirect = 0; redirect <= maximumRedirects; redirect += 1) {
     await assertPublicHostname(current.hostname, options.resolver ?? lookup);
     const response = await fetchImpl(current, {
       redirect: "manual",
@@ -179,7 +181,7 @@ export async function fetchApprovedSource(
     }
 
     if ([301, 302, 303, 307, 308].includes(response.status)) {
-      if (redirect === MAX_REDIRECTS) throw new Error("source_redirect_limit");
+      if (redirect === maximumRedirects) throw new Error("source_redirect_limit");
       const location = response.headers.get("location");
       if (!location) throw new Error("source_redirect_missing");
       current = validateSourceUrl(new URL(location, current).toString());

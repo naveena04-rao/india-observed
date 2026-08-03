@@ -49,6 +49,10 @@ const virtualItem = (
 });
 const configString = (source: ScannerSource, key: string) =>
   typeof source.connector_config[key] === "string" ? String(source.connector_config[key]) : null;
+const configNumber = (source: ScannerSource, key: string) => {
+  const value = source.connector_config[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+};
 
 export async function discoverSourceItems(input: {
   source: ScannerSource;
@@ -59,9 +63,13 @@ export async function discoverSourceItems(input: {
   const { source } = input;
   const maximumItems = Math.max(0, input.maximumItems ?? Number.MAX_SAFE_INTEGER);
   if (["rss", "atom"].includes(source.scan_method)) {
+    const controlledPibRss =
+      source.name === "Press Information Bureau RSS" &&
+      configString(source, "status") === "approved_for_one_manual_metadata_dry_run_only";
     const response = await fetchApprovedSource(source.scan_url, {
       etag: source.last_etag,
       lastModified: source.last_modified_header,
+      ...(controlledPibRss ? { maximumRedirects: 0 } : {}),
     });
     if (response.notModified)
       return {
@@ -70,10 +78,26 @@ export async function discoverSourceItems(input: {
         lastModified: response.lastModified,
         requestCount: 1,
       };
+    const timeWindowHours = configNumber(source, "timeWindowHours");
+    const cutoff = timeWindowHours
+      ? Date.now() - Math.max(1, timeWindowHours) * 60 * 60 * 1000
+      : null;
     return {
       items: parseFeed(response.body, response.finalUrl)
+        .filter((item) => {
+          if (cutoff === null) return true;
+          const publishedAt = item.publishedAt ? Date.parse(item.publishedAt) : Number.NaN;
+          return Number.isFinite(publishedAt) && publishedAt >= cutoff;
+        })
         .slice(0, Math.min(source.daily_request_limit * 50, maximumItems))
-        .map((item) => virtualItem(item.url, item.title)),
+        .map((item) =>
+          virtualItem(item.url, item.title, {
+            publisher: source.name,
+            publishedAt: item.publishedAt,
+            stateHint: source.state,
+            metadataOnly: true,
+          }),
+        ),
       etag: response.etag,
       lastModified: response.lastModified,
       requestCount: 1,

@@ -178,3 +178,57 @@ export async function startFallbackDryRunAction(
     };
   }
 }
+
+export async function startPibRssDryRunAction(
+  previousState: ManualDryRunActionState,
+  formData: FormData,
+): Promise<ManualDryRunActionState> {
+  void previousState;
+  void formData;
+  const startedAt = new Date().toISOString();
+  try {
+    const supabase = await editor();
+    const result = await runDiscoveryScan({
+      supabase,
+      trigger: "manual_pib_rss_dry_run",
+      dryRun: true,
+      scheduledFor: null,
+    });
+    const completedAt = new Date().toISOString();
+    revalidatePath("/admin/review/scan-runs");
+    revalidatePath("/admin/review/today");
+    return {
+      status: result.status,
+      message:
+        result.status === "completed"
+          ? "The one-time PIB RSS metadata dry scan completed. Private review candidates are ready."
+          : (result.safeFailureSummary ??
+            "The PIB RSS dry scan stopped safely. No public records were changed."),
+      runId: result.runId,
+      startedAt,
+      completedAt,
+      queriesUsed: 0,
+      itemsDiscovered: result.itemsFetched,
+      candidatesCreated: result.candidates,
+      failures: result.failures,
+    };
+  } catch (error) {
+    const alreadyRunning = error instanceof Error && error.message === "dry_scan_already_running";
+    const alreadyUsed = error instanceof Error && error.message === "dry_scan_already_used";
+    return {
+      status: alreadyRunning ? "already_running" : "failed",
+      message: alreadyRunning
+        ? "A PIB RSS dry scan is already running."
+        : alreadyUsed
+          ? "The approved one-time PIB RSS dry scan has already been used."
+          : "The PIB RSS dry scan could not be started safely. No public records were changed.",
+      runId: null,
+      startedAt,
+      completedAt: new Date().toISOString(),
+      queriesUsed: 0,
+      itemsDiscovered: 0,
+      candidatesCreated: 0,
+      failures: alreadyRunning ? 0 : 1,
+    };
+  }
+}
