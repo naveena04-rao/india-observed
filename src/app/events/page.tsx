@@ -17,6 +17,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Events | India Observed",
   description: "Browse reviewed records of protests and civic movements across India.",
+  alternates: { canonical: "/events" },
 };
 
 type PageSearchParams = Record<string, string | string[] | undefined>;
