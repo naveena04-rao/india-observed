@@ -25,6 +25,7 @@ export type ScannerSource = {
   last_modified_header: string | null;
   connector_config: Record<string, unknown>;
   daily_request_limit: number;
+  cooldown_until?: string | null;
 };
 type DiscoveryResult = {
   items: SafeFetchedSource[];

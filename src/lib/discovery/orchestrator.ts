@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { processFetchedSource } from "./pipeline";
 import { QueryBudget } from "./queryStrategy";
 import { discoverSourceItems, type ScannerSource } from "./sourceDiscovery";
+import { SafeSourceFetchError } from "./fetchSafety";
 import type { SafeFetchedSource } from "./types";
 
 export const manualDryRunLimits = {
@@ -12,6 +13,8 @@ export const manualDryRunLimits = {
   maximumFetchedItems: 300,
   maximumCandidates: 100,
   maximumGdeltSearches: 60,
+  maximumYoutubeSearches: 50,
+  maximumBlueskyRequests: 100,
 } as const;
 
 function safeError(error: unknown, source: ScannerSource) {
@@ -35,14 +38,30 @@ function safeError(error: unknown, source: ScannerSource) {
       "The GDELT response did not match the expected metadata shape. No items were stored.",
     source_timeout: "The GDELT request timed out. No items were stored.",
   };
+  const retryAfterMs =
+    source.scan_method === "gdelt" &&
+    error instanceof SafeSourceFetchError &&
+    error.diagnostics.statusCode === 429
+      ? Math.max(error.diagnostics.retryAfterMs ?? 60_000, 60_000)
+      : null;
   return {
     code: code.replace(/[^a-z0-9_-]/gi, "_").slice(0, 80),
     summary:
       source.scan_method === "gdelt" && gdeltSummaries[code]
         ? gdeltSummaries[code]
         : "Source scan failed without stopping the remaining run.",
+    cooldownUntil: retryAfterMs ? new Date(Date.now() + retryAfterMs).toISOString() : null,
   };
 }
+
+const fallbackSourcePriority: Record<string, number> = {
+  rss: 0,
+  atom: 0,
+  sitemap: 1,
+  html_list: 2,
+  youtube_api: 3,
+  bluesky_api: 4,
+};
 
 async function persistCandidate(input: {
   supabase: SupabaseClient;
@@ -153,27 +172,32 @@ async function persistCandidate(input: {
 
 export async function runDiscoveryScan(input: {
   supabase: SupabaseClient;
-  trigger: "manual" | "manual_gdelt_dry_run" | "scheduled" | "retry";
+  trigger: "manual" | "manual_gdelt_dry_run" | "manual_fallback_dry_run" | "scheduled" | "retry";
   requestedBy?: string | null;
   scheduledFor?: string | null;
   dryRun?: boolean;
 }) {
   const dryRun = input.dryRun ?? true;
   const controlledManualDryRun =
-    ["manual", "manual_gdelt_dry_run"].includes(input.trigger) && dryRun;
+    ["manual", "manual_gdelt_dry_run", "manual_fallback_dry_run"].includes(input.trigger) && dryRun;
   const controlledGdeltRun = input.trigger === "manual_gdelt_dry_run" && dryRun;
+  const controlledFallbackRun = input.trigger === "manual_fallback_dry_run" && dryRun;
   const day = input.scheduledFor ?? new Date().toISOString().slice(0, 10);
   const idempotencyKey = `${input.trigger}:${day}:discovery-v1`;
   const { data: runId, error: startError } = controlledGdeltRun
     ? await input.supabase.rpc("claim_manual_gdelt_dry_run", {
         p_idempotency_key: idempotencyKey,
       })
-    : await input.supabase.rpc("start_scan_run", {
-        p_trigger_type: input.trigger,
-        p_idempotency_key: idempotencyKey,
-        p_scheduled_for: input.scheduledFor ?? null,
-        p_dry_run: dryRun,
-      });
+    : controlledFallbackRun
+      ? await input.supabase.rpc("claim_manual_fallback_dry_run", {
+          p_idempotency_key: idempotencyKey,
+        })
+      : await input.supabase.rpc("start_scan_run", {
+          p_trigger_type: input.trigger,
+          p_idempotency_key: idempotencyKey,
+          p_scheduled_for: input.scheduledFor ?? null,
+          p_dry_run: dryRun,
+        });
   if (startError) {
     if (startError.message.includes("dry_scan_already_running"))
       throw new Error("dry_scan_already_running");
@@ -185,7 +209,7 @@ export async function runDiscoveryScan(input: {
   let sourceQuery = input.supabase
     .from("scan_sources")
     .select(
-      "id,name,scan_url,scan_method,state,compliance_registry_id,last_etag,last_modified_header,connector_config,daily_request_limit,manual_dry_run_only,manual_run_consumed_at,compliance_registry!inner(production_enabled,legal_review_status,review_expires_at)",
+      "id,name,scan_url,scan_method,state,compliance_registry_id,last_etag,last_modified_header,connector_config,daily_request_limit,manual_dry_run_only,manual_run_consumed_at,cooldown_until,compliance_registry!inner(production_enabled,legal_review_status,review_expires_at)",
     )
     .eq("compliance_registry.production_enabled", true)
     .order("name");
@@ -197,22 +221,39 @@ export async function runDiscoveryScan(input: {
         .is("manual_run_consumed_at", null)
         .eq("compliance_registry.legal_review_status", "approved_for_controlled_metadata_dry_run")
     : sourceQuery.eq("enabled", true);
+  if (controlledFallbackRun) sourceQuery = sourceQuery.neq("scan_method", "gdelt");
   const { data, error } = await sourceQuery;
   if (error) throw new Error("scan_source_query_failed");
-  const eligibleSources = (data ?? []) as unknown as ScannerSource[];
+  const eligibleSources = ((data ?? []) as unknown as ScannerSource[])
+    .filter(
+      (source) => !source.cooldown_until || new Date(source.cooldown_until).getTime() <= Date.now(),
+    )
+    .sort(
+      (left, right) =>
+        (fallbackSourcePriority[left.scan_method] ?? 99) -
+          (fallbackSourcePriority[right.scan_method] ?? 99) || left.name.localeCompare(right.name),
+    );
   const sources = controlledManualDryRun
     ? eligibleSources.slice(0, manualDryRunLimits.maximumSources)
     : eligibleSources;
   const budget = new QueryBudget({
-    gdelt: controlledManualDryRun ? manualDryRunLimits.maximumGdeltSearches : 60,
-    youtube: controlledManualDryRun ? 0 : 100,
-    bluesky: controlledManualDryRun ? 0 : 500,
+    gdelt: controlledFallbackRun
+      ? 0
+      : controlledManualDryRun
+        ? manualDryRunLimits.maximumGdeltSearches
+        : 60,
+    youtube: controlledFallbackRun ? manualDryRunLimits.maximumYoutubeSearches : 0,
+    bluesky: controlledFallbackRun ? manualDryRunLimits.maximumBlueskyRequests : 0,
   });
   let successes = 0;
   let failures = 0;
   let candidates = 0;
   let itemsFetched = 0;
   const safeFailureSummaries: string[] = [];
+  const connectorResults: Record<
+    string,
+    { sources: number; successes: number; failures: number; items: number; candidates: number }
+  > = {};
   let limitReached: "fetched_item_limit" | "candidate_limit" | null = null;
   await input.supabase
     .from("scan_runs")
@@ -220,6 +261,14 @@ export async function runDiscoveryScan(input: {
     .eq("id", runId);
 
   for (const source of sources) {
+    const connector = (connectorResults[source.scan_method] ??= {
+      sources: 0,
+      successes: 0,
+      failures: 0,
+      items: 0,
+      candidates: 0,
+    });
+    connector.sources += 1;
     const remainingFetchedItems = controlledManualDryRun
       ? manualDryRunLimits.maximumFetchedItems - itemsFetched
       : undefined;
@@ -246,6 +295,7 @@ export async function runDiscoveryScan(input: {
           : undefined,
       });
       itemsFetched += discovered.items.length;
+      connector.items += discovered.items.length;
       let itemCount = 0;
       for (const fetched of discovered.items) {
         if (
@@ -259,7 +309,9 @@ export async function runDiscoveryScan(input: {
           itemCount += 1;
       }
       candidates += itemCount;
+      connector.candidates += itemCount;
       successes += 1;
+      connector.successes += 1;
       await input.supabase
         .from("scan_jobs")
         .update({
@@ -286,6 +338,7 @@ export async function runDiscoveryScan(input: {
       if (limitReached) break;
     } catch (error) {
       failures += 1;
+      connector.failures += 1;
       const safe = safeError(error, source);
       safeFailureSummaries.push(safe.summary);
       await input.supabase
@@ -303,6 +356,7 @@ export async function runDiscoveryScan(input: {
           last_attempted_scan: new Date().toISOString(),
           last_error_code: safe.code,
           last_error_summary: safe.summary,
+          ...(safe.cooldownUntil ? { cooldown_until: safe.cooldownUntil } : {}),
         })
         .eq("id", source.id);
     }
@@ -339,6 +393,7 @@ export async function runDiscoveryScan(input: {
     (candidateCounts ?? []).filter((candidate) => candidate.candidate_type === type).length;
   const quotaUsage = {
     ...budget.snapshot(),
+    connectorResults,
     controlledManualDryRun,
     itemsFetched,
     limits: controlledManualDryRun ? manualDryRunLimits : null,
@@ -376,9 +431,12 @@ export async function runDiscoveryScan(input: {
     candidates,
     itemsFetched,
     queriesUsed: budget.snapshot().gdelt?.used ?? 0,
+    youtubeCalls: budget.snapshot().youtube?.used ?? 0,
+    blueskyCalls: budget.snapshot().bluesky?.used ?? 0,
     limitReached,
     quotaUsage,
     safeFailureSummary: safeFailureSummaries[0] ?? null,
+    connectorResults,
     fingerprint: createHash("sha256").update(idempotencyKey).digest("hex"),
   };
 }

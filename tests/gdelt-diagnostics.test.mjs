@@ -8,9 +8,11 @@ const orchestrator = read("src/lib/discovery/orchestrator.ts");
 const actions = read("src/app/admin/review/actions.ts");
 const dashboard = read("src/app/admin/review/[view]/page.tsx");
 
-test("GDELT failures use bounded retry and safe editor diagnostics", () => {
-  assert.match(connector, /GDELT_MAX_ATTEMPTS = 3/);
-  assert.match(connector, /error\.diagnostics\.statusCode === 429/);
+test("GDELT throttling stops immediately and persists a safe cooldown", () => {
+  assert.doesNotMatch(connector, /GDELT_MAX_ATTEMPTS|GDELT_BACKOFF_MS/);
+  assert.match(connector, /A 429 is not retried in the same run/);
+  assert.match(orchestrator, /error\.diagnostics\.statusCode === 429/);
+  assert.match(orchestrator, /cooldown_until/);
   assert.match(orchestrator, /GDELT returned HTTP 429 \(rate limited\)\. No items were stored\./);
   assert.match(actions, /result\.safeFailureSummary/);
   assert.match(

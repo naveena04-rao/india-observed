@@ -1,5 +1,5 @@
 import "server-only";
-import { fetchApprovedSource, SafeSourceFetchError } from "../fetchSafety";
+import { fetchApprovedSource } from "../fetchSafety";
 
 export type DiscoveredLink = {
   url: string;
@@ -147,14 +147,6 @@ export function gdeltDocUrl(input: {
   return url.toString();
 }
 
-const GDELT_MAX_ATTEMPTS = 3;
-const GDELT_BACKOFF_MS = [2_000, 5_000] as const;
-
-const wait = (milliseconds: number) =>
-  new Promise<void>((resolve) => {
-    setTimeout(resolve, milliseconds);
-  });
-
 export function parseGdeltResponse(body: string) {
   let payload: unknown;
   try {
@@ -182,20 +174,9 @@ export async function fetchGdeltCandidates(input: {
   minutes?: number;
   maxRecords?: number;
 }) {
-  let response: Awaited<ReturnType<typeof fetchApprovedSource>> | null = null;
-  for (let attempt = 0; attempt < GDELT_MAX_ATTEMPTS; attempt += 1) {
-    try {
-      response = await fetchApprovedSource(gdeltDocUrl(input));
-      break;
-    } catch (error) {
-      const rateLimited =
-        error instanceof SafeSourceFetchError && error.diagnostics.statusCode === 429;
-      if (!rateLimited || attempt === GDELT_MAX_ATTEMPTS - 1) throw error;
-      const retryAfter = Math.min(error.diagnostics.retryAfterMs ?? 0, 10_000);
-      await wait(Math.max(retryAfter, GDELT_BACKOFF_MS[attempt] ?? 5_000));
-    }
-  }
-  if (!response) throw new Error("gdelt_request_failed");
+  // A 429 is not retried in the same run. The orchestrator persists Retry-After as a
+  // source cooldown so a later run cannot call GDELT before the provider permits it.
+  const response = await fetchApprovedSource(gdeltDocUrl(input));
   return parseGdeltResponse(response.body).flatMap((item) =>
     item.url
       ? [
