@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LaunchPolicyPage } from "@/app/components/LaunchPolicyPage";
+import { getPublicContactEmail } from "@/lib/site";
 
 export const metadata = {
   title: "Corrections",
@@ -8,6 +9,7 @@ export const metadata = {
 };
 
 export default function CorrectionsPage() {
+  const contactEmail = getPublicContactEmail();
   return (
     <LaunchPolicyPage
       description="Consequential corrections remain visible and connected to the affected record."
@@ -25,10 +27,18 @@ export default function CorrectionsPage() {
       </section>
       <section>
         <h2>Suggest a correction</h2>
-        <p>
-          Use the verified public channel listed on the <Link href="/contact">Contact page</Link>.
-          Do not submit private participant information.
-        </p>
+        {contactEmail ? (
+          <p>
+            Email: <a href={`mailto:${contactEmail}`}>{contactEmail}</a>, or use the guidance on the{" "}
+            <Link href="/contact">Contact page</Link>. Do not submit private participant
+            information.
+          </p>
+        ) : (
+          <p role="status">
+            The public corrections address has not yet been configured. Production launch remains
+            blocked when contact configuration is required.
+          </p>
+        )}
       </section>
     </LaunchPolicyPage>
   );
