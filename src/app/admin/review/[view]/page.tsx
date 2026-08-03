@@ -5,7 +5,7 @@ import { ArchiveShell } from "@/app/events/components/ArchiveShell";
 import { connectorManifests } from "@/lib/discovery/connectors/registry";
 import { getEditorialAdminSession } from "@/lib/editorial/admin";
 import { groupCandidatesByState } from "@/lib/editorial/candidateGrouping";
-import { startManualDryRunAction } from "../actions";
+import { ManualGdeltDryRunControl } from "../ManualGdeltDryRunControl";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -51,6 +51,21 @@ type Compliance = {
   robots_policy: string;
   decision_reason: string;
 };
+type ScanSource = {
+  id: string;
+  name: string;
+  source_type: string;
+  state: string | null;
+  language: string;
+  enabled: boolean;
+  scan_method: string;
+  manual_dry_run_only: boolean;
+  manual_run_consumed_at: string | null;
+  connector_config: Record<string, unknown> | null;
+  last_successful_scan: string | null;
+  last_error_summary: string | null;
+  compliance_registry_id: string | null;
+};
 
 export default async function EditorialReviewPage({
   params,
@@ -91,7 +106,7 @@ export default async function EditorialReviewPage({
     session.supabase
       .from("scan_sources")
       .select(
-        "id,name,source_type,state,language,enabled,last_successful_scan,last_error_summary,compliance_registry_id",
+        "id,name,source_type,state,language,enabled,scan_method,manual_dry_run_only,manual_run_consumed_at,connector_config,last_successful_scan,last_error_summary,compliance_registry_id",
       )
       .order("name"),
     session.supabase
@@ -126,6 +141,31 @@ export default async function EditorialReviewPage({
   if (error) throw new Error("Private editorial review data could not be loaded.");
   const candidates = (candidateResult.data ?? []) as Candidate[];
   const compliance = (complianceResult.data ?? []) as Compliance[];
+  const sources = (sourceResult.data ?? []) as ScanSource[];
+  const approvedManualSources = sources.filter((source) => {
+    const review = compliance.find((record) => record.id === source.compliance_registry_id);
+    return (
+      source.name === "GDELT DOC API" &&
+      source.scan_method === "gdelt" &&
+      source.enabled === false &&
+      source.manual_dry_run_only &&
+      source.manual_run_consumed_at === null &&
+      source.connector_config?.status === "approved_for_manual_dry_run_only" &&
+      review?.production_enabled === true &&
+      review.legal_review_status === "approved_for_controlled_metadata_dry_run" &&
+      Boolean(review.review_expires_at && new Date(review.review_expires_at) > new Date())
+    );
+  });
+  const activeManualRun = (scanResult.data ?? []).some(
+    (run) =>
+      run.trigger_type === "manual_gdelt_dry_run" &&
+      (run.status === "queued" || run.status === "running"),
+  );
+  const dryRunDisabledReason = activeManualRun
+    ? "A dry scan is already running."
+    : approvedManualSources.length === 0
+      ? "The approved one-time GDELT dry scan is not currently available."
+      : null;
   const filtered = candidates.filter((candidate) =>
     view === "new-events"
       ? candidate.candidate_type === "new_event"
@@ -180,13 +220,17 @@ export default async function EditorialReviewPage({
           </div>
           <div>
             <dt>Source failures</dt>
-            <dd>{(sourceResult.data ?? []).filter((item) => item.last_error_summary).length}</dd>
+            <dd>{sources.filter((item) => item.last_error_summary).length}</dd>
           </div>
           <div>
             <dt>Production connectors</dt>
-            <dd>0</dd>
+            <dd>{approvedManualSources.length}</dd>
+            <small>Manual dry-run only · scheduled scanning disabled</small>
           </div>
         </dl>
+        {view === "today" || view === "scan-runs" ? (
+          <ManualGdeltDryRunControl disabledReason={dryRunDisabledReason} />
+        ) : null}
         {view === "compliance" ? (
           <ComplianceView
             records={compliance}
@@ -372,9 +416,6 @@ function SettingsView() {
           vendor, counsel and owner approval.
         </li>
       </ul>
-      <form action={startManualDryRunAction}>
-        <button type="submit">Start one-time GDELT metadata dry run</button>
-      </form>
     </section>
   );
 }

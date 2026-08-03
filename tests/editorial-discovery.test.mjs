@@ -16,6 +16,8 @@ const pipeline = read("src/lib/discovery/pipeline.ts");
 const orchestrator = read("src/lib/discovery/orchestrator.ts");
 const connectors = read("src/lib/discovery/connectors/registry.ts");
 const dashboard = read("src/app/admin/review/[view]/page.tsx");
+const dashboardActions = read("src/app/admin/review/actions.ts");
+const manualControl = read("src/app/admin/review/ManualGdeltDryRunControl.tsx");
 const internalRoute = read("src/app/api/internal/discovery/route.ts");
 const freeConnectors = read("src/lib/discovery/connectors/freeConnectors.ts");
 const queryStrategy = read("src/lib/discovery/queryStrategy.ts");
@@ -24,6 +26,9 @@ const leadInputs = read("src/lib/discovery/leadInputs.ts");
 const sourceDiscovery = read("src/lib/discovery/sourceDiscovery.ts");
 const controlledGdelt = read(
   "supabase/migrations/20260802000100_add_controlled_gdelt_metadata_dry_run.sql",
+);
+const protectedGdeltControl = read(
+  "supabase/migrations/20260803000100_protect_manual_gdelt_editor_run.sql",
 );
 
 test("production scheduling and all external effects default off", () => {
@@ -174,4 +179,56 @@ test("controlled GDELT run is metadata-only, single-use and never scheduled", ()
   assert.match(controlledGdelt, /enabled = false/);
   assert.match(orchestrator, /approved_for_controlled_metadata_dry_run/);
   assert.match(sourceDiscovery, /buildManualGdeltDryRunQueries/);
+});
+
+test("only authorised editors can see and invoke the manual GDELT control", () => {
+  assert.match(dashboard, /if \(!session\.user\)[\s\S]*redirect/);
+  assert.match(dashboard, /if \(!session\.editor \|\| !session\.supabase\) notFound\(\)/);
+  assert.ok(
+    dashboard.indexOf("if (!session.editor") < dashboard.indexOf("<ManualGdeltDryRunControl"),
+  );
+  assert.match(manualControl, /Run GDELT dry scan/);
+  assert.match(dashboardActions, /const supabase = await editor\(\)/);
+  assert.match(protectedGdeltControl, /not coalesce\(public\.is_authorised_editor\(\), false\)/);
+  assert.match(protectedGdeltControl, /Authorised editor access required/);
+  assert.doesNotMatch(manualControl, /SERVICE_ROLE|service-role|service_role/);
+});
+
+test("manual GDELT control confirms, reports progress and renders safe outcomes", () => {
+  assert.match(manualControl, /Run one controlled GDELT metadata scan for the previous 48 hours\?/);
+  assert.match(manualControl, /Run dry scan/);
+  assert.match(manualControl, /Cancel/);
+  assert.match(manualControl, /pending \? "Running…"/);
+  assert.match(manualControl, /role="status" aria-live="polite"/);
+  assert.match(manualControl, /Items discovered/);
+  assert.match(manualControl, /Candidates created/);
+  assert.match(manualControl, /Open the resulting review queue/);
+  assert.match(dashboardActions, /No public records were changed/);
+});
+
+test("manual GDELT control is idempotent and refreshes dashboard data", () => {
+  assert.match(manualControl, /disabled=\{pending/);
+  assert.match(protectedGdeltControl, /pg_advisory_xact_lock/);
+  assert.match(protectedGdeltControl, /status in \('queued', 'running'\)/);
+  assert.match(protectedGdeltControl, /dry_scan_already_running/);
+  assert.match(protectedGdeltControl, /dry_scan_already_used/);
+  assert.match(dashboardActions, /revalidatePath\("\/admin\/review\/scan-runs"\)/);
+  assert.match(dashboardActions, /revalidatePath\("\/admin\/review\/today"\)/);
+  assert.match(manualControl, /router\.refresh\(\)/);
+});
+
+test("editor control requires exact metadata-only limits without enabling automation", () => {
+  for (const expected of [
+    /"maximumQueries":60/,
+    /"maximumDiscoveredItems":300/,
+    /"maximumCandidates":100/,
+    /"timeWindowHours":48/,
+    /"fullArticleFetching":false/,
+    /"mediaFetching":false/,
+    /approved_for_manual_dry_run_only/,
+    /gdelt_metadata_editorial_discovery_dry_run/,
+  ])
+    assert.match(protectedGdeltControl, expected);
+  assert.doesNotMatch(protectedGdeltControl, /update public\.discovery_schedule_settings/);
+  assert.doesNotMatch(protectedGdeltControl, /insert into public\.(events|event_media)/);
 });

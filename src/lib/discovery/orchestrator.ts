@@ -142,13 +142,24 @@ export async function runDiscoveryScan(input: {
   const controlledGdeltRun = input.trigger === "manual_gdelt_dry_run" && dryRun;
   const day = input.scheduledFor ?? new Date().toISOString().slice(0, 10);
   const idempotencyKey = `${input.trigger}:${day}:discovery-v1`;
-  const { data: runId, error: startError } = await input.supabase.rpc("start_scan_run", {
-    p_trigger_type: input.trigger,
-    p_idempotency_key: idempotencyKey,
-    p_scheduled_for: input.scheduledFor ?? null,
-    p_dry_run: dryRun,
-  });
-  if (startError || !runId) throw new Error("scan_run_start_failed");
+  const { data: runId, error: startError } = controlledGdeltRun
+    ? await input.supabase.rpc("claim_manual_gdelt_dry_run", {
+        p_idempotency_key: idempotencyKey,
+      })
+    : await input.supabase.rpc("start_scan_run", {
+        p_trigger_type: input.trigger,
+        p_idempotency_key: idempotencyKey,
+        p_scheduled_for: input.scheduledFor ?? null,
+        p_dry_run: dryRun,
+      });
+  if (startError) {
+    if (startError.message.includes("dry_scan_already_running"))
+      throw new Error("dry_scan_already_running");
+    if (startError.message.includes("dry_scan_already_used"))
+      throw new Error("dry_scan_already_used");
+    throw new Error("scan_run_start_failed");
+  }
+  if (!runId) throw new Error("scan_run_start_failed");
   let sourceQuery = input.supabase
     .from("scan_sources")
     .select(
@@ -284,7 +295,7 @@ export async function runDiscoveryScan(input: {
       .update({ status: "skipped", completed_at: new Date().toISOString() })
       .eq("scan_run_id", runId)
       .eq("status", "queued");
-  const status =
+  const status: "completed" | "incomplete" | "failed" =
     limitReached || (controlledManualDryRun && eligibleSources.length > sources.length)
       ? "incomplete"
       : failures && !successes
@@ -340,6 +351,7 @@ export async function runDiscoveryScan(input: {
     failures,
     candidates,
     itemsFetched,
+    queriesUsed: budget.snapshot().gdelt?.used ?? 0,
     limitReached,
     quotaUsage,
     fingerprint: createHash("sha256").update(idempotencyKey).digest("hex"),
