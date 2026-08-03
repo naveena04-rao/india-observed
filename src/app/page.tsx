@@ -129,7 +129,7 @@ const featuredRecords = [
   {
     id: "IO-CM-KA-0002",
     eventType: "protest",
-    eventStatus: "ongoing",
+    eventStatus: "outcome_pending",
     directedAt: "State government — Karnataka",
     title: "Bidadi farmers oppose township land acquisition",
     place: "Bengaluru South, Karnataka",
@@ -149,7 +149,7 @@ const featuredRecords = [
   {
     id: "IO-CM-MN-0001",
     eventType: "strike",
-    eventStatus: "ongoing",
+    eventStatus: "outcome_pending",
     directedAt: "State government — Manipur",
     title: "Manipur government employees continue cease-work strike",
     place: "Manipur",
@@ -166,33 +166,13 @@ const featuredRecords = [
       publicationRightsStatus: "Text fallback · No visual media published",
     },
   },
-  {
-    id: "IO-CM-OD-0001",
-    eventType: "protest",
-    eventStatus: "concluded",
-    directedAt: "District education authorities — Jajpur",
-    title: "Dharmasala students protest teacher vacancies",
-    place: "Jajpur, Odisha",
-    topic: "Education",
-    description:
-      "Students protested after staffing fell to 11 teachers for more than 400 pupils; two teachers were deputed to the school that day.",
-    verification: "Outcome documented",
-    note: "Same-day institutional response recorded",
-    reviewed: "15 July 2026",
-    media: {
-      format: "Text record",
-      sourceProvenance: "Reviewed record sources; no visual asset selected",
-      eventVerification: "Event and outcome confirmed",
-      publicationRightsStatus: "Text fallback · No visual media published",
-    },
-  },
 ] as const;
 
 const latestRecords = [
   {
     id: "IO-CM-MP-0001",
     eventType: "protest",
-    eventStatus: "ongoing",
+    eventStatus: "outcome_pending",
     topic: "Land & rehabilitation",
     place: "Chhatarpur–Panna, Madhya Pradesh",
     title:
@@ -246,7 +226,7 @@ const onRecords = [
   {
     id: "IO-CM-UP-0001",
     eventType: "demonstration",
-    eventStatus: "ongoing",
+    eventStatus: "outcome_pending",
     topic: "Environment",
     place: "Dasiya village, Rudhauli police-station area, Bhanpur tehsil, Basti, Uttar Pradesh",
     title: "Dasiya villagers protest construction of an ethanol plant in Basti district",
@@ -285,21 +265,25 @@ export default async function HomePage() {
   const mediaReadyEvents = reviewedEvents.filter((event) => event.approvedMedia);
   const homepageVisualsByInternalId = createHomepageVisualMap(reviewedEvents);
   const featuredRecordsWithVisuals = candidatePreviewEnabled
-    ? featuredRecords.map((record) => {
+    ? featuredRecords.flatMap((record) => {
+        if (!homepageVisualsByInternalId.has(record.id)) return [];
         const homepageVisual = getHomepageVisual(homepageVisualsByInternalId, record.id);
-        return {
-          ...record,
-          ...homepageVisual,
-          media: getApprovedHomepageMediaDisclosure(homepageVisual.approvedMedia, record.media),
-        };
+        return [
+          {
+            ...record,
+            ...homepageVisual,
+            media: getApprovedHomepageMediaDisclosure(homepageVisual.approvedMedia, record.media),
+          },
+        ];
       })
     : mediaReadyEvents.slice(0, 1).map(createMediaReadyFeaturedRecord);
   const featuredSlugs = new Set(featuredRecordsWithVisuals.map((record) => record.slug));
   const latestRecordsWithVisuals = candidatePreviewEnabled
-    ? latestRecords.map((record) => ({
-        ...record,
-        ...getHomepageVisual(homepageVisualsByInternalId, record.id),
-      }))
+    ? latestRecords.flatMap((record) =>
+        homepageVisualsByInternalId.has(record.id)
+          ? [{ ...record, ...getHomepageVisual(homepageVisualsByInternalId, record.id) }]
+          : [],
+      )
     : mediaReadyEvents
         .filter((event) => !featuredSlugs.has(event.slug))
         .slice(0, 3)

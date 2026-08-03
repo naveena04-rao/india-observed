@@ -13,7 +13,7 @@ import type { ReviewedEventPreview } from "../lib/events/types";
  * Snapshot totals after the 3 August 2026 status verification:
  * 50 events
  * 263 claims
- * 172 sources
+ * 173 sources
  * 197 organisations
  * 2 corrections
  * 12 safety incidents
@@ -29,17 +29,17 @@ const reviewedEventRecords = [
     title:
       "Project-affected communities resume protest over rehabilitation and compensation in Bundelkhand",
     eventType: "Multi-form civic protest",
-    eventStatus: "Ongoing",
+    eventStatus: "Outcome pending",
     topic:
       "Rehabilitation, compensation and displacement linked to the Ken–Betwa Link Project and other development projects",
     stateOrUnionTerritory: "Madhya Pradesh",
     publicLocation: "Chhatarpur–Panna project-affected area",
     startDate: "2026-07-04",
     endDate: null,
-    lastConfirmedActive: "2026-07-15",
-    lastReviewed: "2026-07-15",
+    lastConfirmedActive: "2026-07-19",
+    lastReviewed: "2026-08-03",
     summary:
-      "Project-affected tribal and farming communities resumed a protest in early July 2026 in the Chhatarpur–Panna area of Madhya Pradesh. Reported forms of protest include a symbolic Chita Andolan, Jal Satyagraha, hunger strike and Mitti Satyagraha. Participants have publicly raised concerns about compensation, rehabilitation and displacement. The occurrence and principal demands are corroborated; allegations about water access, compensation irregularities and the full implementation of relief measures remain attributed or under review.",
+      "Project-affected tribal and farming communities resumed a protest in early July 2026 in the Chhatarpur–Panna area of Madhya Pradesh. Reported forms of protest include a symbolic Chita Andolan, Jal Satyagraha, hunger strike and Mitti Satyagraha. Participants have publicly raised concerns about compensation, rehabilitation and displacement. The occurrence and principal demands are corroborated; allegations about water access, compensation irregularities and the full implementation of relief measures remain attributed or under review. Authorities dispersed this protest phase on 19 July, but no reliable final outcome for the wider rehabilitation and compensation dispute has been established.",
     directedAt:
       "Chhatarpur and Panna district administrations; Madhya Pradesh Government; Ken–Betwa Link Project authorities",
     eventVerification: "Occurrence verified — disputed details remain",
@@ -72,16 +72,16 @@ const reviewedEventRecords = [
     slug: "mandya-farmers-krs-irrigation-water",
     title: "Mandya farmers intensify protest demanding release of KRS irrigation water",
     eventType: "Demonstration",
-    eventStatus: "Ongoing",
+    eventStatus: "Outcome pending",
     topic: "Immediate release of canal water from the KRS reservoir for standing crops",
     stateOrUnionTerritory: "Karnataka",
     publicLocation: "Mandya, Karnataka",
     startDate: "2026-07-13",
     endDate: null,
     lastConfirmedActive: "2026-07-14",
-    lastReviewed: "2026-07-15",
+    lastReviewed: "2026-08-03",
     summary:
-      "Farmers and supporting organisations protested in Mandya on 13 July 2026, demanding the immediate release of water from the Krishnaraja Sagar reservoir into irrigation canals. Independent reports documented a demonstration near the deputy commissioner's office and a blockade of the old Mysuru–Bengaluru highway. Protesters said standing crops were drying because of the delay and opposed additional diversion of Cauvery water while irrigation needs remained unmet. The occurrence and stated demands are corroborated; crop-loss severity remains attributed to protesters.",
+      "Farmers and supporting organisations protested in Mandya on 13 July 2026, demanding the immediate release of water from the Krishnaraja Sagar reservoir into irrigation canals. Independent reports documented a demonstration near the deputy commissioner's office and a blockade of the old Mysuru–Bengaluru highway. Protesters said standing crops were drying because of the delay and opposed additional diversion of Cauvery water while irrigation needs remained unmet. The occurrence and stated demands are corroborated; crop-loss severity remains attributed to protesters. No reliable final outcome or continued activity after 14 July has been established.",
     directedAt: "Mandya District Administration; Karnataka Government; Cauvery water authorities",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 3,
@@ -131,7 +131,7 @@ const reviewedEventRecords = [
     title:
       "Bidadi farmers continue protest against land acquisition for Greater Bengaluru Integrated Township",
     eventType: "Multi-form civic protest",
-    eventStatus: "Ongoing",
+    eventStatus: "Outcome pending",
     topic:
       "Land acquisition, agricultural livelihoods, compensation, consent and environmental concerns linked to the Greater Bengaluru Integrated Township",
     stateOrUnionTerritory: "Karnataka",
@@ -139,9 +139,9 @@ const reviewedEventRecords = [
     startDate: null,
     endDate: null,
     lastConfirmedActive: "2026-07-15",
-    lastReviewed: "2026-07-15",
+    lastReviewed: "2026-08-03",
     summary:
-      "Farmers and agricultural communities around Bidadi have conducted a sustained movement opposing land acquisition for the proposed Greater Bengaluru Integrated Township. The movement includes village meetings, marches, an Appiko tree-hugging action and resistance to land-survey activity. Protesters say the project threatens agricultural livelihoods and has proceeded without adequate consent or consultation. The Karnataka government describes the township as a planned urban-development and employment project and has offered compensation options. The protest's occurrence and the first-phase acquisition notification are corroborated; claims concerning consent levels, the fertility and extent of affected farmland, environmental loss and responsibility for violence during survey operations remain attributed or disputed.",
+      "Farmers and agricultural communities around Bidadi have conducted a sustained movement opposing land acquisition for the proposed Greater Bengaluru Integrated Township. The movement includes village meetings, marches, an Appiko tree-hugging action and resistance to land-survey activity. Protesters say the project threatens agricultural livelihoods and has proceeded without adequate consent or consultation. The Karnataka government describes the township as a planned urban-development and employment project and has offered compensation options. The protest's occurrence and the first-phase acquisition notification are corroborated; claims concerning consent levels, the fertility and extent of affected farmland, environmental loss and responsibility for violence during survey operations remain attributed or disputed. A government review was announced, but no reliable final outcome or continued activity after 15 July has been established.",
     directedAt:
       "Karnataka Government; Greater Bengaluru Development Authority; Bengaluru South District Administration",
     eventVerification: "Occurrence verified — disputed details remain",
@@ -174,7 +174,7 @@ const reviewedEventRecords = [
     slug: "dasiya-villagers-ethanol-plant",
     title: "Dasiya villagers protest construction of an ethanol plant in Basti district",
     eventType: "Demonstration",
-    eventStatus: "Ongoing",
+    eventStatus: "Outcome pending",
     topic:
       "Environmental, water, health and land-consent concerns relating to a proposed ethanol plant",
     stateOrUnionTerritory: "Uttar Pradesh",
@@ -182,9 +182,9 @@ const reviewedEventRecords = [
     startDate: "2026-06-23",
     endDate: null,
     lastConfirmedActive: "2026-07-14",
-    lastReviewed: "2026-07-15",
+    lastReviewed: "2026-08-03",
     summary:
-      "Residents of Dasiya and nearby villages have opposed an ethanol plant under construction in Basti district. A memorandum submitted in June raised concerns about nearby settlements and government schools, while a larger demonstration was announced and held on 14 July under substantial police deployment. Protesters called for the factory to be stopped and raised concerns about water use, environmental and health effects, and the circumstances in which land was obtained. The occurrence and continuing opposition are corroborated through local-language reporting and public field material; allegations that residents were misled about the project and specific impact estimates remain attributed.",
+      "Residents of Dasiya and nearby villages have opposed an ethanol plant under construction in Basti district. A memorandum submitted in June raised concerns about nearby settlements and government schools, while a larger demonstration was announced and held on 14 July under substantial police deployment. Protesters called for the factory to be stopped and raised concerns about water use, environmental and health effects, and the circumstances in which land was obtained. The occurrence and stated opposition are corroborated through local-language reporting and public field material; allegations that residents were misled about the project and specific impact estimates remain attributed. No reliable final outcome or continued activity after 14 July has been established.",
     directedAt:
       "Basti District Administration; Uttar Pradesh Pollution Control and industrial authorities",
     eventVerification: "Occurrence verified — disputed details remain",
@@ -217,7 +217,7 @@ const reviewedEventRecords = [
     title:
       "Manipur government employees continue indefinite cease-work strike over pay and service conditions",
     eventType: "Strike",
-    eventStatus: "Ongoing",
+    eventStatus: "Outcome pending",
     topic:
       "Dearness allowance, pension, retirement age, contractual employment and weekly-holiday demands",
     stateOrUnionTerritory: "Manipur",
@@ -225,9 +225,9 @@ const reviewedEventRecords = [
     startDate: "2026-07-01",
     endDate: null,
     lastConfirmedActive: "2026-07-15",
-    lastReviewed: "2026-07-15",
+    lastReviewed: "2026-08-03",
     summary:
-      "The Manipur Government Services Federation launched an indefinite cease-work strike on 1 July 2026 over a multi-point charter concerning dearness allowance, pension arrangements, retirement age, contractual appointments and weekly holidays. Reporting from regional and state-level outlets documented significant disruption to routine administrative work. The government restored Saturday as a holiday and introduced a five-day work week, but the federation said the strike would continue because other demands remained unresolved. The occurrence, duration and partial government response are corroborated; estimates of financial loss and the precise participation level remain attributed.",
+      "The Manipur Government Services Federation launched an indefinite cease-work strike on 1 July 2026 over a multi-point charter concerning dearness allowance, pension arrangements, retirement age, contractual appointments and weekly holidays. Reporting from regional and state-level outlets documented significant disruption to routine administrative work. The government restored Saturday as a holiday and introduced a five-day work week, but the federation said the strike would continue because other demands remained unresolved. The occurrence, duration and partial government response are corroborated; estimates of financial loss and the precise participation level remain attributed. No reliable final outcome or continued activity after 15 July has been established.",
     directedAt: "Manipur Government; Chief Minister and Chief Secretary of Manipur",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 5,
@@ -747,16 +747,16 @@ const reviewedEventRecords = [
     title:
       "Hidkal reservoir-displaced farmers begin round-the-clock compensation protest in Belagavi",
     eventType: "Sit-in",
-    eventStatus: "Ongoing",
+    eventStatus: "Outcome pending",
     topic: "Compensation and land claims of families displaced by the Hidkal reservoir",
     stateOrUnionTerritory: "Karnataka",
     publicLocation: "Belagavi, Karnataka",
     startDate: "2026-07-14",
     endDate: null,
     lastConfirmedActive: "2026-07-16",
-    lastReviewed: "2026-07-21",
+    lastReviewed: "2026-08-03",
     summary:
-      "Farmers and families displaced by the Hidkal reservoir began a round-the-clock protest outside the Karnataka Neeravari Nigam office in Belagavi on 14 July 2026. They demanded compensation for land they said remained unsettled decades after displacement. Reporting documented an overnight sit-in continuing into a third day. The occurrence and core demand are corroborated; affected acreage, claimant eligibility and historical payment status require official land and compensation records.",
+      "Farmers and families displaced by the Hidkal reservoir began a round-the-clock protest outside the Karnataka Neeravari Nigam office in Belagavi on 14 July 2026. They demanded compensation for land they said remained unsettled decades after displacement. Reporting documented an overnight sit-in continuing into a third day. The occurrence and core demand are corroborated; affected acreage, claimant eligibility and historical payment status require official land and compensation records. No reliable final outcome or continued activity after 16 July has been established.",
     directedAt:
       "Karnataka Neeravari Nigam Limited; Karnataka Water Resources Department; Belagavi District Administration",
     eventVerification: "Occurrence verified — disputed details remain",
@@ -830,7 +830,7 @@ const reviewedEventRecords = [
     title:
       "Indore–Dewas farmers begin sit-in after police stop tractor rally over ring-road compensation",
     eventType: "Multi-form civic protest",
-    eventStatus: "Ongoing",
+    eventStatus: "Outcome pending",
     topic:
       "Land-acquisition compensation for the Indore–Dewas Western Ring Road and related agricultural demands",
     stateOrUnionTerritory: "Madhya Pradesh",
@@ -838,9 +838,9 @@ const reviewedEventRecords = [
     startDate: "2026-07-20",
     endDate: null,
     lastConfirmedActive: "2026-07-20",
-    lastReviewed: "2026-07-21",
+    lastReviewed: "2026-08-03",
     summary:
-      "Farmers from villages in Indore and Dewas districts attempted a tractor rally towards Bhopal on 20 July 2026 to demand higher compensation for land acquired for the Western Ring Road. Police stopped the convoy at Barlai using barricades, water cannon and tear gas, after which protesters began an indefinite sit-in. The occurrence and broad demand are documented; participation, land valuations and responsibility for confrontation remain attributed.",
+      "Farmers from villages in Indore and Dewas districts attempted a tractor rally towards Bhopal on 20 July 2026 to demand higher compensation for land acquired for the Western Ring Road. Police stopped the convoy at Barlai using barricades, water cannon and tear gas, after which protesters began an indefinite sit-in. The occurrence and broad demand are documented; participation, land valuations and responsibility for confrontation remain attributed. No reliable final outcome or continued activity after 20 July has been established.",
     directedAt:
       "Madhya Pradesh Government; Indore and Dewas district administrations; Madhya Pradesh Police; ring-road project authorities",
     eventVerification: "Occurrence verified — disputed details remain",
@@ -1053,6 +1053,7 @@ const reviewedEventRecords = [
   ReviewedEventPreview,
   | "primaryTopic"
   | "publicationStatus"
+  | "publicLaunchStatus"
   | "publishedAt"
   | "sources"
   | "safety"
@@ -1123,6 +1124,10 @@ const reviewedEventsWithoutMedia = reviewedEventRecords.map((event) => {
     ...event,
     ...evidence,
     publicationStatus: "published" as const,
+    publicLaunchStatus:
+      event.internalId === "IO-CM-OD-0001"
+        ? ("temporarily_withheld" as const)
+        : ("launchable" as const),
     publishedAt: "2026-07-21",
     approvedSourceCount: evidence.sources.length,
     primaryTopic: primaryTopicByInternalId[event.internalId],

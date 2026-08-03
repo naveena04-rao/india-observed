@@ -14,9 +14,11 @@ export function selectVisibleEvents(
   events: readonly ReviewedEventPreview[],
   includeCandidates: boolean,
 ) {
+  const launchableEvents = events.filter((event) => event.publicLaunchStatus === "launchable");
+
   return includeCandidates
-    ? events
-    : events.filter((event) => event.publicationStatus === "published");
+    ? launchableEvents
+    : launchableEvents.filter((event) => event.publicationStatus === "published");
 }
 
 export async function getReviewedEvents(): Promise<readonly ReviewedEventPreview[]> {

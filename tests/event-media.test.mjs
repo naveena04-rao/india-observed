@@ -267,7 +267,7 @@ test("the source-only audit still covers every published record and source", () 
         )});`,
       )(),
     ).flatMap((event) => event.sources).length,
-    172,
+    173,
   );
 });
 

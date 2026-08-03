@@ -11,8 +11,11 @@ const mediaMigration = read("supabase/migrations/20260728000100_add_event_media_
 const evidenceDataset = read("src/data/reviewed-event-evidence-preview.ts");
 const archivePage = read("src/app/events/page.tsx");
 const detailPage = read("src/app/events/[slug]/page.tsx");
+const sitemap = read("src/app/sitemap.ts");
 const archiveLogic = read("src/lib/events/archive.ts");
 const previewGate = read("src/lib/events/getReviewedEvents.ts");
+const following = read("src/lib/events/following.ts");
+const adminMedia = read("src/app/admin/media/page.tsx");
 const archiveRow = read("src/app/events/components/EventArchiveRow.tsx");
 const filters = read("src/app/events/components/EventFilters.tsx");
 const pagination = read("src/app/events/components/EventPagination.tsx");
@@ -98,7 +101,7 @@ test("reviewed Events routes and the canonical public-safe snapshot exist", () =
   for (const total of [
     "50 events",
     "263 claims",
-    "172 sources",
+    "173 sources",
     "197 organisations",
     "2 corrections",
     "12 safety incidents",
@@ -132,7 +135,7 @@ test("snapshot has 50 unique readable slugs and one truthful fallback per event"
     /eventMediaRegistry satisfies Record<PublishedEventSlug, EventMediaRegistryEntry>/,
   );
   assert.doesNotMatch(dataset, /visual: (?:recordCover|publisherVideo)/);
-  assert.equal(Object.values(evidence).flatMap((event) => event.sources).length, 172);
+  assert.equal(Object.values(evidence).flatMap((event) => event.sources).length, 173);
   assert.equal(new Set(states).size, 20);
   assert.equal(primaryTopics.length, 50);
   assert.equal(new Set(primaryTopics).size, 9);
@@ -210,7 +213,7 @@ test("every Preview record has an ordered public-safe source list", () => {
   const sources = entries.flatMap(([, event]) => event.sources);
 
   assert.equal(entries.length, 50);
-  assert.equal(sources.length, 172);
+  assert.equal(sources.length, 173);
   assert.equal(
     entries.every(([, event]) => event.sources.length >= 1),
     true,
@@ -328,13 +331,20 @@ test("all events have qualified safety summaries and only attributed incident de
   assert.doesNotMatch(archiveRow, /safety|incident/i);
 
   const verifiedStatusChanges = new Map([
+    ["IO-CM-MP-0001", "Outcome pending"],
     ["IO-CM-DL-0001", "Concluded"],
+    ["IO-CM-KA-0001", "Outcome pending"],
+    ["IO-CM-KA-0002", "Outcome pending"],
+    ["IO-CM-UP-0001", "Outcome pending"],
+    ["IO-CM-MN-0001", "Outcome pending"],
     ["IO-CM-UK-0001", "Outcome pending"],
     ["IO-CM-MH-0002", "Concluded"],
     ["IO-CM-MH-0003", "Concluded"],
     ["IO-CM-MH-0004", "Concluded"],
     ["IO-CM-MH-0005", "Concluded"],
     ["IO-CM-DL-0007", "Concluded"],
+    ["IO-CM-KA-0003", "Outcome pending"],
+    ["IO-CM-MP-0002", "Outcome pending"],
     ["IO-CM-PB-0005", "Concluded"],
   ]);
   for (const [eventId, status] of verifiedStatusChanges) {
@@ -414,14 +424,32 @@ test("publication-aware server gate exposes published records and protects futur
   assert.match(previewGate, /import "server-only"/);
   assert.match(previewGate, /includeCandidates[\s\S]*?events\.filter/);
   assert.match(previewGate, /event\.publicationStatus === "published"/);
+  assert.match(previewGate, /event\.publicLaunchStatus === "launchable"/);
   assert.doesNotMatch(previewGate, /NEXT_PUBLIC/);
 
   const candidateFixture = [
-    { slug: "published-record", publicationStatus: "published" },
-    { slug: "candidate-record", publicationStatus: "candidate" },
+    {
+      slug: "published-record",
+      publicationStatus: "published",
+      publicLaunchStatus: "launchable",
+    },
+    {
+      slug: "candidate-record",
+      publicationStatus: "candidate",
+      publicLaunchStatus: "launchable",
+    },
+    {
+      slug: "withheld-record",
+      publicationStatus: "published",
+      publicLaunchStatus: "temporarily_withheld",
+    },
   ];
-  const selectVisible = (events, includeCandidates) =>
-    includeCandidates ? events : events.filter((event) => event.publicationStatus === "published");
+  const selectVisible = (events, includeCandidates) => {
+    const launchableEvents = events.filter((event) => event.publicLaunchStatus === "launchable");
+    return includeCandidates
+      ? launchableEvents
+      : launchableEvents.filter((event) => event.publicationStatus === "published");
+  };
   assert.deepEqual(
     selectVisible(candidateFixture, true).map((event) => event.slug),
     ["published-record", "candidate-record"],
@@ -430,6 +458,13 @@ test("publication-aware server gate exposes published records and protects futur
     selectVisible(candidateFixture, false).map((event) => event.slug),
     ["published-record"],
   );
+
+  assert.match(dataset, /event\.internalId === "IO-CM-OD-0001"[\s\S]*?"temporarily_withheld"/);
+  assert.match(sitemap, /const events = await getReviewedEvents\(\)/);
+  assert.match(homepage, /featuredRecords\.flatMap/);
+  assert.match(homepage, /homepageVisualsByInternalId\.has\(record\.id\)/);
+  assert.doesNotMatch(homepage, /id: "IO-CM-OD-0001"/);
+  assert.match(following, /event\.publicLaunchStatus === "launchable"/);
 
   assert.match(archivePage, /candidatePreviewEnabled && candidateCount/);
   assert.match(archivePage, /Preview includes \{candidateCount\} reviewed candidate/);
@@ -444,6 +479,19 @@ test("publication-aware server gate exposes published records and protects futur
   assert.doesNotMatch(archivePage, /internalId|IO-CM-/);
   assert.doesNotMatch(detailPage, /internalId|IO-CM-|Internal notes/i);
   assert.doesNotMatch(archiveRow, /internalId|IO-CM-/);
+});
+
+test("the conflicting Odisha record is retained for authorised editorial access only", () => {
+  const ids = [...dataset.matchAll(/internalId: "(IO-CM-[^"]+)"/g)].map((match) => match[1]);
+
+  assert.equal(ids.length, 50);
+  assert.equal(new Set(ids).size, 50);
+  assert.match(dataset, /internalId: "IO-CM-OD-0001"/);
+  assert.match(adminMedia, /import \{ reviewedEventsPreview \}/);
+  assert.match(adminMedia, /const session = await getMediaAdminSession\(\)/);
+  assert.match(adminMedia, /if \(!session\.user\) redirect/);
+  assert.match(adminMedia, /if \(!session\.admin \|\| !session\.supabase\) notFound\(\)/);
+  assert.match(adminMedia, /reviewedEventsPreview\.map/);
 });
 
 test("archive filters use only public-safe search fields and preserve URL state", () => {
@@ -481,13 +529,13 @@ test("archive filters use only public-safe search fields and preserve URL state"
   assert.match(pagination, /nextParams\.set\("page", String\(page\)\)/);
 });
 
-test("latest-activity sorting and accessible ten-record pagination cover all records", () => {
+test("latest-activity sorting and pagination cover all 49 launchable records", () => {
   assert.match(
     archiveLogic,
     /event\.lastConfirmedActive \?\? event\.endDate \?\? event\.startDate \?\? event\.lastReviewed/,
   );
   assert.match(archiveLogic, /export const EVENTS_PER_PAGE = 10/);
-  assert.equal(50 / 10, 5);
+  assert.equal(Math.ceil(49 / 10), 5);
   assert.match(archivePage, /Math\.ceil\(filteredEvents\.length \/ EVENTS_PER_PAGE\)/);
   assert.match(archivePage, /Math\.min\(Math\.max\(requestedPage, 1\), pageCount\)/);
   assert.match(archivePage, /slice\(startIndex, startIndex \+ EVENTS_PER_PAGE\)/);
@@ -498,17 +546,21 @@ test("latest-activity sorting and accessible ten-record pagination cover all rec
   assert.match(pagination, />Next</);
   assert.match(pagination, /aria-current="page"/);
 
-  const records = [...dataset.matchAll(/internalId: "([^"]+)"/g)].map(([, id]) => {
-    const block = eventBlock(id);
-    return {
-      slug: literalField(block, "slug"),
-      title: literalField(block, "title"),
-      startDate: literalField(block, "startDate"),
-      endDate: literalField(block, "endDate"),
-      lastConfirmedActive: literalField(block, "lastConfirmedActive"),
-      lastReviewed: literalField(block, "lastReviewed"),
-    };
-  });
+  const records = [...dataset.matchAll(/internalId: "([^"]+)"/g)]
+    .map(([, id]) => {
+      const block = eventBlock(id);
+      return {
+        id,
+        slug: literalField(block, "slug"),
+        title: literalField(block, "title"),
+        startDate: literalField(block, "startDate"),
+        endDate: literalField(block, "endDate"),
+        lastConfirmedActive: literalField(block, "lastConfirmedActive"),
+        lastReviewed: literalField(block, "lastReviewed"),
+      };
+    })
+    .filter((record) => record.id !== "IO-CM-OD-0001");
+  assert.equal(records.length, 49);
   const activityDate = (record) =>
     record.lastConfirmedActive ?? record.endDate ?? record.startDate ?? record.lastReviewed;
   const ordered = records.toSorted(
@@ -529,16 +581,16 @@ test("latest-activity sorting and accessible ten-record pagination cover all rec
       "kisan-ghat-india-us-trade-deal",
       "indore-dewas-ring-road-compensation",
       "jammu-kashmir-statehood-jantar-mantar",
+      "bundelkhand-rehabilitation-compensation-protest",
       "bhaniyawala-rishikesh-tree-felling-protest",
       "mumbai-police-action-education-protest",
       "shamshabad-high-speed-rail-land-protest",
       "bharat-tiwari-justice-rights-assembly",
-      "hidkal-displaced-farmers-belagavi-compensation",
     ],
   );
   assert.deepEqual(
     pages.map((page) => page.length),
-    [10, 10, 10, 10, 10],
+    [10, 10, 10, 10, 9],
   );
   assert.equal(pages[5], undefined);
   assert.equal(Math.min(Math.max(6, 1), pages.length), 5);

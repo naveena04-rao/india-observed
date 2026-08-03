@@ -49,6 +49,16 @@ export const reviewedEventEvidenceByInternalId = {
         independenceNote: "Original / independent",
       },
       {
+        publisher: "India Today",
+        headline:
+          "Ken-Betwa Link Project protest ends, compensation and rehabilitation row persists",
+        url: "https://www.indiatoday.in/india/madhya-pradesh/story/ken-betwa-link-project-protest-ends-compensation-rehabilitation-row-persists-2951188-2026-07-19",
+        publicationDate: "2026-07-19",
+        sourceType: "Follow-up media reporting",
+        sourceRole: "Follow-up",
+        independenceNote: "Original / independent",
+      },
+      {
         publisher: "Down To Earth",
         headline: "Ken-Betwa link leaves tribal families fighting for fair compensation",
         url: "https://www.downtoearth.org.in/environment/ken-betwa-link-leaves-tribal-families-fighting-for-fair-compensation",

@@ -60,7 +60,7 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   const latestIds = recordIds(latestBlock);
   const onRecordIds = recordIds(onRecordBlock);
 
-  assert.deepEqual(featuredIds, ["IO-CM-KA-0002", "IO-CM-MN-0001", "IO-CM-OD-0001"]);
+  assert.deepEqual(featuredIds, ["IO-CM-KA-0002", "IO-CM-MN-0001"]);
   assert.deepEqual(latestIds, ["IO-CM-MP-0001", "IO-CM-DL-0001", "IO-CM-MH-0001"]);
   assert.deepEqual(onRecordIds, ["IO-CM-GJ-0001", "IO-CM-UP-0001", "IO-CM-AS-0001"]);
   assert.equal(
@@ -148,7 +148,7 @@ test("homepage keeps the public archive safety boundaries visible", () => {
     featuredBlock,
     /sourceProvenance: "Reviewed record sources; no approved event visual"/,
   );
-  assert.equal((featuredBlock.match(/publicationRightsStatus:/g) ?? []).length, 3);
+  assert.equal((featuredBlock.match(/publicationRightsStatus:/g) ?? []).length, 2);
   assert.match(carousel, /sourceProvenance: string;/);
   assert.match(carousel, /publicationRightsStatus: string;/);
   assert.equal((carousel.match(/eventVerification: string;/g) ?? []).length, 2);
@@ -170,10 +170,6 @@ test("homepage keeps the public archive safety boundaries visible", () => {
       directedAt: "State government — Manipur",
       eventVerification: "Event confirmed",
     },
-    "IO-CM-OD-0001": {
-      directedAt: "District education authorities — Jajpur",
-      eventVerification: "Event and outcome confirmed",
-    },
   });
   for (const { directedAt, eventVerification } of Object.values(publicDisclosureMappings)) {
     assert.ok(directedAt.trim());
@@ -182,7 +178,7 @@ test("homepage keeps the public archive safety boundaries visible", () => {
       /occurrence verified|provenance|event match|corroborated|human editorial review|verification gate|status code/i,
     );
   }
-  assert.equal((featuredBlock.match(/format: "Text record"/g) ?? []).length, 3);
+  assert.equal((featuredBlock.match(/format: "Text record"/g) ?? []).length, 2);
   assert.match(styles, /\.media-status-grid\s*\{[\s\S]*?grid-template-columns: 1fr 1fr;/);
   assert.match(
     styles,
@@ -203,7 +199,7 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   );
   assert.match(featuredBlock, /Farmers and villagers near Bidadi oppose land acquisition/);
   assert.match(featuredBlock, /statewide cease-work strike centres on a seven-point charter/);
-  assert.match(featuredBlock, /Students protested after staffing fell to 11 teachers/);
+  assert.doesNotMatch(featuredBlock, /IO-CM-OD-0001|Dharmasala students/);
   const disclosureMarkup = carousel.match(
     /<aside className="featured-record-disclosure"[\s\S]*?<\/aside>/,
   )?.[0];
@@ -316,7 +312,7 @@ test("homepage keeps the public archive safety boundaries visible", () => {
   assert.doesNotMatch(styles, /\.open-questions/);
 });
 
-test("all nine homepage records use the central reviewed visual treatments", () => {
+test("all eight launchable homepage records use the central reviewed visual treatments", () => {
   const page = read("src/app/page.tsx");
   const carousel = read("src/app/components/FeaturedRecordCarousel.tsx");
   const eventVisual = read("src/app/events/components/EventVisual.tsx");
@@ -332,10 +328,10 @@ test("all nine homepage records use the central reviewed visual treatments", () 
     return dataset.slice(start, end === -1 ? undefined : end);
   };
 
-  const featuredIds = ["IO-CM-KA-0002", "IO-CM-MN-0001", "IO-CM-OD-0001"];
+  const featuredIds = ["IO-CM-KA-0002", "IO-CM-MN-0001"];
   const latestIds = ["IO-CM-MP-0001", "IO-CM-DL-0001", "IO-CM-MH-0001"];
   const onRecordIds = ["IO-CM-GJ-0001", "IO-CM-UP-0001", "IO-CM-AS-0001"];
-  assert.equal(new Set([...featuredIds, ...latestIds, ...onRecordIds]).size, 9);
+  assert.equal(new Set([...featuredIds, ...latestIds, ...onRecordIds]).size, 8);
   for (const id of [...featuredIds, ...latestIds, ...onRecordIds]) datasetBlock(id);
   assert.doesNotMatch(dataset, /visual: (?:recordCover|publisherVideo)/);
   assert.equal((mediaRegistry.match(/kind: "publisher_video"/g) ?? []).length, 0);
@@ -445,7 +441,6 @@ test("homepage event types use one controlled vocabulary across every record are
   assert.deepEqual(recordEventTypes(featuredBlock), {
     "IO-CM-KA-0002": "protest",
     "IO-CM-MN-0001": "strike",
-    "IO-CM-OD-0001": "protest",
   });
   assert.deepEqual(recordEventTypes(latestBlock), {
     "IO-CM-MP-0001": "protest",
@@ -551,18 +546,17 @@ test("homepage event statuses use one controlled public vocabulary", () => {
       ),
     );
   assert.deepEqual(recordStatuses(featuredBlock), {
-    "IO-CM-KA-0002": "ongoing",
-    "IO-CM-MN-0001": "ongoing",
-    "IO-CM-OD-0001": "concluded",
+    "IO-CM-KA-0002": "outcome_pending",
+    "IO-CM-MN-0001": "outcome_pending",
   });
   assert.deepEqual(recordStatuses(latestBlock), {
-    "IO-CM-MP-0001": "ongoing",
+    "IO-CM-MP-0001": "outcome_pending",
     "IO-CM-DL-0001": "ongoing",
     "IO-CM-MH-0001": "concluded",
   });
   assert.deepEqual(recordStatuses(onRecordBlock), {
     "IO-CM-GJ-0001": "ongoing",
-    "IO-CM-UP-0001": "ongoing",
+    "IO-CM-UP-0001": "outcome_pending",
     "IO-CM-AS-0001": "concluded",
   });
 

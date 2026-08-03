@@ -1,7 +1,7 @@
 # Event media audit
 
-Reviewed 27 July 2026. This source-only audit covers all 50 published event records and the 165
-approved source records available on that date. Seven status-verification follow-ups added on 3
+Reviewed 27 July 2026. This source-only audit covers all 50 internally reviewed event records and the 165
+approved source records available on that date. Eight status-verification follow-ups added on 3
 August 2026 are evidence links only and were not treated as media candidates. Each source URL was
 opened or attempted; inaccessible or platform-blocked pages were not treated as positive media
 evidence without an independently inspectable official
