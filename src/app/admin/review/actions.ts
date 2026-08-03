@@ -3,6 +3,18 @@ import { revalidatePath } from "next/cache";
 import { getEditorialAdminSession } from "@/lib/editorial/admin";
 import { runDiscoveryScan } from "@/lib/discovery/orchestrator";
 
+export type ManualDryRunActionState = {
+  status: "idle" | "completed" | "incomplete" | "failed" | "already_running";
+  message: string;
+  runId: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  queriesUsed: number;
+  itemsDiscovered: number;
+  candidatesCreated: number;
+  failures: number;
+};
+
 async function editor() {
   const session = await getEditorialAdminSession();
   if (!session.user || !session.editor || !session.supabase)
@@ -54,14 +66,55 @@ export async function createChangeSetAction(formData: FormData) {
   revalidatePath(`/admin/review/candidates/${candidateId}`);
 }
 
-export async function startManualDryRunAction() {
-  const supabase = await editor();
-  await runDiscoveryScan({
-    supabase,
-    trigger: "manual_gdelt_dry_run",
-    dryRun: true,
-    scheduledFor: null,
-  });
-  revalidatePath("/admin/review/scan-runs");
-  revalidatePath("/admin/review/today");
+export async function startManualDryRunAction(
+  previousState: ManualDryRunActionState,
+  formData: FormData,
+): Promise<ManualDryRunActionState> {
+  void previousState;
+  void formData;
+  const startedAt = new Date().toISOString();
+  try {
+    const supabase = await editor();
+    const result = await runDiscoveryScan({
+      supabase,
+      trigger: "manual_gdelt_dry_run",
+      dryRun: true,
+      scheduledFor: null,
+    });
+    const completedAt = new Date().toISOString();
+    revalidatePath("/admin/review/scan-runs");
+    revalidatePath("/admin/review/today");
+    return {
+      status: result.status,
+      message:
+        result.status === "completed"
+          ? "The GDELT metadata dry scan completed. Private review candidates are ready."
+          : "The GDELT metadata dry scan stopped safely before every item could be processed.",
+      runId: result.runId,
+      startedAt,
+      completedAt,
+      queriesUsed: result.queriesUsed,
+      itemsDiscovered: result.itemsFetched,
+      candidatesCreated: result.candidates,
+      failures: result.failures,
+    };
+  } catch (error) {
+    const alreadyRunning = error instanceof Error && error.message === "dry_scan_already_running";
+    const alreadyUsed = error instanceof Error && error.message === "dry_scan_already_used";
+    return {
+      status: alreadyRunning ? "already_running" : "failed",
+      message: alreadyRunning
+        ? "A dry scan is already running."
+        : alreadyUsed
+          ? "The approved one-time GDELT dry scan has already been used."
+          : "The dry scan could not be started safely. No public records were changed.",
+      runId: null,
+      startedAt,
+      completedAt: new Date().toISOString(),
+      queriesUsed: 0,
+      itemsDiscovered: 0,
+      candidatesCreated: 0,
+      failures: 1,
+    };
+  }
 }
