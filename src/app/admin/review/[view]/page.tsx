@@ -6,6 +6,7 @@ import { connectorManifests } from "@/lib/discovery/connectors/registry";
 import { getEditorialAdminSession } from "@/lib/editorial/admin";
 import { groupCandidatesByState } from "@/lib/editorial/candidateGrouping";
 import { ManualGdeltDryRunControl } from "../ManualGdeltDryRunControl";
+import { ManualFallbackDryRunControl } from "../ManualFallbackDryRunControl";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -161,10 +162,40 @@ export default async function EditorialReviewPage({
       run.trigger_type === "manual_gdelt_dry_run" &&
       (run.status === "queued" || run.status === "running"),
   );
+  const approvedFallbackSources = sources.filter((source) => {
+    const review = compliance.find((record) => record.id === source.compliance_registry_id);
+    return (
+      source.enabled &&
+      ["rss", "atom", "sitemap", "html_list", "youtube_api", "bluesky_api"].includes(
+        source.scan_method,
+      ) &&
+      review?.production_enabled === true &&
+      [
+        "approved_metadata_only",
+        "approved_link_and_excerpt",
+        "approved_official_api",
+        "approved_internal_review_only",
+      ].includes(review.legal_review_status) &&
+      review.robots_policy !== "not_assessed" &&
+      review.robots_policy !== "restricted" &&
+      review.robots_policy !== "forbidden" &&
+      Boolean(review.review_expires_at && new Date(review.review_expires_at) > new Date())
+    );
+  });
+  const activeFallbackRun = (scanResult.data ?? []).some(
+    (run) =>
+      run.trigger_type === "manual_fallback_dry_run" &&
+      (run.status === "queued" || run.status === "running"),
+  );
   const dryRunDisabledReason = activeManualRun
     ? "A dry scan is already running."
     : approvedManualSources.length === 0
       ? "The approved one-time GDELT dry scan is not currently available."
+      : null;
+  const fallbackDisabledReason = activeFallbackRun
+    ? "A fallback dry scan is already running."
+    : approvedFallbackSources.length === 0
+      ? "No approved non-GDELT production source is currently available."
       : null;
   const filtered = candidates.filter((candidate) =>
     view === "new-events"
@@ -229,7 +260,10 @@ export default async function EditorialReviewPage({
           </div>
         </dl>
         {view === "today" || view === "scan-runs" ? (
-          <ManualGdeltDryRunControl disabledReason={dryRunDisabledReason} />
+          <>
+            <ManualGdeltDryRunControl disabledReason={dryRunDisabledReason} />
+            <ManualFallbackDryRunControl disabledReason={fallbackDisabledReason} />
+          </>
         ) : null}
         {view === "compliance" ? (
           <ComplianceView

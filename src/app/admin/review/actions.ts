@@ -15,6 +15,13 @@ export type ManualDryRunActionState = {
   failures: number;
 };
 
+export type FallbackDryRunActionState = ManualDryRunActionState & {
+  connectorResults: Record<
+    string,
+    { sources: number; successes: number; failures: number; items: number; candidates: number }
+  >;
+};
+
 async function editor() {
   const session = await getEditorialAdminSession();
   if (!session.user || !session.editor || !session.supabase)
@@ -116,6 +123,58 @@ export async function startManualDryRunAction(
       itemsDiscovered: 0,
       candidatesCreated: 0,
       failures: 1,
+    };
+  }
+}
+
+export async function startFallbackDryRunAction(
+  previousState: FallbackDryRunActionState,
+  formData: FormData,
+): Promise<FallbackDryRunActionState> {
+  void previousState;
+  void formData;
+  const startedAt = new Date().toISOString();
+  try {
+    const supabase = await editor();
+    const result = await runDiscoveryScan({
+      supabase,
+      trigger: "manual_fallback_dry_run",
+      dryRun: true,
+      scheduledFor: null,
+    });
+    revalidatePath("/admin/review/scan-runs");
+    revalidatePath("/admin/review/today");
+    return {
+      status: result.status,
+      message:
+        result.status === "completed"
+          ? "The fallback metadata dry scan completed. Private review candidates are ready."
+          : (result.safeFailureSummary ??
+            "The fallback dry scan completed with isolated connector failures."),
+      runId: result.runId,
+      startedAt,
+      completedAt: new Date().toISOString(),
+      queriesUsed: result.youtubeCalls + result.blueskyCalls,
+      itemsDiscovered: result.itemsFetched,
+      candidatesCreated: result.candidates,
+      failures: result.failures,
+      connectorResults: result.connectorResults,
+    };
+  } catch (error) {
+    const alreadyRunning = error instanceof Error && error.message === "dry_scan_already_running";
+    return {
+      status: alreadyRunning ? "already_running" : "failed",
+      message: alreadyRunning
+        ? "A dry scan is already running."
+        : "No approved non-GDELT source is available. No scan run or public change was created.",
+      runId: null,
+      startedAt,
+      completedAt: new Date().toISOString(),
+      queriesUsed: 0,
+      itemsDiscovered: 0,
+      candidatesCreated: 0,
+      failures: alreadyRunning ? 0 : 1,
+      connectorResults: {},
     };
   }
 }

@@ -18,6 +18,7 @@ const connectors = read("src/lib/discovery/connectors/registry.ts");
 const dashboard = read("src/app/admin/review/[view]/page.tsx");
 const dashboardActions = read("src/app/admin/review/actions.ts");
 const manualControl = read("src/app/admin/review/ManualGdeltDryRunControl.tsx");
+const fallbackControl = read("src/app/admin/review/ManualFallbackDryRunControl.tsx");
 const internalRoute = read("src/app/api/internal/discovery/route.ts");
 const freeConnectors = read("src/lib/discovery/connectors/freeConnectors.ts");
 const queryStrategy = read("src/lib/discovery/queryStrategy.ts");
@@ -30,6 +31,7 @@ const controlledGdelt = read(
 const protectedGdeltControl = read(
   "supabase/migrations/20260803000100_protect_manual_gdelt_editor_run.sql",
 );
+const fallbackDryRun = read("supabase/migrations/20260803000200_add_manual_fallback_dry_run.sql");
 
 test("production scheduling and all external effects default off", () => {
   assert.match(workflow, /scheduler_enabled boolean not null default false/);
@@ -155,12 +157,38 @@ test("manual dry runs enforce the first-rollout source, item and candidate stops
   assert.match(orchestrator, /maximumFetchedItems: 300/);
   assert.match(orchestrator, /maximumCandidates: 100/);
   assert.match(orchestrator, /maximumGdeltSearches: 60/);
+  assert.match(orchestrator, /maximumYoutubeSearches: 50/);
+  assert.match(orchestrator, /maximumBlueskyRequests: 100/);
   assert.match(orchestrator, /controlledManualDryRun/);
-  assert.match(orchestrator, /youtube: controlledManualDryRun \? 0 : 100/);
-  assert.match(orchestrator, /bluesky: controlledManualDryRun \? 0 : 500/);
+  assert.match(orchestrator, /controlledFallbackRun/);
+  assert.match(orchestrator, /neq\("scan_method", "gdelt"\)/);
   assert.match(orchestrator, /status: "skipped"/);
   assert.match(orchestrator, /limitReached/);
   assert.match(sourceDiscovery, /maximumItems/);
+});
+
+test("fallback dry run selects only compliant non-GDELT sources in the requested order", () => {
+  assert.match(fallbackDryRun, /manual_fallback_dry_run/);
+  assert.match(fallbackDryRun, /limit 20/);
+  assert.match(
+    fallbackDryRun,
+    /source\.scan_method in \('rss', 'atom', 'sitemap', 'html_list', 'youtube_api', 'bluesky_api'\)/,
+  );
+  assert.doesNotMatch(fallbackDryRun, /source\.scan_method in \([^)]*gdelt/);
+  assert.match(fallbackDryRun, /review\.production_enabled/);
+  assert.match(
+    fallbackDryRun,
+    /review\.robots_policy not in \('not_assessed', 'restricted', 'forbidden'\)/,
+  );
+  assert.match(fallbackDryRun, /fallback_processing_purpose_not_approved/);
+  assert.match(fallbackDryRun, /fallback_sources_unavailable/);
+  assert.doesNotMatch(fallbackDryRun, /discovery_schedule_settings/);
+  assert.match(dashboardActions, /trigger: "manual_fallback_dry_run"/);
+  assert.match(fallbackControl, /Run fallback dry scan/);
+  assert.match(fallbackControl, /approved non-GDELT metadata sources only/);
+  assert.match(fallbackControl, /role="status" aria-live="polite"/);
+  assert.match(dashboard, /approvedFallbackSources/);
+  assert.match(dashboard, /No approved non-GDELT production source is currently available/);
 });
 
 test("private lead discovery excludes contributor contact details", () => {
