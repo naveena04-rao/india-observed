@@ -256,7 +256,7 @@ test("the source-only audit still covers every published record and source", () 
   assert.equal(auditRows.length, 50);
   assert.equal(new Set(auditSlugs).size, 50);
   assert.deepEqual([...auditSlugs].sort(), [...publishedSlugs].sort());
-  assert.match(audit, /all 165\s+approved source records/i);
+  assert.match(audit, /165\s+approved source records available/i);
   assert.equal(
     Object.values(
       Function(
@@ -267,7 +267,7 @@ test("the source-only audit still covers every published record and source", () 
         )});`,
       )(),
     ).flatMap((event) => event.sources).length,
-    165,
+    173,
   );
 });
 

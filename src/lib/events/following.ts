@@ -13,7 +13,10 @@ export const eventSlugSchema = z
 
 export function findPublishedEvent(slug: string) {
   return reviewedEventsPreview.find(
-    (event) => event.slug === slug && event.publicationStatus === "published",
+    (event) =>
+      event.slug === slug &&
+      event.publicationStatus === "published" &&
+      event.publicLaunchStatus === "launchable",
   );
 }
 

@@ -154,6 +154,7 @@ export type ReviewedEventPreview = {
   directedAt: string;
   eventVerification: string;
   publicationStatus: EventPublicationStatus;
+  publicLaunchStatus: "launchable" | "temporarily_withheld";
   publishedAt: string | null;
   approvedSourceCount: number;
   sources: readonly EventPublicSource[];

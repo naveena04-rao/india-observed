@@ -57,7 +57,7 @@ because ordinary participants and possible minors may be identifiable.
 
 The protected `/admin/media` route uses existing passwordless authentication plus a private UUID
 allow-list in `media_admins`. Email address or email domain is never the authorization boundary.
-Administrators select one of the 50 controlled published records and one of that event's 165
+Administrators select one of the 50 controlled reviewed records and one of that event's 173
 approved source URLs; free-text event slugs and cross-event sources are rejected.
 
 Uploaded JPEG, PNG or WebP originals are decoded in the browser, resized to a maximum 2,000-pixel

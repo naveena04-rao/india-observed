@@ -269,7 +269,7 @@ test("following does not alter archive or homepage editorial behavior", () => {
   assert.doesNotMatch(archivePage, /EventFollowControl|event-follow/);
 });
 
-test("all nine homepage definitions resolve to published slugs and render compact controls", () => {
+test("all eight launchable homepage definitions resolve to published slugs and render controls", () => {
   const homepageIds = [...homepage.matchAll(/\bid: "(IO-CM-[A-Z0-9-]+)"/g)].map(
     (match) => match[1],
   );
@@ -280,8 +280,9 @@ test("all nine homepage definitions resolve to published slugs and render compac
     ]),
   );
 
-  assert.equal(homepageIds.length, 9);
-  assert.equal(new Set(homepageIds).size, 9);
+  assert.equal(homepageIds.length, 8);
+  assert.equal(new Set(homepageIds).size, 8);
+  assert.equal(homepageIds.includes("IO-CM-OD-0001"), false);
   for (const id of homepageIds)
     assert.ok(reviewedSlugs.has(id), `missing published slug for ${id}`);
   assert.match(
