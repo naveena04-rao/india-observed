@@ -105,6 +105,15 @@ export const reviewedEventEvidenceByInternalId = {
     sources: [
       {
         publisher: "Associated Press",
+        headline: "India's Cockroach movement ends protests after education minister resigns",
+        url: "https://apnews.com/article/56d69c289589f057c0e72cde0c3d75d3",
+        publicationDate: "2026-07-25",
+        sourceType: "Follow-up media reporting",
+        sourceRole: "Corroboration",
+        independenceNote: "Original / independent",
+      },
+      {
+        publisher: "Associated Press",
         headline:
           "India's youth-led Cockroach movement vows to continue protest after police crackdown",
         url: "https://apnews.com/article/dc9d61bf27f26510c0bd427f4d889699",
@@ -490,6 +499,15 @@ export const reviewedEventEvidenceByInternalId = {
   "IO-CM-GJ-0001": {
     sources: [
       {
+        publisher: "ABP Asmita",
+        headline: "Morbi farmers continue transmission-compensation protest with a mass march",
+        url: "https://gujarati.abplive.com/news/gujarat/morbi-jetpar-farmers-protest-electricity-line-compensation-circular-985595",
+        publicationDate: "2026-07-14",
+        sourceType: "Follow-up media reporting",
+        sourceRole: "Corroboration",
+        independenceNote: "Original / independent",
+      },
+      {
         publisher: "The Indian Express",
         headline: "Gujarat farmers protest Adani transmission line compensation in Morbi",
         url: "https://indianexpress.com/article/cities/ahmedabad/gujarat-farmers-protest-adani-transmission-line-compensation-morbi-10775737/",
@@ -730,6 +748,15 @@ export const reviewedEventEvidenceByInternalId = {
   },
   "IO-CM-UK-0001": {
     sources: [
+      {
+        publisher: "The Times of India",
+        headline: "Dhami halts tree felling and directs consultation after week-long protests",
+        url: "https://timesofindia.indiatimes.com/city/dehradun/after-week-long-protests-dhami-halts-tree-felling-on-rishikesh-stretch-directs-chief-secy-to-consult-all-stakeholders/articleshow/132484099.cms",
+        publicationDate: "2026-07-19",
+        sourceType: "Follow-up media reporting",
+        sourceRole: "Official response",
+        independenceNote: "Original / independent",
+      },
       {
         publisher: "Press Information Bureau / Ministry of Road Transport and Highways",
         headline:
@@ -1652,6 +1679,15 @@ export const reviewedEventEvidenceByInternalId = {
   "IO-CM-MH-0004": {
     sources: [
       {
+        publisher: "The Indian Express",
+        headline: "BEST strike called off after talks with Maharashtra government",
+        url: "https://indianexpress.com/article/cities/mumbai/best-bus-strike-called-off-eknath-shinde-meeting-wage-hike-5000-new-buses-10751356/",
+        publicationDate: "2026-06-22",
+        sourceType: "Follow-up media reporting",
+        sourceRole: "Corroboration",
+        independenceNote: "Original / independent",
+      },
+      {
         publisher: "The New Indian Express",
         headline: "BEST strike enters second day as Mumbai commuters struggle",
         url: "https://www.newindianexpress.com/states/maharashtra/2026/Jun/20/best-strike-enters-second-day-as-mumbai-commuters-struggle-amid-stalled-bus-services",
@@ -1702,6 +1738,15 @@ export const reviewedEventEvidenceByInternalId = {
   },
   "IO-CM-MH-0005": {
     sources: [
+      {
+        publisher: "The Times of India",
+        headline: "RTO clerical staff end strike after minister promises promotion fix",
+        url: "https://timesofindia.indiatimes.com/city/pune/rto-clerical-staff-end-7-day-strike-after-minister-promises-promotion-fix/articleshow/131949412.cms",
+        publicationDate: "2026-06-24",
+        sourceType: "Follow-up media reporting",
+        sourceRole: "Corroboration",
+        independenceNote: "Original / independent",
+      },
       {
         publisher: "The Times of India",
         headline: "RTO clerical staff intensify stir on seventh day",
@@ -2031,6 +2076,15 @@ export const reviewedEventEvidenceByInternalId = {
   "IO-CM-DL-0007": {
     sources: [
       {
+        publisher: "The Times of India",
+        headline: "Farmers halt Delhi march over proposed India–US trade deal",
+        url: "https://timesofindia.indiatimes.com/city/chandigarh/farmers-halt-delhi-march-over-us-deal/articleshow/132544717.cms",
+        publicationDate: "2026-07-21",
+        sourceType: "Follow-up media reporting",
+        sourceRole: "Corroboration",
+        independenceNote: "Original / independent",
+      },
+      {
         publisher: "Hindustan Times",
         headline: "Farmers gather at Shambhu border ahead of march to Delhi",
         url: "https://www.hindustantimes.com/india-news/haryana-punjab-farmers-at-shambhu-border-rally-march-to-delhi-protest-india-us-trade-deal-kisan-mahapanchayat-cjp-news-101784605506778.html",
@@ -2282,6 +2336,15 @@ export const reviewedEventEvidenceByInternalId = {
   },
   "IO-CM-GA-0001": {
     sources: [
+      {
+        publisher: "The Goan",
+        headline: "Karapur-Sarvan agitation remains ongoing at the TCP office",
+        url: "https://www.thegoan.net/goa-news/%EF%BB%BF69day-karapur-protest-reaches-tcp-office-opposition-joins-in-support/149556.html",
+        publicationDate: "2026-07-25",
+        sourceType: "Follow-up media reporting",
+        sourceRole: "Corroboration",
+        independenceNote: "Original / independent",
+      },
       {
         publisher: "The Goan",
         headline: "Save Karapur protest reaches Panaji; agitators threaten indefinite sit-in",

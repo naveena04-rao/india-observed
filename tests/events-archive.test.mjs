@@ -98,7 +98,7 @@ test("reviewed Events routes and the canonical public-safe snapshot exist", () =
   for (const total of [
     "50 events",
     "263 claims",
-    "165 sources",
+    "172 sources",
     "197 organisations",
     "2 corrections",
     "12 safety incidents",
@@ -132,7 +132,7 @@ test("snapshot has 50 unique readable slugs and one truthful fallback per event"
     /eventMediaRegistry satisfies Record<PublishedEventSlug, EventMediaRegistryEntry>/,
   );
   assert.doesNotMatch(dataset, /visual: (?:recordCover|publisherVideo)/);
-  assert.equal(Object.values(evidence).flatMap((event) => event.sources).length, 165);
+  assert.equal(Object.values(evidence).flatMap((event) => event.sources).length, 172);
   assert.equal(new Set(states).size, 20);
   assert.equal(primaryTopics.length, 50);
   assert.equal(new Set(primaryTopics).size, 9);
@@ -210,7 +210,7 @@ test("every Preview record has an ordered public-safe source list", () => {
   const sources = entries.flatMap(([, event]) => event.sources);
 
   assert.equal(entries.length, 50);
-  assert.equal(sources.length, 165);
+  assert.equal(sources.length, 172);
   assert.equal(
     entries.every(([, event]) => event.sources.length >= 1),
     true,
@@ -312,18 +312,34 @@ test("all events have qualified safety summaries and only attributed incident de
   assert.match(eventSafety, /\{event\.safety\.summary\}/);
 
   const jantar = evidence["IO-CM-DL-0001"];
-  assert.equal(jantar.sources.length, 8);
+  assert.equal(jantar.sources.length, 9);
   assert.equal(jantar.safetyIncidents.length, 2);
   assert.deepEqual(
     jantar.safetyIncidents.map((incident) => incident.date),
     ["2026-07-18", "2026-07-20"],
   );
   const jantarBlock = eventBlock("IO-CM-DL-0001");
-  assert.match(jantarBlock, /lastConfirmedActive: "2026-07-20"/);
-  assert.match(jantarBlock, /lastReviewed: "2026-07-21"/);
+  assert.match(jantarBlock, /eventStatus: "Concluded"/);
+  assert.match(jantarBlock, /endDate: "2026-07-25"/);
+  assert.match(jantarBlock, /lastConfirmedActive: "2026-07-25"/);
+  assert.match(jantarBlock, /lastReviewed: "2026-08-03"/);
   assert.match(jantarBlock, /Police removed him from the site and transferred him to hospital/);
   assert.match(jantarBlock, /latestOfficialResponse:/);
   assert.doesNotMatch(archiveRow, /safety|incident/i);
+
+  const verifiedStatusChanges = new Map([
+    ["IO-CM-DL-0001", "Concluded"],
+    ["IO-CM-UK-0001", "Outcome pending"],
+    ["IO-CM-MH-0002", "Concluded"],
+    ["IO-CM-MH-0003", "Concluded"],
+    ["IO-CM-MH-0004", "Concluded"],
+    ["IO-CM-MH-0005", "Concluded"],
+    ["IO-CM-DL-0007", "Concluded"],
+    ["IO-CM-PB-0005", "Concluded"],
+  ]);
+  for (const [eventId, status] of verifiedStatusChanges) {
+    assert.equal(literalField(eventBlock(eventId), "eventStatus"), status);
+  }
 });
 
 test("only controlled visual types are allowed and the archive never loads video iframes", () => {
@@ -508,16 +524,16 @@ test("latest-activity sorting and accessible ten-record pagination cover all rec
   assert.deepEqual(
     ordered.slice(0, 10).map((record) => record.slug),
     [
-      "kisan-ghat-india-us-trade-deal",
       "education-accountability-jantar-mantar",
+      "karapur-sarvan-luxury-township-protest",
+      "kisan-ghat-india-us-trade-deal",
       "indore-dewas-ring-road-compensation",
       "jammu-kashmir-statehood-jantar-mantar",
+      "bhaniyawala-rishikesh-tree-felling-protest",
       "mumbai-police-action-education-protest",
       "shamshabad-high-speed-rail-land-protest",
       "bharat-tiwari-justice-rights-assembly",
       "hidkal-displaced-farmers-belagavi-compensation",
-      "channot-drinking-water-pipeline-protest",
-      "khanna-mgnrega-workers-regularisation-salaries",
     ],
   );
   assert.deepEqual(

@@ -4,9 +4,11 @@
 > superseded on 30 July 2026 by the owner-authorised, source-linked current-events review described
 > in `MEDIA_PHASE2_COMPLETION.md`. It must not be used as the current publication-status register.
 
-Reviewed 28 July 2026 after opening or attempting all 165 approved sources for all 50 event
-records. The 47 events below remain editorially reviewed but are not Production-visible. Publisher
-article photographs were not copied or remotely displayed without a documented display basis.
+Reviewed 28 July 2026 after opening or attempting all 165 approved sources then available for all
+50 event records. Seven status-verification follow-ups added on 3 August 2026 are evidence links
+only and do not change this media review. The 47 events below remain editorially reviewed but are
+not Production-visible. Publisher article photographs were not copied or remotely displayed
+without a documented display basis.
 Unsupported direct video streams were not extracted.
 
 ## Awaiting rights or supported display confirmation

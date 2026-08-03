@@ -1,8 +1,10 @@
 # Event media audit
 
-Reviewed 27 July 2026. This source-only audit covers all 50 published event records and all 165
-approved source records. Each source URL was opened or attempted; inaccessible or platform-blocked
-pages were not treated as positive media evidence without an independently inspectable official
+Reviewed 27 July 2026. This source-only audit covers all 50 published event records and the 165
+approved source records available on that date. Seven status-verification follow-ups added on 3
+August 2026 are evidence links only and were not treated as media candidates. Each source URL was
+opened or attempted; inaccessible or platform-blocked pages were not treated as positive media
+evidence without an independently inspectable official
 post. Media is approved only when it depicts the same event, belongs to the event's approved source
 set (or is the publisher's official version of media directly corresponding to an approved source),
 has a lawful display route, and passes privacy, safety and human-editorial gates.

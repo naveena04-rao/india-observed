@@ -10,10 +10,10 @@ import type { ReviewedEventPreview } from "../lib/events/types";
  * Workbook SHA-256:
  * 76958985A005AFE9EF332F657959FFB039334E7B97D0205D3FC82C5DDD249262
  *
- * Canonical totals:
+ * Snapshot totals after the 3 August 2026 status verification:
  * 50 events
  * 263 claims
- * 165 sources
+ * 172 sources
  * 197 organisations
  * 2 corrections
  * 12 safety incidents
@@ -48,24 +48,24 @@ const reviewedEventRecords = [
   {
     internalId: "IO-CM-DL-0001",
     slug: "education-accountability-jantar-mantar",
-    title: "Education accountability sit-in and hunger strike continues at Jantar Mantar",
+    title: "Education accountability sit-in and hunger strike at Jantar Mantar",
     eventType: "Multi-form civic protest",
-    eventStatus: "Ongoing",
+    eventStatus: "Concluded",
     topic:
       "Alleged examination irregularities, paper leaks and demand for education-system accountability",
     stateOrUnionTerritory: "Delhi",
     publicLocation: "Jantar Mantar, New Delhi",
     startDate: "2026-06-20",
-    endDate: null,
-    lastConfirmedActive: "2026-07-20",
-    lastReviewed: "2026-07-21",
+    endDate: "2026-07-25",
+    lastConfirmedActive: "2026-07-25",
+    lastReviewed: "2026-08-03",
     summary:
-      "A sit-in organised by the Cockroach Janta Party continued at Jantar Mantar in New Delhi in July 2026, with participants demanding accountability over alleged examination irregularities and the resignation of Union Education Minister Dharmendra Pradhan. Education reformer Sonam Wangchuk joined through an indefinite hunger strike from 28 June. Police removed him from the site and transferred him to hospital on 18 July. A 20 July march towards Parliament encountered police baton charges and tear gas. The occurrence and principal demands are corroborated; the necessity of the removal, responsibility for escalation and injury totals remain disputed or attributed.",
+      "A sit-in organised by the Cockroach Janta Party continued at Jantar Mantar in New Delhi through July 2026, with participants demanding accountability over alleged examination irregularities and the resignation of Union Education Minister Dharmendra Pradhan. Education reformer Sonam Wangchuk joined through an indefinite hunger strike from 28 June. Police removed him from the site and transferred him to hospital on 18 July, and a 20 July march towards Parliament encountered police baton charges and tear gas. The movement called off its protests on 25 July after the education minister resigned and organisers said the government had accepted their demands. The occurrence, conclusion and principal demands are corroborated; responsibility for the earlier escalation and injury totals remain disputed or attributed.",
     directedAt: "Union Ministry of Education; Government of India",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 4,
     latestOfficialResponse:
-      "Police transferred Sonam Wangchuk to hospital on 18 July and used batons and tear gas during the 20 July march. Government representatives met protest delegates, but no final settlement of the movement's demands was identified.",
+      "The education minister resigned on 25 July, after which organisers said the government had accepted their demands and called off the protests.",
   },
   {
     internalId: "IO-CM-KA-0001",
@@ -160,8 +160,8 @@ const reviewedEventRecords = [
     publicLocation: "Jetpar village, Morbi district",
     startDate: "2026-06-07",
     endDate: null,
-    lastConfirmedActive: "2026-07-07",
-    lastReviewed: "2026-07-15",
+    lastConfirmedActive: "2026-07-14",
+    lastReviewed: "2026-08-03",
     summary:
       "Farmers centred in Jetpar village, Morbi, conducted a multi-phase movement against the compensation terms for agricultural land affected by a high-voltage power-transmission project. The movement included demonstrations, symbolic head-shaving and an indefinite hunger strike that began on 17 June. After the Gujarat government issued revised compensation guidelines on 4 July, the farmers ended the fast but said the agitation would continue as a satyagraha because questions remained about land valuation, right-of-way compensation and implementation. The movement and government response are independently corroborated; claims about land becoming uncultivable and the exact number of affected farmers remain attributed.",
     directedAt:
@@ -254,20 +254,19 @@ const reviewedEventRecords = [
   {
     internalId: "IO-CM-UK-0001",
     slug: "bhaniyawala-rishikesh-tree-felling-protest",
-    title:
-      "Residents continue protest against tree felling for Bhaniyawala–Rishikesh highway widening",
+    title: "Residents protest tree felling for Bhaniyawala–Rishikesh highway widening",
     eventType: "Multi-form civic protest",
-    eventStatus: "Ongoing",
+    eventStatus: "Outcome pending",
     topic:
       "Tree felling, forest and wildlife-corridor impacts linked to the Bhaniyawala–Jollygrant–Rishikesh road-widening project",
     stateOrUnionTerritory: "Uttarakhand",
     publicLocation: "Bhaniyawala–Rishikesh stretch, Dehradun district",
     startDate: "2026-07-08",
-    endDate: null,
-    lastConfirmedActive: "2026-07-15",
-    lastReviewed: "2026-07-17",
+    endDate: "2026-07-19",
+    lastConfirmedActive: "2026-07-19",
+    lastReviewed: "2026-08-03",
     summary:
-      "Residents and environmental activists in Dehradun district organised protests against tree felling for the Bhaniyawala–Jollygrant–Rishikesh highway-widening project. Documented actions included a demonstration at the NHAI office, tree-hugging and sit-ins along the road stretch. Tree felling later resumed under police deployment, and media reported arrests and an FIR against unidentified protesters. The occurrence and protest methods are corroborated; the precise number of trees affected and some project-impact claims remain disputed or dependent on official records.",
+      "Residents and environmental activists in Dehradun district organised protests against tree felling for the Bhaniyawala–Jollygrant–Rishikesh highway-widening project. Documented actions included a demonstration at the NHAI office, tree-hugging and sit-ins along the road stretch. Tree felling later resumed under police deployment, and media reported arrests and an FIR against unidentified protesters. On 19 July, the chief minister ordered an immediate halt to tree felling and directed officials to consult stakeholders. The occurrence, protest methods and interim halt are corroborated; the project's final configuration and the precise number of trees affected remain unresolved.",
     directedAt:
       "National Highways Authority of India; Uttarakhand Forest Department; Uttarakhand Government",
     eventVerification: "Occurrence verified — disputed details remain",
@@ -537,7 +536,7 @@ const reviewedEventRecords = [
     title:
       "Maharashtra scheme workers hold three-day Azad Maidan protest over pay and regularisation",
     eventType: "Sit-in",
-    eventStatus: "Outcome pending",
+    eventStatus: "Concluded",
     topic:
       "Delayed remuneration, regularisation and social-security demands of Anganwadi, ASHA, NHM and other scheme workers",
     stateOrUnionTerritory: "Maharashtra",
@@ -545,7 +544,7 @@ const reviewedEventRecords = [
     startDate: "2026-06-01",
     endDate: "2026-06-03",
     lastConfirmedActive: "2026-06-03",
-    lastReviewed: "2026-07-21",
+    lastReviewed: "2026-08-03",
     summary:
       "Anganwadi, ASHA, National Health Mission and other government-scheme workers held a three-day protest at Azad Maidan from 1 to 3 June 2026. Their demands included release of delayed remuneration, regularisation, improved honoraria and social-security protections. The protest ended after representatives received an assurance of a meeting with the state government. The occurrence and broad demands are corroborated; worker totals and arrears estimates remain organiser or media figures.",
     directedAt:
@@ -559,7 +558,7 @@ const reviewedEventRecords = [
     title:
       "Gadchiroli farmers protest land acquisition for proposed airport and industrial projects",
     eventType: "Multi-form civic protest",
-    eventStatus: "Outcome pending",
+    eventStatus: "Concluded",
     topic:
       "Land acquisition, consent and compensation for proposed airport and industrial projects",
     stateOrUnionTerritory: "Maharashtra",
@@ -567,7 +566,7 @@ const reviewedEventRecords = [
     startDate: "2026-06-04",
     endDate: "2026-06-06",
     lastConfirmedActive: "2026-06-06",
-    lastReviewed: "2026-07-21",
+    lastReviewed: "2026-08-03",
     summary:
       "Farmers and village residents marched and held a sit-in in Gadchiroli in early June 2026 against land acquisition for a proposed airport and industrial projects. Participants raised concerns about consent, compensation, agricultural livelihoods and protections under the Panchayats (Extension to Scheduled Areas) Act. The Maharashtra government subsequently halted the acquisition process pending further consultation. The protest and halt are corroborated; the permanent status of the projects and affected acreage require continued review.",
     directedAt:
@@ -644,16 +643,16 @@ const reviewedEventRecords = [
     slug: "best-workers-pension-pay-strike",
     title: "BEST workers begin strike over pension, pay-revision and retirement dues",
     eventType: "Strike",
-    eventStatus: "Outcome pending",
+    eventStatus: "Concluded",
     topic: "Pension, seventh-pay-commission implementation and settlement of retirement dues",
     stateOrUnionTerritory: "Maharashtra",
     publicLocation: "Mumbai, Maharashtra",
     startDate: "2026-06-18",
-    endDate: null,
-    lastConfirmedActive: "2026-06-20",
-    lastReviewed: "2026-07-21",
+    endDate: "2026-06-21",
+    lastConfirmedActive: "2026-06-21",
+    lastReviewed: "2026-08-03",
     summary:
-      "Employees of Mumbai's Brihanmumbai Electric Supply and Transport undertaking began a strike in mid-June 2026 over pension, pay-revision and retirement dues. Bus operations were disrupted and court proceedings addressed the legality of the proposed action. Reporting confirmed that the strike continued into a second day. The occurrence and demands are corroborated; the exact share of services affected and the final settlement remain under review.",
+      "Employees of Mumbai's Brihanmumbai Electric Supply and Transport undertaking began a strike in mid-June 2026 over pension, pay-revision and retirement dues. Bus operations were disrupted and court proceedings addressed the legality of the proposed action. Unions called off the strike on 21 June after talks with the Maharashtra government, and bus services began to resume. The occurrence, conclusion and demands are corroborated; implementation of the assurances remains subject to follow-up.",
     directedAt:
       "Brihanmumbai Electric Supply and Transport undertaking; Brihanmumbai Municipal Corporation; Maharashtra Government; Bombay High Court",
     eventVerification: "Occurrence verified — disputed details remain",
@@ -664,17 +663,17 @@ const reviewedEventRecords = [
     slug: "maharashtra-rto-clerical-pen-down-strike",
     title: "Maharashtra RTO clerical employees hold statewide pen-down strike",
     eventType: "Strike",
-    eventStatus: "Outcome pending",
+    eventStatus: "Concluded",
     topic:
       "Cadre restructuring, promotions, staffing and service-condition demands of RTO clerical employees",
     stateOrUnionTerritory: "Maharashtra",
     publicLocation: "Maharashtra",
     startDate: "2026-06-16",
-    endDate: null,
-    lastConfirmedActive: "2026-06-22",
-    lastReviewed: "2026-07-21",
+    endDate: "2026-06-23",
+    lastConfirmedActive: "2026-06-23",
+    lastReviewed: "2026-08-03",
     summary:
-      "Clerical employees at Regional Transport Offices across Maharashtra began an indefinite pen-down strike on 16 June 2026 over cadre restructuring, promotions, staffing and related service conditions. By 22 June, workers held coordinated sit-ins while public-facing RTO services were affected. The occurrence and demands are corroborated; the extent of service disruption and the final employment settlement remain under review.",
+      "Clerical employees at Regional Transport Offices across Maharashtra began an indefinite pen-down strike on 16 June 2026 over cadre restructuring, promotions, staffing and related service conditions. Workers held coordinated sit-ins while public-facing RTO services were affected. The union called off the strike on 23 June after the transport minister accepted or gave assurances on the promotion demands. The occurrence and conclusion are corroborated; implementation of the assurances remains subject to follow-up.",
     directedAt: "Maharashtra Transport Department; Maharashtra Government",
     eventVerification: "Occurrence verified — disputed details remain",
     approvedSourceCount: 3,
@@ -809,17 +808,17 @@ const reviewedEventRecords = [
     slug: "kisan-ghat-india-us-trade-deal",
     title: "Farmers mobilise at Kisan Ghat and border points against proposed India–US trade deal",
     eventType: "Rally",
-    eventStatus: "Ongoing",
+    eventStatus: "Concluded",
     topic:
       "Opposition to a proposed India–US trade agreement and its potential effects on agriculture, dairy and small businesses",
     stateOrUnionTerritory: "Delhi",
     publicLocation: "New Delhi and interstate approach routes",
     startDate: "2026-07-21",
-    endDate: null,
+    endDate: "2026-07-21",
     lastConfirmedActive: "2026-07-21",
-    lastReviewed: "2026-07-21",
+    lastReviewed: "2026-08-03",
     summary:
-      "Farmer organisations mobilised towards Delhi and gathered for a Kisan Mahapanchayat at Kisan Ghat on 21 July 2026 to oppose a proposed India–US trade agreement. Reporting documented convoys from Punjab, a gathering at the Shambhu border, police barricading and a Delhi traffic advisory. Organisers said the agreement could harm agriculture, dairy and small businesses. The mobilisation and gathering are corroborated; attendance claims and predictions about the trade agreement remain attributed.",
+      "Farmer organisations mobilised towards Delhi and gathered for a Kisan Mahapanchayat at Kisan Ghat on 21 July 2026 to oppose a proposed India–US trade agreement. Reporting documented convoys from Punjab, a gathering at the Shambhu border, police barricading and a Delhi traffic advisory. A planned march was called off after negotiations with police, while organisers warned of further action if agricultural safeguards were not addressed. The one-day mobilisation and gathering are corroborated; attendance claims and predictions about the trade agreement remain attributed.",
     directedAt:
       "Government of India; Union Ministry of Commerce and Industry; Delhi Police; Haryana Police",
     eventVerification: "Occurrence verified — disputed details remain",
@@ -892,7 +891,7 @@ const reviewedEventRecords = [
     slug: "mohali-aerotropolis-land-acquisition-hunger-strike",
     title: "Aerotropolis project-affected farmers hold hunger strike over Mohali land acquisition",
     eventType: "Hunger strike",
-    eventStatus: "Outcome pending",
+    eventStatus: "Concluded",
     topic:
       "Compensation, consent and rehabilitation linked to the Aerotropolis land-acquisition project",
     stateOrUnionTerritory: "Punjab",
@@ -900,7 +899,7 @@ const reviewedEventRecords = [
     startDate: "2026-03-25",
     endDate: "2026-04-15",
     lastConfirmedActive: "2026-04-15",
-    lastReviewed: "2026-07-21",
+    lastReviewed: "2026-08-03",
     summary:
       "Farmers affected by the Aerotropolis project held a hunger strike and protest in Mohali from late March until 15 April 2026 over land acquisition, compensation and rehabilitation. The principal group ended the hunger strike after government assurances, while reporting indicated that another faction considered continuing separate action. The occurrence and interim assurance are corroborated; final compensation and factional representation remain unresolved.",
     directedAt:
@@ -939,8 +938,8 @@ const reviewedEventRecords = [
     publicLocation: "Karapur-Sarvan, North Goa",
     startDate: null,
     endDate: null,
-    lastConfirmedActive: "2026-07-13",
-    lastReviewed: "2026-07-21",
+    lastConfirmedActive: "2026-07-25",
+    lastReviewed: "2026-08-03",
     summary:
       "Residents of Karapur-Sarvan in North Goa sustained a multi-month campaign against a proposed luxury housing and hotel development, including village protests, marches towards Panaji and an announced or continuing sit-in. By mid-July, reporting described the movement as having crossed 100 days. Participants raised concerns about land use, water, roads, environment and local consent. The occurrence is corroborated; the exact start date, project impacts and legal status remain under review.",
     directedAt:
