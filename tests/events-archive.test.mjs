@@ -10,6 +10,7 @@ const publicMediaLoader = read("src/lib/media/public.ts");
 const mediaMigration = read("supabase/migrations/20260728000100_add_event_media_library.sql");
 const evidenceDataset = read("src/data/reviewed-event-evidence-preview.ts");
 const archivePage = read("src/app/events/page.tsx");
+const privacyPage = read("src/app/privacy/page.tsx");
 const detailPage = read("src/app/events/[slug]/page.tsx");
 const sitemap = read("src/app/sitemap.ts");
 const archiveLogic = read("src/lib/events/archive.ts");
@@ -92,6 +93,8 @@ function literalField(block, name) {
 
 test("reviewed Events routes and the canonical public-safe snapshot exist", () => {
   assert.match(archivePage, /export default async function EventsPage/);
+  assert.match(archivePage, /alternates: \{ canonical: "\/events" \}/);
+  assert.match(privacyPage, /alternates: \{ canonical: "\/privacy" \}/);
   assert.match(detailPage, /export default async function EventRecordPage/);
   assert.match(
     dataset,

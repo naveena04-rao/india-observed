@@ -5,6 +5,7 @@ import { getPublicContactEmail } from "@/lib/site";
 export const metadata = {
   title: "Privacy | India Observed",
   description: "How India Observed handles reader accounts, event follows and submitted leads.",
+  alternates: { canonical: "/privacy" },
 };
 
 export default function PrivacyPage() {
