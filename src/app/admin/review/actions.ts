@@ -232,3 +232,53 @@ export async function startPibRssDryRunAction(
     };
   }
 }
+
+export async function startDailyScannerDryRunAction(
+  previousState: ManualDryRunActionState,
+  formData: FormData,
+): Promise<ManualDryRunActionState> {
+  void previousState;
+  void formData;
+  const startedAt = new Date().toISOString();
+  try {
+    const supabase = await editor();
+    const result = await runDiscoveryScan({
+      supabase,
+      trigger: "manual_daily_scanner_dry_run",
+      dryRun: true,
+      scheduledFor: null,
+    });
+    revalidatePath("/admin/review/scan-runs");
+    revalidatePath("/admin/review/today");
+    return {
+      status: result.status,
+      message:
+        result.status === "completed"
+          ? "The daily-scanner readiness run completed. Private review candidates are ready."
+          : (result.safeFailureSummary ??
+            "The readiness run stopped safely. No public records were changed."),
+      runId: result.runId,
+      startedAt,
+      completedAt: new Date().toISOString(),
+      queriesUsed: 0,
+      itemsDiscovered: result.itemsFetched,
+      candidatesCreated: result.candidates,
+      failures: result.failures,
+    };
+  } catch (error) {
+    const alreadyRunning = error instanceof Error && error.message === "dry_scan_already_running";
+    return {
+      status: alreadyRunning ? "already_running" : "failed",
+      message: alreadyRunning
+        ? "A daily-scanner readiness run is already active."
+        : "The readiness run could not be started safely. No public records were changed.",
+      runId: null,
+      startedAt,
+      completedAt: new Date().toISOString(),
+      queriesUsed: 0,
+      itemsDiscovered: 0,
+      candidatesCreated: 0,
+      failures: alreadyRunning ? 0 : 1,
+    };
+  }
+}

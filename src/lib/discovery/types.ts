@@ -20,6 +20,10 @@ export type DiscoveryClassification = {
   confidence: number;
   priority: "low" | "normal" | "high" | "urgent_editor_attention";
   reason: string;
+  targetEventInternalId: string | null;
+  matchingSignals: string[];
+  conflictingSignals: string[];
+  sourceIsNewerThanEvent: boolean | null;
 };
 
 export type SafeFetchedSource = {
@@ -38,5 +42,7 @@ export type SafeFetchedSource = {
     queryFamily?: string | null;
     queryIndex?: number;
     metadataOnly?: boolean;
+    feedSummary?: string | null;
+    connector?: string | null;
   };
 };

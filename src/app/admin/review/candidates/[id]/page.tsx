@@ -90,6 +90,33 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
           </div>
         </dl>
         <section>
+          <h2>Scanner match diagnostics</h2>
+          <dl>
+            <div>
+              <dt>Suggested event</dt>
+              <dd>{candidate.target_event_internal_id ?? candidate.target_event_slug ?? "None"}</dd>
+            </div>
+            <div>
+              <dt>Source newer than latest review</dt>
+              <dd>
+                {candidate.source_is_newer_than_event === null
+                  ? "Unknown"
+                  : candidate.source_is_newer_than_event
+                    ? "Yes"
+                    : "No"}
+              </dd>
+            </div>
+            <div>
+              <dt>Matching signals</dt>
+              <dd>{(candidate.matching_signals ?? []).join(" · ") || "None"}</dd>
+            </div>
+            <div>
+              <dt>Conflicting signals</dt>
+              <dd>{(candidate.conflicting_signals ?? []).join(" · ") || "None"}</dd>
+            </div>
+          </dl>
+        </section>
+        <section>
           <h2>Field-by-field review</h2>
           {fields.length === 0 ? (
             <p className="editor-review__empty">

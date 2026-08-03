@@ -25,6 +25,32 @@ export const pibRssDryRunLimits = {
   timeWindowHours: 72,
 } as const;
 
+export const dailyScannerLimits = {
+  maximumSources: 5,
+  maximumItemsPerSource: 50,
+  maximumFetchedItems: 100,
+  maximumStoredItems: 50,
+  maximumCandidates: 25,
+  maximumRuntimeMs: 230_000,
+  timeWindowHours: 48,
+} as const;
+
+const headlineTerms = (value: string) =>
+  new Set(
+    value
+      .toLocaleLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, " ")
+      .split(/\s+/)
+      .filter((term) => term.length > 2),
+  );
+
+const headlineSimilarity = (left: string, right: string) => {
+  const a = headlineTerms(left);
+  const b = headlineTerms(right);
+  const intersection = [...a].filter((term) => b.has(term)).length;
+  return Math.max(a.size, b.size) ? intersection / Math.max(a.size, b.size) : 0;
+};
+
 function safeError(error: unknown, source: ScannerSource) {
   const code =
     error instanceof Error && ["AbortError", "TimeoutError"].includes(error.name)
@@ -47,9 +73,7 @@ function safeError(error: unknown, source: ScannerSource) {
     source_timeout: "The GDELT request timed out. No items were stored.",
   };
   const retryAfterMs =
-    source.scan_method === "gdelt" &&
-    error instanceof SafeSourceFetchError &&
-    error.diagnostics.statusCode === 429
+    error instanceof SafeSourceFetchError && error.diagnostics.statusCode === 429
       ? Math.max(error.diagnostics.retryAfterMs ?? 60_000, 60_000)
       : null;
   return {
@@ -96,15 +120,46 @@ async function persistCandidate(input: {
     .select("id")
     .eq("content_fingerprint", processed.fingerprint)
     .maybeSingle();
-  const { data: titleDuplicate } = exactDuplicate
+  const { data: canonicalDuplicate } = exactDuplicate
     ? { data: null }
     : await input.supabase
         .from("discovered_items")
         .select("id")
-        .eq("normalized_title_fingerprint", normalizedTitleFingerprint)
+        .eq("canonical_url", processed.canonicalUrl)
         .limit(1)
         .maybeSingle();
-  const duplicate = exactDuplicate ?? titleDuplicate;
+  const { data: titleDuplicate } =
+    exactDuplicate || canonicalDuplicate
+      ? { data: null }
+      : await input.supabase
+          .from("discovered_items")
+          .select("id")
+          .eq("normalized_title_fingerprint", normalizedTitleFingerprint)
+          .limit(1)
+          .maybeSingle();
+  const publisher = input.fetched.discoveryMetadata?.publisher ?? input.source.name;
+  const publishedAt = input.fetched.discoveryMetadata?.publishedAt ?? null;
+  const { data: recentItems } =
+    exactDuplicate || canonicalDuplicate || titleDuplicate
+      ? { data: null }
+      : await input.supabase
+          .from("discovered_items")
+          .select("id,title,published_at,source_metadata")
+          .order("created_at", { ascending: false })
+          .limit(100);
+  const publisherTimeDuplicate = (recentItems ?? []).find((item) => {
+    const metadata = item.source_metadata as { publisher?: string } | null;
+    return metadata?.publisher === publisher && item.published_at === publishedAt;
+  });
+  const syndicatedDuplicate = (recentItems ?? []).find(
+    (item) => headlineSimilarity(item.title, processed.title) >= 0.85,
+  );
+  const duplicate =
+    exactDuplicate ??
+    canonicalDuplicate ??
+    titleDuplicate ??
+    publisherTimeDuplicate ??
+    syndicatedDuplicate;
   if (duplicate) {
     const { error } = await input.supabase.from("discovery_duplicate_observations").upsert(
       {
@@ -112,7 +167,15 @@ async function persistCandidate(input: {
         source_id: input.source.id,
         existing_item_id: duplicate.id,
         observed_url: processed.canonicalUrl,
-        grouping_reason: exactDuplicate ? "content_hash" : "normalized_title",
+        grouping_reason: exactDuplicate
+          ? "content_hash"
+          : canonicalDuplicate
+            ? "canonical_url"
+            : titleDuplicate
+              ? "normalized_title"
+              : publisherTimeDuplicate
+                ? "source_family"
+                : "syndicated_copy",
       },
       { onConflict: "scan_run_id,observed_url", ignoreDuplicates: true },
     );
@@ -147,6 +210,14 @@ async function persistCandidate(input: {
           collectionBoundary: input.fetched.discoveryMetadata?.metadataOnly
             ? "metadata_and_canonical_link_only"
             : "approved_source",
+          feedSummary: input.fetched.discoveryMetadata?.feedSummary ?? null,
+          connector: input.fetched.discoveryMetadata?.connector ?? input.source.scan_method,
+          sourceId: input.source.id,
+          collectedAt: new Date().toISOString(),
+          suggestedEventId: processed.classification.targetEventInternalId,
+          matchingSignals: processed.classification.matchingSignals,
+          conflictingSignals: processed.classification.conflictingSignals,
+          sourceIsNewerThanEvent: processed.classification.sourceIsNewerThanEvent,
         },
         content_fingerprint: processed.fingerprint,
         normalized_title_fingerprint: normalizedTitleFingerprint,
@@ -160,21 +231,56 @@ async function persistCandidate(input: {
   if (itemError) throw new Error("discovered_item_write_failed");
   if (!item) return false;
   const classification = processed.classification;
-  const { error: candidateError } = await input.supabase.from("editorial_candidates").insert({
-    discovered_item_id: item.id,
-    candidate_type: manualReview ? "manual_review" : classification.candidateType,
-    target_event_slug: classification.targetEventSlug,
-    suggested_title: processed.title,
-    state: classification.state ?? input.fetched.discoveryMetadata?.stateHint ?? input.source.state,
-    priority:
-      processed.safetyFlags.possibleChild || processed.safetyFlags.liveTacticalLocation
-        ? "urgent_editor_attention"
-        : classification.priority,
-    confidence: classification.confidence,
-    classification_method: "deterministic",
-    extraction_notes: classification.reason,
-  });
+  const candidateType =
+    classification.candidateType === "media_evidence" &&
+    input.source.connector_config.status === "approved_metadata_only"
+      ? classification.targetEventSlug
+        ? "event_update"
+        : "irrelevant"
+      : classification.candidateType;
+  const { data: candidate, error: candidateError } = await input.supabase
+    .from("editorial_candidates")
+    .insert({
+      discovered_item_id: item.id,
+      candidate_type: manualReview ? "manual_review" : candidateType,
+      target_event_slug: classification.targetEventSlug,
+      target_event_internal_id: classification.targetEventInternalId,
+      suggested_title: processed.title,
+      state:
+        classification.state ?? input.fetched.discoveryMetadata?.stateHint ?? input.source.state,
+      priority:
+        processed.safetyFlags.possibleChild || processed.safetyFlags.liveTacticalLocation
+          ? "urgent_editor_attention"
+          : classification.priority,
+      confidence: classification.confidence,
+      classification_method: "deterministic",
+      extraction_notes: classification.reason,
+      matching_signals: classification.matchingSignals,
+      conflicting_signals: classification.conflictingSignals,
+      source_is_newer_than_event: classification.sourceIsNewerThanEvent,
+    })
+    .select("id")
+    .single();
   if (candidateError) throw new Error("candidate_write_failed");
+  const { error: candidateSourceError } = await input.supabase.from("candidate_sources").insert({
+    candidate_id: candidate.id,
+    source_url: input.fetched.finalUrl,
+    canonical_url: processed.canonicalUrl,
+    publisher,
+    headline: processed.title,
+    published_at: publishedAt,
+    reliability_tier: input.source.reliability_tier,
+    evidence_summary: input.fetched.discoveryMetadata?.feedSummary ?? null,
+    original_language: processed.originalLanguage,
+    original_supporting_passage: null,
+    translated_supporting_passage: null,
+    source_family: new URL(processed.canonicalUrl).hostname,
+    ownership_group: null,
+    independence_key: new URL(processed.canonicalUrl).hostname,
+    source_relationship: input.source.reliability_tier === "primary" ? "official" : "independent",
+    content_fingerprint: processed.fingerprint,
+  });
+  if (candidateSourceError) throw new Error("candidate_source_write_failed");
   return true;
 }
 
@@ -185,6 +291,7 @@ export async function runDiscoveryScan(input: {
     | "manual_gdelt_dry_run"
     | "manual_fallback_dry_run"
     | "manual_pib_rss_dry_run"
+    | "manual_daily_scanner_dry_run"
     | "scheduled"
     | "retry";
   requestedBy?: string | null;
@@ -198,11 +305,18 @@ export async function runDiscoveryScan(input: {
       "manual_gdelt_dry_run",
       "manual_fallback_dry_run",
       "manual_pib_rss_dry_run",
+      "manual_daily_scanner_dry_run",
     ].includes(input.trigger) && dryRun;
   const controlledGdeltRun = input.trigger === "manual_gdelt_dry_run" && dryRun;
   const controlledFallbackRun = input.trigger === "manual_fallback_dry_run" && dryRun;
   const controlledPibRssRun = input.trigger === "manual_pib_rss_dry_run" && dryRun;
-  const activeLimits = controlledPibRssRun ? pibRssDryRunLimits : manualDryRunLimits;
+  const controlledDailyScannerRun = input.trigger === "manual_daily_scanner_dry_run" && dryRun;
+  const scheduledRun = input.trigger === "scheduled";
+  const activeLimits = controlledPibRssRun
+    ? pibRssDryRunLimits
+    : controlledDailyScannerRun || scheduledRun
+      ? dailyScannerLimits
+      : manualDryRunLimits;
   const day = input.scheduledFor ?? new Date().toISOString().slice(0, 10);
   const idempotencyKey = `${input.trigger}:${day}:discovery-v1`;
   const { data: runId, error: startError } = controlledGdeltRun
@@ -217,12 +331,16 @@ export async function runDiscoveryScan(input: {
         ? await input.supabase.rpc("claim_manual_pib_rss_dry_run", {
             p_idempotency_key: idempotencyKey,
           })
-        : await input.supabase.rpc("start_scan_run", {
-            p_trigger_type: input.trigger,
-            p_idempotency_key: idempotencyKey,
-            p_scheduled_for: input.scheduledFor ?? null,
-            p_dry_run: dryRun,
-          });
+        : controlledDailyScannerRun
+          ? await input.supabase.rpc("claim_manual_daily_scanner_dry_run", {
+              p_idempotency_key: idempotencyKey,
+            })
+          : await input.supabase.rpc("start_scan_run", {
+              p_trigger_type: input.trigger,
+              p_idempotency_key: idempotencyKey,
+              p_scheduled_for: input.scheduledFor ?? null,
+              p_dry_run: dryRun,
+            });
   if (startError) {
     if (startError.message.includes("dry_scan_already_running"))
       throw new Error("dry_scan_already_running");
@@ -234,7 +352,7 @@ export async function runDiscoveryScan(input: {
   let sourceQuery = input.supabase
     .from("scan_sources")
     .select(
-      "id,name,scan_url,scan_method,state,compliance_registry_id,last_etag,last_modified_header,connector_config,daily_request_limit,manual_dry_run_only,manual_run_consumed_at,cooldown_until,compliance_registry!inner(production_enabled,legal_review_status,review_expires_at)",
+      "id,name,scan_url,scan_method,scan_frequency,state,reliability_tier,failure_count,compliance_registry_id,last_etag,last_modified_header,connector_config,daily_request_limit,manual_dry_run_only,manual_run_consumed_at,cooldown_until,compliance_registry!inner(production_enabled,legal_review_status,review_expires_at)",
     )
     .eq("compliance_registry.production_enabled", true)
     .order("name");
@@ -255,6 +373,8 @@ export async function runDiscoveryScan(input: {
           .eq("compliance_registry.legal_review_status", "approved_for_controlled_metadata_dry_run")
       : sourceQuery.eq("enabled", true);
   if (controlledFallbackRun) sourceQuery = sourceQuery.neq("scan_method", "gdelt");
+  if (controlledDailyScannerRun || scheduledRun)
+    sourceQuery = sourceQuery.eq("scan_frequency", "daily");
   const { data, error } = await sourceQuery;
   if (error) throw new Error("scan_source_query_failed");
   const eligibleSources = ((data ?? []) as unknown as ScannerSource[])
@@ -266,9 +386,21 @@ export async function runDiscoveryScan(input: {
         (fallbackSourcePriority[left.scan_method] ?? 99) -
           (fallbackSourcePriority[right.scan_method] ?? 99) || left.name.localeCompare(right.name),
     );
-  const sources = controlledManualDryRun
-    ? eligibleSources.slice(0, activeLimits.maximumSources)
-    : eligibleSources;
+  const sources =
+    controlledManualDryRun || scheduledRun
+      ? eligibleSources.slice(0, activeLimits.maximumSources)
+      : eligibleSources;
+  if ((controlledDailyScannerRun || scheduledRun) && sources.length === 0) {
+    await input.supabase
+      .from("scan_runs")
+      .update({
+        status: "failed",
+        completed_at: new Date().toISOString(),
+        error_summary: "no_approved_source",
+      })
+      .eq("id", runId);
+    throw new Error("no_approved_source");
+  }
   const budget = new QueryBudget({
     gdelt:
       controlledFallbackRun || controlledPibRssRun
@@ -283,6 +415,10 @@ export async function runDiscoveryScan(input: {
   let failures = 0;
   let candidates = 0;
   let itemsFetched = 0;
+  let itemsRetained = 0;
+  const deadline =
+    Date.now() +
+    (controlledDailyScannerRun || scheduledRun ? dailyScannerLimits.maximumRuntimeMs : 10 * 60_000);
   const safeFailureSummaries: string[] = [];
   const connectorResults: Record<
     string,
@@ -295,6 +431,10 @@ export async function runDiscoveryScan(input: {
     .eq("id", runId);
 
   for (const source of sources) {
+    if (Date.now() >= deadline) {
+      limitReached = "fetched_item_limit";
+      break;
+    }
     const connector = (connectorResults[source.scan_method] ??= {
       sources: 0,
       successes: 0,
@@ -303,7 +443,8 @@ export async function runDiscoveryScan(input: {
       candidates: 0,
     });
     connector.sources += 1;
-    const remainingFetchedItems = controlledManualDryRun
+    const boundedRun = controlledManualDryRun || scheduledRun;
+    const remainingFetchedItems = boundedRun
       ? activeLimits.maximumFetchedItems - itemsFetched
       : undefined;
     if (remainingFetchedItems !== undefined && remainingFetchedItems <= 0) {
@@ -322,7 +463,7 @@ export async function runDiscoveryScan(input: {
         source,
         supabase: input.supabase,
         budget,
-        maximumItems: controlledManualDryRun
+        maximumItems: boundedRun
           ? controlledGdeltRun
             ? remainingFetchedItems
             : Math.min(activeLimits.maximumItemsPerSource, remainingFetchedItems!)
@@ -332,12 +473,28 @@ export async function runDiscoveryScan(input: {
       connector.items += discovered.items.length;
       let itemCount = 0;
       for (const fetched of discovered.items) {
-        if (controlledManualDryRun && candidates + itemCount >= activeLimits.maximumCandidates) {
+        if (Date.now() >= deadline) {
+          limitReached = "fetched_item_limit";
+          break;
+        }
+        if (boundedRun && candidates + itemCount >= activeLimits.maximumCandidates) {
           limitReached = "candidate_limit";
           break;
         }
-        if (await persistCandidate({ supabase: input.supabase, runId, source, fetched }))
+        if (
+          boundedRun &&
+          itemsRetained >=
+            ("maximumStoredItems" in activeLimits
+              ? activeLimits.maximumStoredItems
+              : activeLimits.maximumCandidates)
+        ) {
+          limitReached = "candidate_limit";
+          break;
+        }
+        if (await persistCandidate({ supabase: input.supabase, runId, source, fetched })) {
           itemCount += 1;
+          itemsRetained += 1;
+        }
       }
       candidates += itemCount;
       connector.candidates += itemCount;
@@ -364,13 +521,17 @@ export async function runDiscoveryScan(input: {
           last_modified_header: discovered.lastModified,
         })
         .eq("id", source.id);
-      if (controlledManualDryRun && itemsFetched >= activeLimits.maximumFetchedItems)
+      if (boundedRun && itemsFetched >= activeLimits.maximumFetchedItems)
         limitReached = "fetched_item_limit";
       if (limitReached) break;
     } catch (error) {
       failures += 1;
       connector.failures += 1;
       const safe = safeError(error, source);
+      const failureCount = source.failure_count + 1;
+      const cooldownUntil =
+        safe.cooldownUntil ??
+        (failureCount >= 3 ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() : null);
       safeFailureSummaries.push(safe.summary);
       await input.supabase
         .from("scan_jobs")
@@ -387,7 +548,8 @@ export async function runDiscoveryScan(input: {
           last_attempted_scan: new Date().toISOString(),
           last_error_code: safe.code,
           last_error_summary: safe.summary,
-          ...(safe.cooldownUntil ? { cooldown_until: safe.cooldownUntil } : {}),
+          failure_count: failureCount,
+          ...(cooldownUntil ? { cooldown_until: cooldownUntil } : {}),
         })
         .eq("id", source.id);
     }
@@ -427,6 +589,7 @@ export async function runDiscoveryScan(input: {
     connectorResults,
     controlledManualDryRun,
     itemsFetched,
+    itemsRetained,
     limits: controlledManualDryRun ? activeLimits : null,
     limitReached,
   };

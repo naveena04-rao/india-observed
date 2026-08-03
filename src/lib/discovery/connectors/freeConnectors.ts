@@ -6,6 +6,7 @@ export type DiscoveredLink = {
   title: string | null;
   publishedAt: string | null;
   sourceKind: "feed" | "sitemap" | "news_sitemap" | "api" | "public_post";
+  summary: string | null;
 };
 const text = (value: string) =>
   value
@@ -61,6 +62,8 @@ export function parseFeed(xml: string, baseUrl: string): DiscoveredLink[] {
             text(tag(block, "pubDate") ?? tag(block, "published") ?? tag(block, "updated") ?? "") ||
             null,
           sourceKind: "feed" as const,
+          summary:
+            text(tag(block, "description") ?? tag(block, "summary") ?? "").slice(0, 500) || null,
         },
       ];
     })
@@ -91,6 +94,7 @@ export function parseSitemap(xml: string, baseUrl: string) {
             publishedAt:
               text(tag(block, "news:publication_date") ?? tag(block, "lastmod") ?? "") || null,
             sourceKind: tag(block, "news:title") ? ("news_sitemap" as const) : ("sitemap" as const),
+            summary: null,
           },
         ];
       })

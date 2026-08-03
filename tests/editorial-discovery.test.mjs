@@ -40,7 +40,10 @@ test("production scheduling and all external effects default off", () => {
   assert.match(workflow, /github_write_enabled boolean not null default false/);
   assert.match(workflow, /real_notifications_enabled boolean not null default false/);
   assert.match(internalRoute, /DISCOVERY_SCHEDULER_ENABLED/);
-  assert.match(internalRoute, /dryRun: env\.DISCOVERY_DRY_RUN_ONLY === "true"/);
+  assert.match(
+    internalRoute,
+    /dryRun: settings\.dry_run_only \|\| env\.DISCOVERY_DRY_RUN_ONLY === "true"/,
+  );
 });
 
 test("unreviewed, rejected, expired and paywalled sources fail closed", () => {
