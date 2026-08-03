@@ -189,7 +189,7 @@ test("only authorised editors can see and invoke the manual GDELT control", () =
   );
   assert.match(manualControl, /Run GDELT dry scan/);
   assert.match(dashboardActions, /const supabase = await editor\(\)/);
-  assert.match(protectedGdeltControl, /not public\.is_authorised_editor\(\)/);
+  assert.match(protectedGdeltControl, /not coalesce\(public\.is_authorised_editor\(\), false\)/);
   assert.match(protectedGdeltControl, /Authorised editor access required/);
   assert.doesNotMatch(manualControl, /SERVICE_ROLE|service-role|service_role/);
 });
