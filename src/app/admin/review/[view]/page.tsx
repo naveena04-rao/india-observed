@@ -8,6 +8,7 @@ import { groupCandidatesByState } from "@/lib/editorial/candidateGrouping";
 import { ManualGdeltDryRunControl } from "../ManualGdeltDryRunControl";
 import { ManualFallbackDryRunControl } from "../ManualFallbackDryRunControl";
 import { ManualPibRssDryRunControl } from "../ManualPibRssDryRunControl";
+import { ManualDailyScannerControl } from "../ManualDailyScannerControl";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -41,6 +42,16 @@ type Candidate = {
   review_status: string;
   discovery_time: string;
   target_event_slug: string | null;
+  target_event_internal_id: string | null;
+  matching_signals: string[];
+  conflicting_signals: string[];
+  source_is_newer_than_event: boolean | null;
+  candidate_sources: Array<{
+    publisher: string | null;
+    canonical_url: string;
+    published_at: string | null;
+    source_family: string | null;
+  }>;
 };
 type Compliance = {
   id: string;
@@ -94,7 +105,7 @@ export default async function EditorialReviewPage({
     session.supabase
       .from("editorial_candidates")
       .select(
-        "id,candidate_type,suggested_title,state,district_or_region,priority,confidence,corroboration_status,independent_source_count,review_status,discovery_time,target_event_slug",
+        "id,candidate_type,suggested_title,state,district_or_region,priority,confidence,corroboration_status,independent_source_count,review_status,discovery_time,target_event_slug,target_event_internal_id,matching_signals,conflicting_signals,source_is_newer_than_event,candidate_sources(publisher,canonical_url,published_at,source_family)",
       )
       .order("discovery_time", { ascending: false })
       .limit(100),
@@ -207,6 +218,26 @@ export default async function EditorialReviewPage({
       run.trigger_type === "manual_pib_rss_dry_run" &&
       (run.status === "queued" || run.status === "running"),
   );
+  const approvedDailySources = sources.filter((source) => {
+    const review = compliance.find((record) => record.id === source.compliance_registry_id);
+    return (
+      source.enabled &&
+      !source.manual_dry_run_only &&
+      source.connector_config?.status === "approved_metadata_only" &&
+      ["rss", "atom", "sitemap", "html_list"].includes(source.scan_method) &&
+      review?.production_enabled === true &&
+      ["approved_metadata_only", "approved_internal_review_only"].includes(
+        review.legal_review_status,
+      ) &&
+      ["allowed", "not_applicable"].includes(review.robots_policy) &&
+      Boolean(review.review_expires_at && new Date(review.review_expires_at) > new Date())
+    );
+  });
+  const activeDailyScannerRun = (scanResult.data ?? []).some(
+    (run) =>
+      ["manual_daily_scanner_dry_run", "scheduled"].includes(run.trigger_type) &&
+      (run.status === "queued" || run.status === "running"),
+  );
   const dryRunDisabledReason = activeManualRun
     ? "A dry scan is already running."
     : approvedManualSources.length === 0
@@ -221,6 +252,11 @@ export default async function EditorialReviewPage({
     ? "A PIB RSS dry scan is already running."
     : approvedPibRssSources.length === 0
       ? "The approved one-time PIB RSS dry scan is not currently available."
+      : null;
+  const dailyScannerDisabledReason = activeDailyScannerRun
+    ? "A daily-scanner run is already active."
+    : approvedDailySources.length < 2
+      ? "At least two approved, working daily sources are required."
       : null;
   const filtered = candidates.filter((candidate) =>
     view === "new-events"
@@ -280,8 +316,8 @@ export default async function EditorialReviewPage({
           </div>
           <div>
             <dt>Production connectors</dt>
-            <dd>{approvedManualSources.length}</dd>
-            <small>Manual dry-run only · scheduled scanning disabled</small>
+            <dd>{approvedDailySources.length}</dd>
+            <small>Daily source readiness; schedule state is shown under Settings</small>
           </div>
         </dl>
         {view === "today" || view === "scan-runs" ? (
@@ -289,6 +325,7 @@ export default async function EditorialReviewPage({
             <ManualGdeltDryRunControl disabledReason={dryRunDisabledReason} />
             <ManualFallbackDryRunControl disabledReason={fallbackDisabledReason} />
             <ManualPibRssDryRunControl disabledReason={pibRssDisabledReason} />
+            <ManualDailyScannerControl disabledReason={dailyScannerDisabledReason} />
           </>
         ) : null}
         {view === "compliance" ? (
@@ -345,10 +382,31 @@ function CandidateList({ candidates }: { candidates: Candidate[] }) {
                       </Link>
                     </h3>
                     <p>
-                      {[item.state, item.district_or_region, item.target_event_slug]
+                      {[
+                        item.state,
+                        item.district_or_region,
+                        item.target_event_internal_id ?? item.target_event_slug,
+                      ]
                         .filter(Boolean)
                         .join(" · ") || "Location or event match requires review"}
                     </p>
+                    {item.candidate_sources[0] ? (
+                      <p>
+                        <a
+                          href={item.candidate_sources[0].canonical_url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {item.candidate_sources[0].publisher ??
+                            item.candidate_sources[0].source_family ??
+                            "Open source"}
+                        </a>
+                        {item.candidate_sources[0].published_at
+                          ? ` · ${new Date(item.candidate_sources[0].published_at).toLocaleString("en-IN")}`
+                          : ""}
+                      </p>
+                    ) : null}
+                    <p>{item.matching_signals.join(" · ") || "No existing-event match signals"}</p>
                     <dl>
                       <div>
                         <dt>Confidence</dt>

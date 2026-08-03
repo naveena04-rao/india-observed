@@ -41,6 +41,16 @@ export const reviewedLocalitiesByState: Record<string, readonly string[]> = {
   "West Bengal": ["Kolkata", "Howrah", "Darjeeling"],
 };
 
+export function detectReviewedState(value: string) {
+  const normalized = value.toLocaleLowerCase();
+  for (const [state, localities] of Object.entries(reviewedLocalitiesByState)) {
+    if (normalized.includes(state.toLocaleLowerCase())) return state;
+    if (localities.some((locality) => normalized.includes(locality.toLocaleLowerCase())))
+      return state;
+  }
+  return null;
+}
+
 export function buildPriorityLocalities(input: {
   ongoingEventLocalities: readonly string[];
   weakCoverageStates: readonly string[];

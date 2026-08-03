@@ -54,7 +54,12 @@ export function processFetchedSource(source: SafeFetchedSource) {
     languageConfidence: language.confidence,
     fingerprint,
     safetyFlags: detectSafetyFlags(originalText),
-    classification: classifyDiscoveredItem({ title, text: originalText, sourceUrl: canonicalUrl }),
+    classification: classifyDiscoveredItem({
+      title,
+      text: originalText,
+      sourceUrl: canonicalUrl,
+      publishedAt: source.discoveryMetadata?.publishedAt ?? null,
+    }),
     pipelineTrace: pipelineStages,
   };
 }

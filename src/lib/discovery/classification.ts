@@ -23,19 +23,50 @@ export function classifyDiscoveredItem(input: {
   title: string;
   text: string;
   sourceUrl: string;
+  publishedAt?: string | null;
 }): DiscoveryClassification {
   const inputTerms = terms(`${input.title} ${input.text.slice(0, 4000)}`);
   const ranked = reviewedEventsPreview
-    .filter((event) => event.publicationStatus === "published")
-    .map((event) => ({
-      event,
-      score: similarity(
+    .map((event) => {
+      const titleScore = similarity(inputTerms, terms(event.title));
+      const topicScore = similarity(inputTerms, terms(`${event.topic} ${event.summary}`));
+      const locationScore = similarity(
         inputTerms,
-        terms(
-          `${event.title} ${event.summary} ${event.stateOrUnionTerritory} ${event.publicLocation}`,
-        ),
-      ),
-    }))
+        terms(`${event.stateOrUnionTerritory} ${event.publicLocation}`),
+      );
+      const authorityScore = similarity(inputTerms, terms(event.directedAt));
+      const stateMatch = input.text
+        .toLocaleLowerCase()
+        .includes(event.stateOrUnionTerritory.toLocaleLowerCase());
+      const score = Math.min(
+        1,
+        titleScore * 0.45 +
+          topicScore * 0.25 +
+          locationScore * 0.15 +
+          authorityScore * 0.1 +
+          (stateMatch ? 0.05 : 0),
+      );
+      const signals = [
+        titleScore >= 0.12 ? "title similarity" : null,
+        topicScore >= 0.12 ? "event topic or affected-group overlap" : null,
+        locationScore >= 0.12 ? "state, district or location overlap" : null,
+        authorityScore >= 0.12 ? "organisation or authority overlap" : null,
+        stateMatch ? "explicit state match" : null,
+      ].filter((signal): signal is string => Boolean(signal));
+      const published = input.publishedAt ? Date.parse(input.publishedAt) : Number.NaN;
+      const start = event.startDate ? Date.parse(event.startDate) : Number.NaN;
+      const verified = Date.parse(event.lastReviewed);
+      return {
+        event,
+        score,
+        signals,
+        conflicts:
+          Number.isFinite(published) && Number.isFinite(start) && published < start
+            ? ["source timestamp predates the reviewed event"]
+            : [],
+        newer: Number.isFinite(published) ? published > verified : null,
+      };
+    })
     .sort((left, right) => right.score - left.score);
   const best = ranked[0];
   const content = `${input.title} ${input.text}`.toLowerCase();
@@ -52,7 +83,7 @@ export function classifyDiscoveredItem(input: {
     );
   const mediaEvidence = /\b(video|photograph|photo|footage|livestream)\b/.test(content);
 
-  if (best && best.score >= 0.22) {
+  if (best && best.score >= 0.12 && best.signals.length >= 2) {
     return {
       candidateType: outcomeOrStatusChange
         ? "outcome_status_change"
@@ -69,6 +100,10 @@ export function classifyDiscoveredItem(input: {
           ? "high"
           : "normal",
       reason: "Deterministic title, location and event-term overlap with a reviewed public record.",
+      targetEventInternalId: best.event.internalId,
+      matchingSignals: best.signals,
+      conflictingSignals: best.conflicts,
+      sourceIsNewerThanEvent: best.newer,
     };
   }
 
@@ -83,6 +118,10 @@ export function classifyDiscoveredItem(input: {
       priority: "normal",
       reason:
         "Civic-event terms were found, but no reviewed event passed the deterministic match threshold.",
+      targetEventInternalId: null,
+      matchingSignals: [],
+      conflictingSignals: [],
+      sourceIsNewerThanEvent: null,
     };
   }
 
@@ -93,5 +132,9 @@ export function classifyDiscoveredItem(input: {
     confidence: 0.25,
     priority: "low",
     reason: "The metadata does not match a reviewed event or a deterministic civic-event rule.",
+    targetEventInternalId: null,
+    matchingSignals: [],
+    conflictingSignals: [],
+    sourceIsNewerThanEvent: null,
   };
 }

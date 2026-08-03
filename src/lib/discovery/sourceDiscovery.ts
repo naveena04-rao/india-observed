@@ -1,15 +1,16 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getServerEnvironment } from "@/lib/env";
-import { fetchApprovedSource } from "./fetchSafety";
+import { detectReviewedState } from "./geography";
+import { fetchApprovedSource, SafeSourceFetchError } from "./fetchSafety";
 import { getPrivateLeadDiscoveryInputs } from "./leadInputs";
 import { buildManualGdeltDryRunQueries, QueryBudget } from "./queryStrategy";
 import {
   fetchBlueskyCandidates,
   fetchGdeltCandidates,
-  fetchSitemapCandidates,
   fetchYoutubeCandidates,
   parseFeed,
+  parseSitemap,
 } from "./connectors/freeConnectors";
 import { getReviewedRecentPageAdapter } from "./connectors/recentPageAdapters";
 import type { SafeFetchedSource } from "./types";
@@ -26,6 +27,9 @@ export type ScannerSource = {
   connector_config: Record<string, unknown>;
   daily_request_limit: number;
   cooldown_until?: string | null;
+  failure_count: number;
+  reliability_tier: "primary" | "high" | "standard" | "lead_only";
+  scan_frequency: "daily" | "weekdays" | "weekly" | "manual";
 };
 type DiscoveryResult = {
   items: SafeFetchedSource[];
@@ -54,6 +58,31 @@ const configNumber = (source: ScannerSource, key: string) => {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 };
 
+const temporaryFailure = (error: unknown) => {
+  if (!(error instanceof SafeSourceFetchError))
+    return (
+      error instanceof TypeError ||
+      (error instanceof Error && ["AbortError", "TimeoutError"].includes(error.name))
+    );
+  const status = error.diagnostics.statusCode;
+  return status === null || status === 408 || status === 425 || status >= 500;
+};
+
+async function fetchWithOneTemporaryRetry(
+  url: string,
+  options: Parameters<typeof fetchApprovedSource>[1],
+) {
+  try {
+    return { response: await fetchApprovedSource(url, options), requestCount: 1 };
+  } catch (error) {
+    if (!temporaryFailure(error)) throw error;
+    const retryAfter =
+      error instanceof SafeSourceFetchError ? (error.diagnostics.retryAfterMs ?? 250) : 250;
+    await new Promise((resolve) => setTimeout(resolve, Math.min(Math.max(retryAfter, 250), 5_000)));
+    return { response: await fetchApprovedSource(url, options), requestCount: 2 };
+  }
+}
+
 export async function discoverSourceItems(input: {
   source: ScannerSource;
   supabase: SupabaseClient;
@@ -66,17 +95,18 @@ export async function discoverSourceItems(input: {
     const controlledPibRss =
       source.name === "Press Information Bureau RSS" &&
       configString(source, "status") === "approved_for_one_manual_metadata_dry_run_only";
-    const response = await fetchApprovedSource(source.scan_url, {
+    const fetched = await fetchWithOneTemporaryRetry(source.scan_url, {
       etag: source.last_etag,
       lastModified: source.last_modified_header,
       ...(controlledPibRss ? { maximumRedirects: 0 } : {}),
     });
+    const { response } = fetched;
     if (response.notModified)
       return {
         items: [],
         etag: response.etag,
         lastModified: response.lastModified,
-        requestCount: 1,
+        requestCount: fetched.requestCount,
       };
     const timeWindowHours = configNumber(source, "timeWindowHours");
     const cutoff = timeWindowHours
@@ -94,43 +124,69 @@ export async function discoverSourceItems(input: {
           virtualItem(item.url, item.title, {
             publisher: source.name,
             publishedAt: item.publishedAt,
-            stateHint: source.state,
+            stateHint:
+              detectReviewedState(`${item.title ?? ""} ${item.summary ?? ""}`) ?? source.state,
             metadataOnly: true,
+            feedSummary: item.summary,
+            connector: source.scan_method,
           }),
         ),
       etag: response.etag,
       lastModified: response.lastModified,
-      requestCount: 1,
+      requestCount: fetched.requestCount,
     };
   }
   if (source.scan_method === "sitemap") {
-    const items = await fetchSitemapCandidates({
-      url: source.scan_url,
-      modifiedAfter: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
-      maximumChildSitemaps: Math.min(source.daily_request_limit - 1, 8),
+    const fetched = await fetchWithOneTemporaryRetry(source.scan_url, {
+      etag: source.last_etag,
+      lastModified: source.last_modified_header,
+    });
+    const parsed = parseSitemap(fetched.response.body, fetched.response.finalUrl);
+    if (parsed.isIndex) throw new Error("nested_sitemap_not_allowed_for_daily_scan");
+    const cutoff = Date.now() - 48 * 60 * 60 * 1000;
+    const items = parsed.entries.filter((item) => {
+      const publishedAt = item.publishedAt ? Date.parse(item.publishedAt) : Number.NaN;
+      return Number.isFinite(publishedAt) && publishedAt >= cutoff;
     });
     return {
-      items: items.slice(0, maximumItems).map((item) => virtualItem(item.url, item.title)),
-      etag: null,
-      lastModified: null,
-      requestCount: Math.min(source.daily_request_limit, 9),
+      items: items.slice(0, maximumItems).map((item) =>
+        virtualItem(item.url, item.title, {
+          publisher: source.name,
+          publishedAt: item.publishedAt,
+          stateHint: source.state,
+          metadataOnly: true,
+          connector: source.scan_method,
+        }),
+      ),
+      etag: fetched.response.etag,
+      lastModified: fetched.response.lastModified,
+      requestCount: fetched.requestCount,
     };
   }
   if (source.scan_method === "html_list") {
     const adapter = getReviewedRecentPageAdapter(configString(source, "adapterId") ?? "");
     if (!adapter) throw new Error("reviewed_source_adapter_required");
-    const response = await fetchApprovedSource(source.scan_url, {
+    const fetched = await fetchWithOneTemporaryRetry(source.scan_url, {
       etag: source.last_etag,
       lastModified: source.last_modified_header,
     });
+    const { response } = fetched;
     return {
       items: adapter
         .parse(response.body, response.finalUrl)
         .slice(0, maximumItems)
-        .map((item) => virtualItem(item.url, item.title)),
+        .map((item) =>
+          virtualItem(item.url, item.title, {
+            publisher: source.name,
+            publishedAt: item.publishedAt,
+            stateHint: source.state,
+            metadataOnly: true,
+            connector: source.scan_method,
+          }),
+        ),
       etag: response.etag,
       lastModified: response.lastModified,
-      requestCount: 1,
+      requestCount: fetched.requestCount,
     };
   }
   if (source.scan_method === "gdelt") {
