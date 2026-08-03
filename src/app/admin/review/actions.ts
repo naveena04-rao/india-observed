@@ -89,7 +89,8 @@ export async function startManualDryRunAction(
       message:
         result.status === "completed"
           ? "The GDELT metadata dry scan completed. Private review candidates are ready."
-          : "The GDELT metadata dry scan stopped safely before every item could be processed.",
+          : (result.safeFailureSummary ??
+            "The GDELT metadata dry scan stopped safely before every item could be processed."),
       runId: result.runId,
       startedAt,
       completedAt,

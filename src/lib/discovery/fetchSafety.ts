@@ -7,6 +7,22 @@ export const MAX_SOURCE_BYTES = 2 * 1024 * 1024;
 export const SOURCE_TIMEOUT_MS = 12_000;
 export const MAX_REDIRECTS = 3;
 
+export class SafeSourceFetchError extends Error {
+  constructor(
+    readonly code: string,
+    readonly diagnostics: {
+      stage: "http_request";
+      statusCode: number;
+      contentType: string | null;
+      contentLength: number | null;
+      retryAfterMs: number | null;
+    },
+  ) {
+    super(code);
+    this.name = "SafeSourceFetchError";
+  }
+}
+
 const permittedContentTypes = [
   "application/atom+xml",
   "application/json",
@@ -47,6 +63,14 @@ function blockedIpv6(address: string) {
     return isIP(mapped) !== 4 || blockedIpv4(mapped);
   }
   return false;
+}
+
+function retryAfterMilliseconds(value: string | null) {
+  if (!value) return null;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1000;
+  const date = Date.parse(value);
+  return Number.isFinite(date) ? Math.max(0, date - Date.now()) : null;
 }
 
 export function isBlockedAddress(address: string) {
@@ -161,7 +185,17 @@ export async function fetchApprovedSource(
       current = validateSourceUrl(new URL(location, current).toString());
       continue;
     }
-    if (!response.ok) throw new Error(`source_http_${response.status}`);
+    if (!response.ok) {
+      const lengthHeader = response.headers.get("content-length");
+      const declaredLength = lengthHeader === null ? Number.NaN : Number(lengthHeader);
+      throw new SafeSourceFetchError(`source_http_${response.status}`, {
+        stage: "http_request",
+        statusCode: response.status,
+        contentType: response.headers.get("content-type"),
+        contentLength: Number.isFinite(declaredLength) ? declaredLength : null,
+        retryAfterMs: retryAfterMilliseconds(response.headers.get("retry-after")),
+      });
+    }
     const contentType = (response.headers.get("content-type") ?? "").split(";")[0]!.trim();
     if (!permittedContentTypes.includes(contentType)) throw new Error("source_content_type");
     const { body, bytesRead } = await readBoundedBody(response, maximumBytes);

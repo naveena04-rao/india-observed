@@ -1,5 +1,5 @@
 import "server-only";
-import { fetchApprovedSource } from "../fetchSafety";
+import { fetchApprovedSource, SafeSourceFetchError } from "../fetchSafety";
 
 export type DiscoveredLink = {
   url: string;
@@ -147,24 +147,56 @@ export function gdeltDocUrl(input: {
   return url.toString();
 }
 
+const GDELT_MAX_ATTEMPTS = 3;
+const GDELT_BACKOFF_MS = [2_000, 5_000] as const;
+
+const wait = (milliseconds: number) =>
+  new Promise<void>((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
+
+export function parseGdeltResponse(body: string) {
+  let payload: unknown;
+  try {
+    payload = JSON.parse(body);
+  } catch {
+    throw new Error("gdelt_response_parsing_failed");
+  }
+  if (!payload || typeof payload !== "object") throw new Error("gdelt_response_validation_failed");
+  const articles = (payload as { articles?: unknown }).articles;
+  if (articles === undefined) return [];
+  if (!Array.isArray(articles)) throw new Error("gdelt_response_validation_failed");
+  return articles as Array<{
+    url?: string;
+    title?: string;
+    seendate?: string;
+    domain?: string;
+    language?: string;
+    sourcecountry?: string;
+  }>;
+}
+
 export async function fetchGdeltCandidates(input: {
   query: string;
   domain?: string;
   minutes?: number;
   maxRecords?: number;
 }) {
-  const response = await fetchApprovedSource(gdeltDocUrl(input));
-  const payload = JSON.parse(response.body) as {
-    articles?: Array<{
-      url?: string;
-      title?: string;
-      seendate?: string;
-      domain?: string;
-      language?: string;
-      sourcecountry?: string;
-    }>;
-  };
-  return (payload.articles ?? []).flatMap((item) =>
+  let response: Awaited<ReturnType<typeof fetchApprovedSource>> | null = null;
+  for (let attempt = 0; attempt < GDELT_MAX_ATTEMPTS; attempt += 1) {
+    try {
+      response = await fetchApprovedSource(gdeltDocUrl(input));
+      break;
+    } catch (error) {
+      const rateLimited =
+        error instanceof SafeSourceFetchError && error.diagnostics.statusCode === 429;
+      if (!rateLimited || attempt === GDELT_MAX_ATTEMPTS - 1) throw error;
+      const retryAfter = Math.min(error.diagnostics.retryAfterMs ?? 0, 10_000);
+      await wait(Math.max(retryAfter, GDELT_BACKOFF_MS[attempt] ?? 5_000));
+    }
+  }
+  if (!response) throw new Error("gdelt_request_failed");
+  return parseGdeltResponse(response.body).flatMap((item) =>
     item.url
       ? [
           {

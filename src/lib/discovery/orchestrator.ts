@@ -14,11 +14,33 @@ export const manualDryRunLimits = {
   maximumGdeltSearches: 60,
 } as const;
 
-function safeError(error: unknown) {
-  const code = error instanceof Error ? error.message : "discovery_error";
+function safeError(error: unknown, source: ScannerSource) {
+  const code =
+    error instanceof Error && ["AbortError", "TimeoutError"].includes(error.name)
+      ? "source_timeout"
+      : error instanceof Error
+        ? error.message
+        : "discovery_error";
+  const gdeltSummaries: Record<string, string> = {
+    source_http_400: "GDELT rejected the query syntax. No items were stored.",
+    source_http_403: "GDELT refused the request. No items were stored.",
+    source_http_429: "GDELT returned HTTP 429 (rate limited). No items were stored.",
+    source_http_500: "GDELT returned a server error. No items were stored.",
+    source_http_502: "GDELT returned a server error. No items were stored.",
+    source_http_503: "GDELT returned a server error. No items were stored.",
+    source_http_504: "GDELT returned a server error. No items were stored.",
+    source_content_type: "GDELT returned an unexpected response type. No items were stored.",
+    gdelt_response_parsing_failed: "The GDELT response could not be parsed. No items were stored.",
+    gdelt_response_validation_failed:
+      "The GDELT response did not match the expected metadata shape. No items were stored.",
+    source_timeout: "The GDELT request timed out. No items were stored.",
+  };
   return {
     code: code.replace(/[^a-z0-9_-]/gi, "_").slice(0, 80),
-    summary: "Source scan failed without stopping the remaining run.",
+    summary:
+      source.scan_method === "gdelt" && gdeltSummaries[code]
+        ? gdeltSummaries[code]
+        : "Source scan failed without stopping the remaining run.",
   };
 }
 
@@ -190,6 +212,7 @@ export async function runDiscoveryScan(input: {
   let failures = 0;
   let candidates = 0;
   let itemsFetched = 0;
+  const safeFailureSummaries: string[] = [];
   let limitReached: "fetched_item_limit" | "candidate_limit" | null = null;
   await input.supabase
     .from("scan_runs")
@@ -263,7 +286,8 @@ export async function runDiscoveryScan(input: {
       if (limitReached) break;
     } catch (error) {
       failures += 1;
-      const safe = safeError(error);
+      const safe = safeError(error, source);
+      safeFailureSummaries.push(safe.summary);
       await input.supabase
         .from("scan_jobs")
         .update({
@@ -354,6 +378,7 @@ export async function runDiscoveryScan(input: {
     queriesUsed: budget.snapshot().gdelt?.used ?? 0,
     limitReached,
     quotaUsage,
+    safeFailureSummary: safeFailureSummaries[0] ?? null,
     fingerprint: createHash("sha256").update(idempotencyKey).digest("hex"),
   };
 }
