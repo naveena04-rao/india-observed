@@ -99,7 +99,7 @@ export default async function EditorialReviewPage({
     session.supabase
       .from("scan_runs")
       .select(
-        "id,status,trigger_type,started_at,completed_at,source_count,success_count,failure_count,dry_run,quota_usage",
+        "id,status,trigger_type,started_at,completed_at,source_count,success_count,failure_count,dry_run,quota_usage,scan_jobs(status,attempt_count,request_count,items_discovered,error_code,safe_error_summary)",
       )
       .order("started_at", { ascending: false })
       .limit(20),
