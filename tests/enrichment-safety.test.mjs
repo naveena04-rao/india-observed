@@ -26,3 +26,12 @@ Allow: /news/public/
   assert.equal(robotsAllowsPath(robots, "/news/public/story"), true);
   assert.equal(robotsAllowsPath(robots, "/india/story"), true);
 });
+
+test("enrichment falls back to the reviewed base hostname when stored domains are malformed", () => {
+  const source = readFileSync(
+    new URL("../src/lib/discovery/sourceDiscovery.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /configuredDomains\.filter/);
+  assert.match(source, /new URL\(input\.source\.base_url\)\.hostname/);
+});

@@ -90,6 +90,18 @@ test("ambiguous and routine-news uses of civic words remain irrelevant", () => {
     ],
     ["Gujarat reports virus cases", "Gujarat reported a disease outbreak."],
     ["Assam recruitment notice", "The Assam department advertised vacancies."],
+    [
+      "MahaRERA strikes down builder cancellation clause in Pune",
+      "The authority strikes down a contractual clause and orders interest.",
+    ],
+    [
+      "Govt signs memorandum of understanding in Bihar",
+      "The government will sign an MoU with an organisation.",
+    ],
+    [
+      "Andhra police arrest leader in kidnapping case",
+      "Police arrested a party leader in a kidnapping investigation in Gujarat.",
+    ],
   ]) {
     const result = classifyDiscoveredItem({
       title,
@@ -99,6 +111,47 @@ test("ambiguous and routine-news uses of civic words remain irrelevant", () => {
     });
     assert.equal(result.candidateType, "irrelevant", title);
   }
+});
+
+test("state detection uses whole phrases rather than substrings", () => {
+  const result = classifyDiscoveredItem({
+    title: "Students protest across Madhya Pradesh demanding minister resignation",
+    text: "Students in Madhya Pradesh protest exam leaks and demand government action.",
+    sourceUrl: "https://example.in/madhya-pradesh-students",
+  });
+  assert.equal(result.state, "Madhya Pradesh");
+});
+
+test("national institutions do not inherit a regional publisher hint", () => {
+  const result = classifyDiscoveredItem({
+    title: "Opposition MPs protest in Parliament over donation issue",
+    text: "Members protested in Parliament and demanded a Union government response.",
+    sourceUrl: "https://example.in/parliament-protest",
+    sourceStateHint: "Telangana",
+  });
+  assert.equal(result.state, "National");
+});
+
+test("generic state and police words cannot create an existing-event match", () => {
+  const event = {
+    internalId: "IO-CM-DL-0001",
+    slug: "unrelated-delhi-farmers-event",
+    title: "Farmers protest trade agreement at Kisan Ghat",
+    topic: "Agricultural trade agreement opposition",
+    summary: "Farmers oppose an international trade agreement.",
+    directedAt: "Delhi Police; Union Agriculture Ministry",
+    stateOrUnionTerritory: "Delhi",
+    publicLocation: "Kisan Ghat, Delhi",
+    startDate: "2026-07-01",
+    lastReviewed: "2026-07-21",
+  };
+  const match = matchExistingEvent({
+    content: "Delhi police action during NEET student protest",
+    state: "Delhi",
+    publishedAt: "2026-08-03T00:00:00Z",
+    events: [event],
+  });
+  assert.equal(match.score, 0);
 });
 
 test("credible future collective action uses the planned-event classification", () => {

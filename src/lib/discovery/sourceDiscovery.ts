@@ -363,9 +363,13 @@ export async function enrichSourceItem(input: {
   )
     return { item: input.item, fetched: false };
   const target = new URL(input.item.finalUrl);
-  const allowedDomains = Array.isArray(input.source.connector_config.enrichmentDomains)
+  const configuredDomains = Array.isArray(input.source.connector_config.enrichmentDomains)
     ? input.source.connector_config.enrichmentDomains.map(String)
-    : [new URL(input.source.base_url).hostname];
+    : [];
+  const allowedDomains = [
+    ...configuredDomains.filter((domain) => /^(?:[a-z0-9-]+\.)*[a-z0-9-]+$/i.test(domain)),
+    new URL(input.source.base_url).hostname,
+  ];
   if (
     !allowedDomains.some(
       (domain) => target.hostname === domain || target.hostname.endsWith(`.${domain}`),

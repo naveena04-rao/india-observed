@@ -19,6 +19,11 @@ const stopWords = new Set([
   "march",
   "farmers",
   "students",
+  "against",
+  "action",
+  "opposition",
+  "government",
+  "police",
 ]);
 
 const civicEventPattern =
@@ -34,13 +39,15 @@ const indiaInstitutionPattern =
 const explicitForeignPattern =
   /\b(sudan|darfur|pakistan|bangladesh|dhaka|sri lanka|nepal|myanmar|china|russia|ukraine|israel|gaza|iran|iraq|afghanistan|united states|u\.s\.|united kingdom|britain|london|france|paris|germany|canada|toronto|australia|south africa|kenya|nigeria|brazil)\b/;
 const ambiguousStrikePattern =
-  /\b(?:military|air|airborne|drone|missile|surgical|lightning|precision) strikes?\b|\bstrike rate\b/;
+  /\b(?:military|air|airborne|drone|missile|surgical|lightning|precision) strikes?\b|\bstrike rate\b|\bstrikes? down\b/;
 const routineNonCivicPattern =
-  /\b(recruitment|vacanc(?:y|ies)|horoscope|fashion|food festival|sports?|football|cricket|stock market|shares?|virus|disease|outbreak|drug smugglers?|murder|killing|box office|film|actor|actress|technology|smartphone)\b/;
+  /\b(recruitment|vacanc(?:y|ies)|horoscope|fashion|food festival|sports?|football|cricket|stock market|shares?|virus|disease|outbreak|drug smugglers?|kidnapping|murder|killing|box office|film|actor|actress|technology|smartphone)\b/;
 const routinePoliticalMeetingPattern =
   /\b(?:party|nda|bjp|congress|rss)\b.{0,80}\b(?:meeting|meet|conference|conclave|outreach|election rally)\b/;
 const plannedPattern =
-  /\b(?:announce[ds]?|plans?|planned|will|to hold|to stage|to begin|to launch|calls? for|scheduled|threatens?)\b.{0,100}\b(?:protest|march|strike|bandh|rally|dharna|blockade|hunger strike|agitation|walkout)\b|\b(?:protest|march|strike|bandh|rally|dharna|blockade|hunger strike|agitation|walkout)\b.{0,100}\b(?:on|from|starting|next|tomorrow)\b/;
+  /\b(?:announce[ds]?|plans?|planned|will|to hold|to stage|to begin|to launch|calls? for|scheduled|threatens?)\b.{0,100}\b(?:protest|march|strike|bandh|rally|dharna|blockade|hunger strike|agitation|walkout)\b|\b(?:protest|march|strike|bandh|rally|dharna|blockade|hunger strike|agitation|walkout)\b.{0,80}\b(?:from|starting|next|tomorrow|on\s+(?:\d{1,2}|monday|tuesday|wednesday|thursday|friday|saturday|sunday))\b/;
+const nationalInstitutionPattern =
+  /\b(parliament|rajya sabha|lok sabha|supreme court|prime minister|union government|centre)\b/;
 const officialResponsePattern =
   /\b(official response|government response|court order|court intervened|administration said|minister announced|assurance given|talks held|police detained protesters|fir withdrawn|government order issued)\b/;
 const outcomePattern =
@@ -86,20 +93,29 @@ export function matchExistingEvent(input: {
   return [...(input.events ?? reviewedEventsPreview)]
     .map((event) => {
       const eventState = normalize(event.stateOrUnionTerritory);
+      const stateTokens = terms(event.stateOrUnionTerritory);
       const stateMismatch = Boolean(input.state && normalize(input.state) !== eventState);
       const locationTokens = terms(event.publicLocation);
       const topicTokens = terms(`${event.topic} ${event.summary}`);
       const authorityTokens = terms(event.directedAt);
       const titleTokens = terms(event.title);
-      const locationOverlap = overlap(contentTerms, locationTokens);
-      const topicOverlap = overlap(contentTerms, topicTokens);
-      const authorityOverlap = overlap(contentTerms, authorityTokens);
-      const titleOverlap = overlap(contentTerms, titleTokens);
-      const specificLocation = locationOverlap.filter((term) => term !== eventState).length > 0;
+      const locationOverlap = overlap(contentTerms, locationTokens).filter(
+        (term) => !stateTokens.has(term),
+      );
+      const topicOverlap = overlap(contentTerms, topicTokens).filter(
+        (term) => !stateTokens.has(term),
+      );
+      const authorityOverlap = overlap(contentTerms, authorityTokens).filter(
+        (term) => !stateTokens.has(term),
+      );
+      const titleOverlap = overlap(contentTerms, titleTokens).filter(
+        (term) => !stateTokens.has(term),
+      );
+      const specificLocation = locationOverlap.length > 0;
       const positives = [
         specificLocation ? `specific locality: ${locationOverlap.join(", ")}` : null,
         topicOverlap.length >= 2 ? `demand/dispute: ${topicOverlap.slice(0, 5).join(", ")}` : null,
-        authorityOverlap.length >= 1
+        authorityOverlap.length >= 2
           ? `authority/organisation: ${authorityOverlap.slice(0, 4).join(", ")}`
           : null,
         titleOverlap.length >= 2
@@ -125,7 +141,8 @@ export function matchExistingEvent(input: {
       const eligible =
         negatives.length === 0 &&
         positives.length >= 3 &&
-        (specificLocation || (topicOverlap.length >= 3 && authorityOverlap.length >= 1));
+        (specificLocation ||
+          (topicOverlap.length >= 3 && authorityOverlap.length >= 2 && titleOverlap.length >= 2));
       return {
         event,
         score: eligible ? Math.max(0, Math.min(1, specificity)) : 0,
@@ -156,7 +173,11 @@ export function classifyDiscoveredItem(input: {
     dictionaryMatches[0]?.slice(dictionaryMatches[0].indexOf(":") + 1) ??
     null;
   const civicSignal =
-    rawCivicSignal?.includes("strike") && ambiguousStrikePattern.test(content)
+    (rawCivicSignal?.includes("strike") && ambiguousStrikePattern.test(content)) ||
+    (rawCivicSignal === "memorandum" &&
+      !/\bmemorandum\b.{0,40}\b(submit|submitted|submission|present|presented|handed)\b/.test(
+        content,
+      ))
       ? null
       : rawCivicSignal;
   const contextSignal = content.match(civicContextPattern)?.[0] ?? null;
@@ -167,13 +188,19 @@ export function classifyDiscoveredItem(input: {
   const foreignSignal = content.match(explicitForeignPattern)?.[0] ?? null;
   const explicitIndia = content.match(/\b(?:india|indian)\b/)?.[0] ?? null;
   const institution = content.match(indiaInstitutionPattern)?.[0] ?? null;
+  const nationalInstitution = content.match(nationalInstitutionPattern)?.[0] ?? null;
   const stateHint =
     input.sourceStateHint && input.sourceStateHint !== "National" ? input.sourceStateHint : null;
   const indiaSignal =
-    explicitState ?? explicitIndia ?? institution ?? (!foreignSignal ? stateHint : null);
+    explicitState ??
+    explicitIndia ??
+    institution ??
+    nationalInstitution ??
+    (!foreignSignal ? stateHint : null);
+  const resolvedState = explicitState ?? (nationalInstitution ? "National" : stateHint);
   const base = {
     targetEventSlug: null,
-    state: explicitState ?? stateHint,
+    state: resolvedState,
     priority: "low" as const,
     targetEventInternalId: null,
     matchingSignals: [] as string[],
@@ -249,7 +276,7 @@ export function classifyDiscoveredItem(input: {
 
   const match = matchExistingEvent({
     content,
-    state: explicitState ?? stateHint,
+    state: resolvedState,
     publishedAt: input.publishedAt,
   });
   const officialResponse = officialResponsePattern.test(content);

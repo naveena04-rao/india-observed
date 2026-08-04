@@ -41,20 +41,29 @@ export const reviewedLocalitiesByState: Record<string, readonly string[]> = {
   "West Bengal": ["Kolkata", "Howrah", "Darjeeling"],
 };
 
+const containsReviewedPhrase = (value: string, phrase: string) => {
+  const searchable = ` ${value
+    .toLocaleLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim()} `;
+  const expected = ` ${phrase
+    .toLocaleLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim()} `;
+  return searchable.includes(expected);
+};
+
 export function detectReviewedState(value: string) {
-  const normalized = value.toLocaleLowerCase();
   for (const [state, localities] of Object.entries(reviewedLocalitiesByState)) {
-    if (normalized.includes(state.toLocaleLowerCase())) return state;
-    if (localities.some((locality) => normalized.includes(locality.toLocaleLowerCase())))
-      return state;
+    if (containsReviewedPhrase(value, state)) return state;
+    if (localities.some((locality) => containsReviewedPhrase(value, locality))) return state;
   }
   return null;
 }
 
 export function detectReviewedLocality(value: string) {
-  const normalized = value.toLocaleLowerCase();
   for (const [state, localities] of Object.entries(reviewedLocalitiesByState)) {
-    const locality = localities.find((item) => normalized.includes(item.toLocaleLowerCase()));
+    const locality = localities.find((item) => containsReviewedPhrase(value, item));
     if (locality) return { state, locality };
   }
   return null;
