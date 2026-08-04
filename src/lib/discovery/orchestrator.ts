@@ -28,9 +28,9 @@ export const pibRssDryRunLimits = {
 export const dailyScannerLimits = {
   maximumSources: 2,
   maximumItemsPerSource: 50,
-  maximumFetchedItems: 100,
-  maximumStoredItems: 50,
-  maximumCandidates: 25,
+  maximumFetchedItems: 60,
+  maximumStoredItems: 30,
+  maximumCandidates: 15,
   maximumRuntimeMs: 230_000,
   timeWindowHours: 72,
 } as const;
@@ -94,6 +94,13 @@ const fallbackSourcePriority: Record<string, number> = {
   youtube_api: 3,
   bluesky_api: 4,
 };
+
+const shortlistCandidateTypes = new Set([
+  "new_event",
+  "event_update",
+  "official_response",
+  "outcome_status_change",
+]);
 
 async function persistCandidate(input: {
   supabase: SupabaseClient;
@@ -180,7 +187,7 @@ async function persistCandidate(input: {
       { onConflict: "scan_run_id,observed_url", ignoreDuplicates: true },
     );
     if (error) throw new Error("duplicate_observation_write_failed");
-    return false;
+    return null;
   }
   const { data: item, error: itemError } = await input.supabase
     .from("discovered_items")
@@ -229,7 +236,7 @@ async function persistCandidate(input: {
     .select("id")
     .maybeSingle();
   if (itemError) throw new Error("discovered_item_write_failed");
-  if (!item) return false;
+  if (!item) return null;
   const classification = processed.classification;
   const candidateType =
     classification.candidateType === "media_evidence" &&
@@ -238,11 +245,12 @@ async function persistCandidate(input: {
         ? "event_update"
         : "irrelevant"
       : classification.candidateType;
+  const persistedCandidateType = manualReview ? "manual_review" : candidateType;
   const { data: candidate, error: candidateError } = await input.supabase
     .from("editorial_candidates")
     .insert({
       discovered_item_id: item.id,
-      candidate_type: manualReview ? "manual_review" : candidateType,
+      candidate_type: persistedCandidateType,
       target_event_slug: classification.targetEventSlug,
       target_event_internal_id: classification.targetEventInternalId,
       suggested_title: processed.title,
@@ -281,7 +289,10 @@ async function persistCandidate(input: {
     content_fingerprint: processed.fingerprint,
   });
   if (candidateSourceError) throw new Error("candidate_source_write_failed");
-  return true;
+  return {
+    eventCandidate:
+      shortlistCandidateTypes.has(persistedCandidateType) && classification.confidence >= 0.5,
+  };
 }
 
 export async function runDiscoveryScan(input: {
@@ -318,7 +329,7 @@ export async function runDiscoveryScan(input: {
       ? dailyScannerLimits
       : manualDryRunLimits;
   const day = input.scheduledFor ?? new Date().toISOString().slice(0, 10);
-  const idempotencyKey = `${input.trigger}:${day}:discovery-v1`;
+  const idempotencyKey = `${input.trigger}:${day}:discovery-v2`;
   const { data: runId, error: startError } = controlledGdeltRun
     ? await input.supabase.rpc("claim_manual_gdelt_dry_run", {
         p_idempotency_key: idempotencyKey,
@@ -424,7 +435,7 @@ export async function runDiscoveryScan(input: {
     string,
     { sources: number; successes: number; failures: number; items: number; candidates: number }
   > = {};
-  let limitReached: "fetched_item_limit" | "candidate_limit" | null = null;
+  let limitReached: "fetched_item_limit" | "stored_item_limit" | "candidate_limit" | null = null;
   await input.supabase
     .from("scan_runs")
     .update({ status: "running", source_count: sources.length })
@@ -472,12 +483,13 @@ export async function runDiscoveryScan(input: {
       itemsFetched += discovered.items.length;
       connector.items += discovered.items.length;
       let itemCount = 0;
+      let sourceCandidateCount = 0;
       for (const fetched of discovered.items) {
         if (Date.now() >= deadline) {
           limitReached = "fetched_item_limit";
           break;
         }
-        if (boundedRun && candidates + itemCount >= activeLimits.maximumCandidates) {
+        if (boundedRun && candidates >= activeLimits.maximumCandidates) {
           limitReached = "candidate_limit";
           break;
         }
@@ -488,16 +500,25 @@ export async function runDiscoveryScan(input: {
               ? activeLimits.maximumStoredItems
               : activeLimits.maximumCandidates)
         ) {
-          limitReached = "candidate_limit";
+          limitReached = "stored_item_limit";
           break;
         }
-        if (await persistCandidate({ supabase: input.supabase, runId, source, fetched })) {
+        const persisted = await persistCandidate({
+          supabase: input.supabase,
+          runId,
+          source,
+          fetched,
+        });
+        if (persisted) {
           itemCount += 1;
           itemsRetained += 1;
+          if (persisted.eventCandidate) {
+            candidates += 1;
+            sourceCandidateCount += 1;
+          }
         }
       }
-      candidates += itemCount;
-      connector.candidates += itemCount;
+      connector.candidates += sourceCandidateCount;
       successes += 1;
       connector.successes += 1;
       await input.supabase

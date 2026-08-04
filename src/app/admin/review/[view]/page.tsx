@@ -4,7 +4,10 @@ import { notFound, redirect } from "next/navigation";
 import { ArchiveShell } from "@/app/events/components/ArchiveShell";
 import { connectorManifests } from "@/lib/discovery/connectors/registry";
 import { getEditorialAdminSession } from "@/lib/editorial/admin";
-import { groupCandidatesByState } from "@/lib/editorial/candidateGrouping";
+import {
+  groupCandidatesByState,
+  partitionCandidateReviewRows,
+} from "@/lib/editorial/candidateGrouping";
 import { ManualGdeltDryRunControl } from "../ManualGdeltDryRunControl";
 import { ManualFallbackDryRunControl } from "../ManualFallbackDryRunControl";
 import { ManualPibRssDryRunControl } from "../ManualPibRssDryRunControl";
@@ -258,11 +261,14 @@ export default async function EditorialReviewPage({
     : approvedDailySources.length < 2
       ? "At least two approved, working daily sources are required."
       : null;
-  const filtered = candidates.filter((candidate) =>
+  const { eventCandidates, diagnostics } = partitionCandidateReviewRows(candidates);
+  const filtered = eventCandidates.filter((candidate) =>
     view === "new-events"
       ? candidate.candidate_type === "new_event"
       : view === "event-updates"
-        ? ["event_update", "official_response", "new_source"].includes(candidate.candidate_type)
+        ? ["event_update", "official_response", "outcome_status_change"].includes(
+            candidate.candidate_type,
+          )
         : true,
   );
   const title = views.find(([key]) => key === view)?.[1] ?? "Review";
@@ -298,13 +304,13 @@ export default async function EditorialReviewPage({
         <dl className="editor-review__metrics">
           <div>
             <dt>Unreviewed</dt>
-            <dd>{candidates.filter((item) => item.review_status === "unreviewed").length}</dd>
+            <dd>{eventCandidates.filter((item) => item.review_status === "unreviewed").length}</dd>
           </div>
           <div>
             <dt>High priority</dt>
             <dd>
               {
-                candidates.filter((item) =>
+                eventCandidates.filter((item) =>
                   ["high", "urgent_editor_attention"].includes(item.priority),
                 ).length
               }
@@ -345,97 +351,119 @@ export default async function EditorialReviewPage({
             title="Media awaiting rights, privacy and safety review"
             rows={mediaResult.data ?? []}
           />
+        ) : view === "today" ? (
+          <>
+            <CandidateList heading="Event candidates" candidates={filtered} />
+            <CandidateList heading="Scanner diagnostics" candidates={diagnostics} collapsed />
+          </>
         ) : (
-          <CandidateList candidates={filtered} />
+          <CandidateList heading={title} candidates={filtered} />
         )}
       </main>
     </ArchiveShell>
   );
 }
 
-function CandidateList({ candidates }: { candidates: Candidate[] }) {
+function CandidateList({
+  heading,
+  candidates,
+  collapsed = false,
+}: {
+  heading: string;
+  candidates: Candidate[];
+  collapsed?: boolean;
+}) {
   const groups = groupCandidatesByState(candidates);
+  const headingId = `candidate-heading-${heading.toLowerCase().replaceAll(" ", "-")}`;
+  const content =
+    candidates.length === 0 ? (
+      <p className="editor-review__empty">No candidates in this view.</p>
+    ) : (
+      <div className="editor-review__state-groups">
+        {groups.map((group) => (
+          <section key={group.state} aria-labelledby={`${headingId}-${group.state}`}>
+            <h3 id={`${headingId}-${group.state}`}>{group.state}</h3>
+            <CandidateCards items={group.items} />
+          </section>
+        ))}
+      </div>
+    );
   return (
-    <section aria-labelledby="candidate-heading">
-      <h2 id="candidate-heading">Review queue</h2>
-      {candidates.length === 0 ? (
-        <p className="editor-review__empty">
-          No candidates in this view. Production scanning is disabled.
-        </p>
+    <section aria-labelledby={headingId} className="editor-review__candidate-section">
+      <h2 id={headingId}>{heading}</h2>
+      {collapsed ? (
+        <details>
+          <summary>Show {candidates.length} diagnostic rows</summary>
+          <p>
+            Irrelevant, duplicate, failed, generic manual-review and sub-50% confidence rows remain
+            available here for private scanner QA.
+          </p>
+          {content}
+        </details>
       ) : (
-        <div className="editor-review__state-groups">
-          {groups.map((group) => (
-            <section key={group.state} aria-labelledby={`state-${group.state}`}>
-              <h3 id={`state-${group.state}`}>{group.state}</h3>
-              <ol className="editor-review__list">
-                {group.items.map((item) => (
-                  <li key={item.id}>
-                    <div>
-                      <span className="editor-review__badge">
-                        {item.candidate_type.replaceAll("_", " ")}
-                      </span>
-                      <span>{item.priority}</span>
-                    </div>
-                    <h3>
-                      <Link href={`/admin/review/candidates/${item.id}`}>
-                        {item.suggested_title ?? "Untitled candidate"}
-                      </Link>
-                    </h3>
-                    <p>
-                      {[
-                        item.state,
-                        item.district_or_region,
-                        item.target_event_internal_id ?? item.target_event_slug,
-                      ]
-                        .filter(Boolean)
-                        .join(" · ") || "Location or event match requires review"}
-                    </p>
-                    {item.candidate_sources[0] ? (
-                      <p>
-                        <a
-                          href={item.candidate_sources[0].canonical_url}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          {item.candidate_sources[0].publisher ??
-                            item.candidate_sources[0].source_family ??
-                            "Open source"}
-                        </a>
-                        {item.candidate_sources[0].published_at
-                          ? ` · ${new Date(item.candidate_sources[0].published_at).toLocaleString("en-IN")}`
-                          : ""}
-                      </p>
-                    ) : null}
-                    <p>{item.matching_signals.join(" · ") || "No existing-event match signals"}</p>
-                    <dl>
-                      <div>
-                        <dt>Confidence</dt>
-                        <dd>
-                          {item.confidence === null
-                            ? "Not scored"
-                            : `${Math.round(item.confidence * 100)}%`}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Corroboration</dt>
-                        <dd>
-                          {item.corroboration_status.replaceAll("_", " ")} (
-                          {item.independent_source_count})
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Status</dt>
-                        <dd>{item.review_status.replaceAll("_", " ")}</dd>
-                      </div>
-                    </dl>
-                  </li>
-                ))}
-              </ol>
-            </section>
-          ))}
-        </div>
+        content
       )}
     </section>
+  );
+}
+
+function CandidateCards({ items }: { items: Candidate[] }) {
+  return (
+    <ol className="editor-review__list">
+      {items.map((item) => (
+        <li key={item.id}>
+          <div>
+            <span className="editor-review__badge">{item.candidate_type.replaceAll("_", " ")}</span>
+            <span>{item.priority}</span>
+          </div>
+          <h3>
+            <Link href={`/admin/review/candidates/${item.id}`}>
+              {item.suggested_title ?? "Untitled candidate"}
+            </Link>
+          </h3>
+          <p>
+            {[
+              item.state,
+              item.district_or_region,
+              item.target_event_internal_id ?? item.target_event_slug,
+            ]
+              .filter(Boolean)
+              .join(" · ") || "Location or event match requires review"}
+          </p>
+          {item.candidate_sources[0] ? (
+            <p>
+              <a href={item.candidate_sources[0].canonical_url} target="_blank" rel="noreferrer">
+                {item.candidate_sources[0].publisher ??
+                  item.candidate_sources[0].source_family ??
+                  "Open source"}
+              </a>
+              {item.candidate_sources[0].published_at
+                ? ` · ${new Date(item.candidate_sources[0].published_at).toLocaleString("en-IN")}`
+                : ""}
+            </p>
+          ) : null}
+          <p>{item.matching_signals.join(" · ") || "No existing-event match signals"}</p>
+          <dl>
+            <div>
+              <dt>Confidence</dt>
+              <dd>
+                {item.confidence === null ? "Not scored" : `${Math.round(item.confidence * 100)}%`}
+              </dd>
+            </div>
+            <div>
+              <dt>Corroboration</dt>
+              <dd>
+                {item.corroboration_status.replaceAll("_", " ")} ({item.independent_source_count})
+              </dd>
+            </div>
+            <div>
+              <dt>Status</dt>
+              <dd>{item.review_status.replaceAll("_", " ")}</dd>
+            </div>
+          </dl>
+        </li>
+      ))}
+    </ol>
   );
 }
 function CoverageView({

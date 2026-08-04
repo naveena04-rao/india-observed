@@ -1,12 +1,21 @@
 import { reviewedEventsPreview } from "@/data/reviewed-events-preview";
+import { detectReviewedState } from "./geography";
 import type { DiscoveryClassification } from "./types";
 
 const stopWords = new Set(["and", "for", "from", "over", "the", "their", "with"]);
 
 const civicEventPattern =
-  /\b(protests?|strikes?|march(?:es)?|rall(?:y|ies)|dharnas?|demonstrations?|shutdowns?|hunger strikes?|blockades?)\b/;
+  /\b(protests?|strikes?|march(?:es)?|rall(?:y|ies)|dharnas?|demonstrations?|shutdowns?|hunger strikes?|blockades?|condemn(?:s|ed|ing|ation)?)\b/;
 const civicContextPattern =
-  /\b(organisations?|organizations?|trade unions?|unions?|movements?|activists?|rights defenders?|government|administration|authorit(?:y|ies)|courts?|workers?|students?|farmers?|residents?|employees?|communities?|groups?)\b/;
+  /\b(organisations?|organizations?|trade unions?|unions?|movements?|activists?|rights defenders?|civil society|bodies?|government|administration|authorit(?:y|ies)|courts?|workers?|students?|farmers?|residents?|employees?|communities?|groups?|detention|detained|demands?|demanded|urges?|grievances?)\b/;
+const indiaInstitutionPattern =
+  /\b(government of india|union (?:government|ministry)|supreme court of india|high court|indian railways|election commission of india|bharatiya kisan union|bku|aituc|citu|intuc|asha workers?|anganwadi workers?)\b/;
+const ambiguousStrikePattern =
+  /\b(?:military|air|airborne|drone|missile|surgical|lightning|precision) strikes?\b|\bstrike rate\b/;
+const routineNonCivicPattern =
+  /\b(recruitment|vacanc(?:y|ies)|horoscope|fashion|food festival|sports?|football|cricket|virus|disease|outbreak|drug smugglers?|murder|killing|citizenship revocation|cabinet expansion)\b/;
+const routinePoliticalMeetingPattern =
+  /\b(?:party|nda|bjp|congress|rss)\b.{0,80}\b(?:meeting|meet|conference|conclave|outreach)\b/;
 
 function terms(value: string) {
   return new Set(
@@ -87,10 +96,57 @@ export function classifyDiscoveredItem(input: {
       content,
     );
   const mediaEvidence = /\b(video|photograph|photo|footage|livestream)\b/.test(content);
-  const civicEventSignal = content.match(civicEventPattern)?.[0] ?? null;
+  const rawCivicEventSignal = content.match(civicEventPattern)?.[0] ?? null;
+  const civicEventSignal =
+    rawCivicEventSignal?.includes("strike") && ambiguousStrikePattern.test(content)
+      ? null
+      : rawCivicEventSignal;
   const civicContextSignal = content.match(civicContextPattern)?.[0] ?? null;
+  const indiaState = detectReviewedState(content);
+  const indiaSignal =
+    indiaState ??
+    content.match(/\b(?:india|indian)\b/)?.[0] ??
+    content.match(indiaInstitutionPattern)?.[0] ??
+    null;
+  const routineNonCivic =
+    routineNonCivicPattern.test(content) || routinePoliticalMeetingPattern.test(content);
 
-  if (best && best.score >= 0.12 && best.signals.length >= 2) {
+  if (!indiaSignal) {
+    return {
+      candidateType: "irrelevant",
+      targetEventSlug: null,
+      state: null,
+      confidence: 0.1,
+      priority: "low",
+      reason: "irrelevant_non_india",
+      targetEventInternalId: null,
+      matchingSignals: [],
+      conflictingSignals: ["No reliable India location or institution signal was found."],
+      sourceIsNewerThanEvent: null,
+    };
+  }
+
+  if (routineNonCivic && !(civicEventSignal && civicContextSignal)) {
+    return {
+      candidateType: "irrelevant",
+      targetEventSlug: null,
+      state: indiaState,
+      confidence: 0.2,
+      priority: "low",
+      reason: "irrelevant_non_collective_context",
+      targetEventInternalId: null,
+      matchingSignals: [`India signal: ${indiaSignal}`],
+      conflictingSignals: ["Routine news without collective civic action."],
+      sourceIsNewerThanEvent: null,
+    };
+  }
+
+  if (
+    best &&
+    best.score >= 0.12 &&
+    best.signals.length >= 2 &&
+    ((civicEventSignal && civicContextSignal) || officialResponse || outcomeOrStatusChange)
+  ) {
     return {
       candidateType: outcomeOrStatusChange
         ? "outcome_status_change"
@@ -118,13 +174,14 @@ export function classifyDiscoveredItem(input: {
     return {
       candidateType: "new_event",
       targetEventSlug: null,
-      state: null,
+      state: indiaState,
       confidence: 0.55,
       priority: "normal",
       reason:
         "A civic-event term and a location, organisation, affected-group, authority or action context were found, but no reviewed event passed the deterministic match threshold.",
       targetEventInternalId: null,
       matchingSignals: [
+        `India signal: ${indiaSignal}`,
         `civic-event term: ${civicEventSignal}`,
         `context term: ${civicContextSignal}`,
       ],

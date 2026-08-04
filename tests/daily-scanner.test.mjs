@@ -7,6 +7,9 @@ const migration = read("supabase/migrations/20260803000400_add_minimum_daily_sca
 const focusedMigration = read(
   "supabase/migrations/20260804000100_focus_daily_scanner_iteration.sql",
 );
+const shortlistMigration = read(
+  "supabase/migrations/20260804000200_add_event_candidate_shortlist.sql",
+);
 const orchestrator = read("src/lib/discovery/orchestrator.ts");
 const discovery = read("src/lib/discovery/sourceDiscovery.ts");
 const classification = read("src/lib/discovery/classification.ts");
@@ -27,9 +30,9 @@ test("daily scanner contains only the two reviewed metadata sources", () => {
 test("scheduled runs enforce source, item, candidate and runtime limits", () => {
   for (const expected of [
     /maximumSources: 2/,
-    /maximumFetchedItems: 100/,
-    /maximumStoredItems: 50/,
-    /maximumCandidates: 25/,
+    /maximumFetchedItems: 60/,
+    /maximumStoredItems: 30/,
+    /maximumCandidates: 15/,
     /maximumRuntimeMs: 230_000/,
     /timeWindowHours: 72/,
   ])
@@ -37,6 +40,28 @@ test("scheduled runs enforce source, item, candidate and runtime limits", () => 
   assert.match(orchestrator, /scheduledRun/);
   assert.match(orchestrator, /no_approved_source/);
   assert.match(orchestrator, /sourceQuery\.eq\("scan_frequency", "daily"\)/);
+  assert.match(orchestrator, /discovery-v2/);
+  assert.match(orchestrator, /shortlistCandidateTypes/);
+  assert.match(orchestrator, /persisted\.eventCandidate/);
+});
+
+test("the shortlist migration tightens limits without enabling automation", () => {
+  assert.match(shortlistMigration, /"maximumRawItems":60/);
+  assert.match(shortlistMigration, /"maximumStoredItems":30/);
+  assert.match(shortlistMigration, /"maximumCandidates":15/);
+  assert.match(shortlistMigration, /not coalesce\(public\.is_authorised_editor\(\), false\)/);
+  assert.doesNotMatch(
+    shortlistMigration,
+    /scheduler_enabled\s*=\s*true|outbound_email_enabled\s*=\s*true|real_notifications_enabled\s*=\s*true|github_write_enabled\s*=\s*true/,
+  );
+});
+
+test("today separates event candidates from private scanner diagnostics", () => {
+  assert.match(dashboard, /partitionCandidateReviewRows/);
+  assert.match(dashboard, /heading="Event candidates"/);
+  assert.match(dashboard, /heading="Scanner diagnostics"/);
+  assert.match(dashboard, /collapsed/);
+  assert.match(dashboard, /confidence >= 0\.5|partitionCandidateReviewRows/);
 });
 
 test("focused iteration disables PIB and enables only the reviewed replacement", () => {
