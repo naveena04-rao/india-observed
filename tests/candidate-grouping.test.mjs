@@ -56,6 +56,13 @@ test("missing and blank states use the Unknown / National group", () => {
 test("the default review shortlist contains only credible event candidate types", () => {
   const rows = [
     {
+      id: "planned",
+      state: "Tamil Nadu",
+      discovery_time: "2026-08-04T09:30:00Z",
+      candidate_type: "possible_planned_event",
+      confidence: 0.7,
+    },
+    {
       id: "new",
       state: "Assam",
       discovery_time: "2026-08-04T10:00:00Z",
@@ -122,7 +129,7 @@ test("the default review shortlist contains only credible event candidate types"
   const result = partitionCandidateReviewRows(rows);
   assert.deepEqual(
     result.eventCandidates.map((item) => item.id),
-    ["new", "update", "response", "outcome"],
+    ["planned", "new", "update", "response", "outcome"],
   );
   assert.deepEqual(
     result.diagnostics.map((item) => item.id),

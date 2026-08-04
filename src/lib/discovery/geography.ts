@@ -51,6 +51,15 @@ export function detectReviewedState(value: string) {
   return null;
 }
 
+export function detectReviewedLocality(value: string) {
+  const normalized = value.toLocaleLowerCase();
+  for (const [state, localities] of Object.entries(reviewedLocalitiesByState)) {
+    const locality = localities.find((item) => normalized.includes(item.toLocaleLowerCase()));
+    if (locality) return { state, locality };
+  }
+  return null;
+}
+
 export function buildPriorityLocalities(input: {
   ongoingEventLocalities: readonly string[];
   weakCoverageStates: readonly string[];

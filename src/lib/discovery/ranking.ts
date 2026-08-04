@@ -2,6 +2,7 @@ import type { DiscoveryClassification } from "./types";
 
 const eventCandidateTypes = new Set([
   "new_event",
+  "possible_planned_event",
   "event_update",
   "official_response",
   "outcome_status_change",

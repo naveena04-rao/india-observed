@@ -49,6 +49,14 @@ type Candidate = {
   matching_signals: string[];
   conflicting_signals: string[];
   source_is_newer_than_event: boolean | null;
+  action_type: string | null;
+  event_date: string | null;
+  planned_date: string | null;
+  affected_group: string | null;
+  demand: string | null;
+  authority_response: string | null;
+  dictionary_matches: string[];
+  detected_language: string;
   candidate_sources: Array<{
     publisher: string | null;
     canonical_url: string;
@@ -108,7 +116,7 @@ export default async function EditorialReviewPage({
     session.supabase
       .from("editorial_candidates")
       .select(
-        "id,candidate_type,suggested_title,state,district_or_region,priority,confidence,corroboration_status,independent_source_count,review_status,discovery_time,target_event_slug,target_event_internal_id,matching_signals,conflicting_signals,source_is_newer_than_event,candidate_sources(publisher,canonical_url,published_at,source_family)",
+        "id,candidate_type,suggested_title,state,district_or_region,priority,confidence,corroboration_status,independent_source_count,review_status,discovery_time,target_event_slug,target_event_internal_id,matching_signals,conflicting_signals,source_is_newer_than_event,action_type,event_date,planned_date,affected_group,demand,authority_response,dictionary_matches,detected_language,candidate_sources(publisher,canonical_url,published_at,source_family)",
       )
       .order("discovery_time", { ascending: false })
       .limit(100),
@@ -258,13 +266,13 @@ export default async function EditorialReviewPage({
       : null;
   const dailyScannerDisabledReason = activeDailyScannerRun
     ? "A daily-scanner run is already active."
-    : approvedDailySources.length < 2
-      ? "At least two approved, working daily sources are required."
+    : approvedDailySources.length < 24
+      ? "At least 24 approved daily metadata sources are required."
       : null;
   const { eventCandidates, diagnostics } = partitionCandidateReviewRows(candidates);
   const filtered = eventCandidates.filter((candidate) =>
     view === "new-events"
-      ? candidate.candidate_type === "new_event"
+      ? ["new_event", "possible_planned_event"].includes(candidate.candidate_type)
       : view === "event-updates"
         ? ["event_update", "official_response", "outcome_status_change"].includes(
             candidate.candidate_type,
@@ -425,23 +433,36 @@ function CandidateCards({ items }: { items: Candidate[] }) {
             {[
               item.state,
               item.district_or_region,
+              item.planned_date ? `Planned ${item.planned_date}` : item.event_date,
               item.target_event_internal_id ?? item.target_event_slug,
             ]
               .filter(Boolean)
               .join(" · ") || "Location or event match requires review"}
           </p>
-          {item.candidate_sources[0] ? (
-            <p>
-              <a href={item.candidate_sources[0].canonical_url} target="_blank" rel="noreferrer">
-                {item.candidate_sources[0].publisher ??
-                  item.candidate_sources[0].source_family ??
-                  "Open source"}
-              </a>
-              {item.candidate_sources[0].published_at
-                ? ` · ${new Date(item.candidate_sources[0].published_at).toLocaleString("en-IN")}`
-                : ""}
-            </p>
+          {item.candidate_sources.length ? (
+            <ul aria-label="Candidate sources">
+              {item.candidate_sources.map((source) => (
+                <li key={source.canonical_url}>
+                  <a href={source.canonical_url} target="_blank" rel="noreferrer">
+                    {source.publisher ?? source.source_family ?? "Open source"}
+                  </a>
+                  {source.published_at
+                    ? ` · ${new Date(source.published_at).toLocaleString("en-IN")}`
+                    : ""}
+                </li>
+              ))}
+            </ul>
           ) : null}
+          <p>
+            {[
+              item.action_type ? `Action: ${item.action_type}` : null,
+              item.affected_group ? `Affected group: ${item.affected_group}` : null,
+              item.demand ? `Demand: ${item.demand}` : null,
+              item.authority_response ? `Authority response: ${item.authority_response}` : null,
+            ]
+              .filter(Boolean)
+              .join(" · ") || "Structured event details require editor review"}
+          </p>
           <p>{item.matching_signals.join(" · ") || "No existing-event match signals"}</p>
           <dl>
             <div>
@@ -459,6 +480,10 @@ function CandidateCards({ items }: { items: Candidate[] }) {
             <div>
               <dt>Status</dt>
               <dd>{item.review_status.replaceAll("_", " ")}</dd>
+            </div>
+            <div>
+              <dt>Language</dt>
+              <dd>{item.detected_language}</dd>
             </div>
           </dl>
         </li>

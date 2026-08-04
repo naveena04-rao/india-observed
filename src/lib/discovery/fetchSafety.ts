@@ -146,6 +146,7 @@ export async function fetchApprovedSource(
     maximumRedirects?: number;
     etag?: string | null;
     lastModified?: string | null;
+    acceptHeader?: string;
   } = {},
 ): Promise<SafeFetchedSource> {
   const fetchImpl = options.fetchImpl ?? fetch;
@@ -160,7 +161,9 @@ export async function fetchApprovedSource(
       redirect: "manual",
       signal: AbortSignal.timeout(timeoutMs),
       headers: {
-        Accept: "application/rss+xml, application/atom+xml, application/json, text/html;q=0.8",
+        Accept:
+          options.acceptHeader ??
+          "application/rss+xml, application/atom+xml, application/json, text/html;q=0.8",
         "User-Agent":
           "IndiaObservedEditorialDiscovery/1.0 (+https://india-observed.vercel.app/methodology)",
         ...(options.etag ? { "If-None-Match": options.etag } : {}),
@@ -177,6 +180,7 @@ export async function fetchApprovedSource(
         etag: response.headers.get("etag") ?? options.etag ?? null,
         lastModified: response.headers.get("last-modified") ?? options.lastModified ?? null,
         notModified: true,
+        statusCode: 304,
       };
     }
 
@@ -209,6 +213,7 @@ export async function fetchApprovedSource(
       etag: response.headers.get("etag"),
       lastModified: response.headers.get("last-modified"),
       notModified: false,
+      statusCode: response.status,
     };
   }
   throw new Error("source_redirect_limit");
