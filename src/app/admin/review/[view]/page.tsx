@@ -12,6 +12,11 @@ import { ManualGdeltDryRunControl } from "../ManualGdeltDryRunControl";
 import { ManualFallbackDryRunControl } from "../ManualFallbackDryRunControl";
 import { ManualPibRssDryRunControl } from "../ManualPibRssDryRunControl";
 import { ManualDailyScannerControl } from "../ManualDailyScannerControl";
+import { reviewTwelveMonthVerificationLeadAction } from "../actions";
+import {
+  twelveMonthVerificationLeads,
+  type TwelveMonthVerificationLead,
+} from "@/data/twelveMonthVerification";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -21,6 +26,7 @@ export const metadata: Metadata = {
 
 const views = [
   ["today", "Today"],
+  ["verification", "12-month verification"],
   ["new-events", "New Events"],
   ["event-updates", "Event Updates"],
   ["media", "Media"],
@@ -166,6 +172,15 @@ export default async function EditorialReviewPage({
   const candidates = (candidateResult.data ?? []) as Candidate[];
   const compliance = (complianceResult.data ?? []) as Compliance[];
   const sources = (sourceResult.data ?? []) as ScanSource[];
+  const verificationDecisionResult =
+    view === "verification"
+      ? await session.supabase
+          .from("editorial_verification_decisions")
+          .select("lead_ref,decision,note,decided_at")
+      : { data: [], error: null };
+  const verificationDecisions = new Map(
+    (verificationDecisionResult.data ?? []).map((decision) => [decision.lead_ref, decision]),
+  );
   const approvedManualSources = sources.filter((source) => {
     const review = compliance.find((record) => record.id === source.compliance_registry_id);
     return (
@@ -342,7 +357,12 @@ export default async function EditorialReviewPage({
             <ManualDailyScannerControl disabledReason={dailyScannerDisabledReason} />
           </>
         ) : null}
-        {view === "compliance" ? (
+        {view === "verification" ? (
+          <TwelveMonthVerificationView
+            decisions={verificationDecisions}
+            persistenceAvailable={!verificationDecisionResult.error}
+          />
+        ) : view === "compliance" ? (
           <ComplianceView
             records={compliance}
             media={mediaResult.data ?? []}
@@ -369,6 +389,224 @@ export default async function EditorialReviewPage({
         )}
       </main>
     </ArchiveShell>
+  );
+}
+
+type VerificationDecision = {
+  lead_ref: string;
+  decision: string;
+  note: string | null;
+  decided_at: string;
+};
+
+function TwelveMonthVerificationView({
+  decisions,
+  persistenceAvailable,
+}: {
+  decisions: Map<string, VerificationDecision>;
+  persistenceAvailable: boolean;
+}) {
+  const ready = twelveMonthVerificationLeads.filter(
+    (lead) => lead.recommendation === "approve_new_event_draft",
+  );
+  const held = twelveMonthVerificationLeads.filter(
+    (lead) => lead.recommendation === "retain_for_more_evidence",
+  );
+  const duplicates = twelveMonthVerificationLeads.filter(
+    (lead) => lead.recommendation === "reject_duplicate",
+  );
+  return (
+    <section className="verification-review" aria-labelledby="verification-heading">
+      <div className="verification-review__intro">
+        <div>
+          <p className="section-kicker">EDITORIAL DECISION PACKET</p>
+          <h2 id="verification-heading">Fresh leads from the last 12 months</h2>
+          <p>
+            Each lead was checked against dated, attributable reporting. Approving here creates an
+            owner decision for a <strong>private draft only</strong>; it cannot publish an event.
+          </p>
+        </div>
+        <span className="verification-review__window">4 Aug 2025–4 Aug 2026</span>
+      </div>
+      <dl className="verification-review__summary">
+        <div>
+          <dt>Reviewed</dt>
+          <dd>{twelveMonthVerificationLeads.length}</dd>
+        </div>
+        <div>
+          <dt>Draft-ready</dt>
+          <dd>{ready.length}</dd>
+        </div>
+        <div>
+          <dt>Need evidence</dt>
+          <dd>{held.length}</dd>
+        </div>
+        <div>
+          <dt>Duplicate</dt>
+          <dd>{duplicates.length}</dd>
+        </div>
+        <div>
+          <dt>Owner decisions</dt>
+          <dd>{decisions.size}</dd>
+        </div>
+      </dl>
+      {!persistenceAvailable ? (
+        <p className="verification-review__notice" role="status">
+          The evidence packet is available for review. Decision saving will become available after
+          its private database migration is applied.
+        </p>
+      ) : null}
+      <VerificationGroup
+        id="draft-ready"
+        title="Ready for your decision"
+        description="Sufficiently evidenced for a private draft. Nothing is made public from this screen."
+        leads={ready}
+        decisions={decisions}
+        persistenceAvailable={persistenceAvailable}
+      />
+      <VerificationGroup
+        id="needs-evidence"
+        title="Needs more evidence"
+        description="Held because occurrence, legal sensitivity, or a bounded action is not yet sufficiently established."
+        leads={held}
+        decisions={decisions}
+        persistenceAvailable={persistenceAvailable}
+      />
+      <VerificationGroup
+        id="duplicates"
+        title="Duplicate check"
+        description="Matched to an existing reviewed record and should not create another event."
+        leads={duplicates}
+        decisions={decisions}
+        persistenceAvailable={persistenceAvailable}
+      />
+    </section>
+  );
+}
+
+function VerificationGroup({
+  id,
+  title,
+  description,
+  leads,
+  decisions,
+  persistenceAvailable,
+}: {
+  id: string;
+  title: string;
+  description: string;
+  leads: TwelveMonthVerificationLead[];
+  decisions: Map<string, VerificationDecision>;
+  persistenceAvailable: boolean;
+}) {
+  return (
+    <section className="verification-review__group" aria-labelledby={`${id}-heading`}>
+      <header>
+        <div>
+          <h3 id={`${id}-heading`}>{title}</h3>
+          <p>{description}</p>
+        </div>
+        <span>{leads.length}</span>
+      </header>
+      <ol className="verification-review__list">
+        {leads.map((lead) => (
+          <VerificationCard
+            key={lead.ref}
+            lead={lead}
+            decision={decisions.get(lead.ref)}
+            persistenceAvailable={persistenceAvailable}
+          />
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+function VerificationCard({
+  lead,
+  decision,
+  persistenceAvailable,
+}: {
+  lead: TwelveMonthVerificationLead;
+  decision: VerificationDecision | undefined;
+  persistenceAvailable: boolean;
+}) {
+  const recommendation = lead.recommendation.replaceAll("_", " ");
+  return (
+    <li className="verification-review__card">
+      <div className="verification-review__card-topline">
+        <span className="editor-review__badge">{lead.ref}</span>
+        <span>{lead.confidence} confidence</span>
+        {decision ? (
+          <span className="verification-review__decision">
+            Saved: {decision.decision.replaceAll("_", " ")}
+          </span>
+        ) : null}
+      </div>
+      <h4>{lead.title}</h4>
+      <dl className="verification-review__facts">
+        <div>
+          <dt>Where</dt>
+          <dd>{lead.state}</dd>
+        </div>
+        <div>
+          <dt>When</dt>
+          <dd>{lead.eventDate}</dd>
+        </div>
+        <div>
+          <dt>Record</dt>
+          <dd>{lead.proposedEventId ?? lead.matchedEventId ?? "Not assigned"}</dd>
+        </div>
+        <div>
+          <dt>Recommendation</dt>
+          <dd>{recommendation}</dd>
+        </div>
+      </dl>
+      <p className="verification-review__evidence">{lead.evidenceNote}</p>
+      <a href={lead.primarySource.url} target="_blank" rel="noreferrer">
+        Open primary evidence · {lead.primarySource.publisher}
+      </a>
+      {decision?.note ? (
+        <p className="verification-review__saved-note">Note: {decision.note}</p>
+      ) : null}
+      <form action={reviewTwelveMonthVerificationLeadAction}>
+        <input type="hidden" name="leadRef" value={lead.ref} />
+        <label htmlFor={`${lead.ref}-note`}>Owner note (required for hold or reject)</label>
+        <textarea
+          id={`${lead.ref}-note`}
+          name="note"
+          rows={2}
+          defaultValue={decision?.note ?? ""}
+          placeholder="Add context for the editorial record"
+          disabled={!persistenceAvailable}
+        />
+        <div
+          className="verification-review__actions"
+          role="group"
+          aria-label={`${lead.ref} decision`}
+        >
+          <button
+            type="submit"
+            name="decision"
+            value="approve_private_draft"
+            disabled={!persistenceAvailable}
+          >
+            Approve private draft
+          </button>
+          <button
+            type="submit"
+            name="decision"
+            value="hold_for_evidence"
+            disabled={!persistenceAvailable}
+          >
+            Hold for evidence
+          </button>
+          <button type="submit" name="decision" value="reject" disabled={!persistenceAvailable}>
+            Reject
+          </button>
+        </div>
+      </form>
+    </li>
   );
 }
 
