@@ -10,6 +10,7 @@ const focusedMigration = read(
 const shortlistMigration = read(
   "supabase/migrations/20260804000200_add_event_candidate_shortlist.sql",
 );
+const indiaWideMigration = read("supabase/migrations/20260804000300_expand_india_wide_scanner.sql");
 const orchestrator = read("src/lib/discovery/orchestrator.ts");
 const discovery = read("src/lib/discovery/sourceDiscovery.ts");
 const classification = read("src/lib/discovery/classification.ts");
@@ -29,20 +30,50 @@ test("daily scanner contains only the two reviewed metadata sources", () => {
 
 test("scheduled runs enforce source, item, candidate and runtime limits", () => {
   for (const expected of [
-    /maximumSources: 2/,
-    /maximumFetchedItems: 60/,
-    /maximumStoredItems: 30/,
-    /maximumCandidates: 15/,
-    /maximumRuntimeMs: 230_000/,
+    /maximumSources: 15/,
+    /maximumFetchedItems: 300/,
+    /maximumStoredItems: 100/,
+    /maximumCandidates: 40/,
+    /maximumRuntimeMs: 350_000/,
     /timeWindowHours: 72/,
   ])
     assert.match(orchestrator, expected);
   assert.match(orchestrator, /scheduledRun/);
   assert.match(orchestrator, /no_approved_source/);
   assert.match(orchestrator, /sourceQuery\.eq\("scan_frequency", "daily"\)/);
-  assert.match(orchestrator, /discovery-v2/);
-  assert.match(orchestrator, /shortlistCandidateTypes/);
+  assert.match(orchestrator, /discovery-v3/);
+  assert.match(orchestrator, /rankPreliminaryReviewItems/);
+  assert.match(orchestrator, /itemsPassingIndiaGate/);
+  assert.match(orchestrator, /itemsPassingPreliminaryCivicFilter/);
   assert.match(orchestrator, /persisted\.eventCandidate/);
+});
+
+test("India-wide migration selects reviewed regional feeds without enabling automation", () => {
+  for (const expected of [
+    /Indian Express India RSS/,
+    /Hindustan Times India RSS/,
+    /Times of India India RSS/,
+    /Indian Express Delhi RSS/,
+    /Hindustan Times Lucknow RSS/,
+    /Indian Express Bengaluru RSS/,
+    /Telangana Today RSS/,
+    /Indian Express Kolkata RSS/,
+    /Hindustan Times Patna RSS/,
+    /Indian Express Mumbai RSS/,
+    /Indian Express Ahmedabad RSS/,
+    /NorthEast Now RSS/,
+    /EastMojo RSS/,
+    /Madhya Pradesh Information RSS/,
+    /"maximumRawItems":300/,
+    /"maximumStoredItems":100/,
+    /"maximumCandidates":40/,
+    /eligible_count < 8 or eligible_count > 15/,
+  ])
+    assert.match(indiaWideMigration, expected);
+  assert.doesNotMatch(
+    indiaWideMigration,
+    /scheduler_enabled\s*=\s*true|outbound_email_enabled\s*=\s*true|real_notifications_enabled\s*=\s*true|github_write_enabled\s*=\s*true/,
+  );
 });
 
 test("the shortlist migration tightens limits without enabling automation", () => {

@@ -23,18 +23,18 @@ where review.id = source.compliance_registry_id
 
 select is(
   (select (retention_details ->> 'maximumRawItems')::integer from public.processing_purposes where purpose_key = 'daily_metadata_editorial_discovery'),
-  60,
-  'raw metadata is capped at 60 items'
+  300,
+  'raw metadata uses the current India-wide 300-item cap'
 );
 select is(
   (select (retention_details ->> 'maximumStoredItems')::integer from public.processing_purposes where purpose_key = 'daily_metadata_editorial_discovery'),
-  30,
-  'stored diagnostic and candidate rows are capped at 30'
+  100,
+  'stored diagnostic and candidate rows use the current 100-row cap'
 );
 select is(
   (select (retention_details ->> 'maximumCandidates')::integer from public.processing_purposes where purpose_key = 'daily_metadata_editorial_discovery'),
-  15,
-  'credible event candidates are capped at 15'
+  40,
+  'credible event candidates use the current 40-candidate cap'
 );
 select is((select scheduler_enabled from public.discovery_schedule_settings where singleton), false, 'scanner cron remains disabled');
 select is((select outbound_email_enabled from public.discovery_schedule_settings where singleton), false, 'outbound email remains disabled');

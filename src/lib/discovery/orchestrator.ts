@@ -5,6 +5,7 @@ import { processFetchedSource } from "./pipeline";
 import { QueryBudget } from "./queryStrategy";
 import { discoverSourceItems, type ScannerSource } from "./sourceDiscovery";
 import { SafeSourceFetchError } from "./fetchSafety";
+import { isCredibleEventCandidate, rankPreliminaryReviewItems } from "./ranking";
 import type { SafeFetchedSource } from "./types";
 
 export const manualDryRunLimits = {
@@ -26,12 +27,12 @@ export const pibRssDryRunLimits = {
 } as const;
 
 export const dailyScannerLimits = {
-  maximumSources: 2,
+  maximumSources: 15,
   maximumItemsPerSource: 50,
-  maximumFetchedItems: 60,
-  maximumStoredItems: 30,
-  maximumCandidates: 15,
-  maximumRuntimeMs: 230_000,
+  maximumFetchedItems: 300,
+  maximumStoredItems: 100,
+  maximumCandidates: 40,
+  maximumRuntimeMs: 350_000,
   timeWindowHours: 72,
 } as const;
 
@@ -95,20 +96,14 @@ const fallbackSourcePriority: Record<string, number> = {
   bluesky_api: 4,
 };
 
-const shortlistCandidateTypes = new Set([
-  "new_event",
-  "event_update",
-  "official_response",
-  "outcome_status_change",
-]);
-
 async function persistCandidate(input: {
   supabase: SupabaseClient;
   runId: string;
   source: ScannerSource;
   fetched: SafeFetchedSource;
+  processed?: ReturnType<typeof processFetchedSource>;
 }) {
-  const processed = processFetchedSource(input.fetched);
+  const processed = input.processed ?? processFetchedSource(input.fetched);
   const manualReview =
     processed.safetyFlags.possibleChild ||
     processed.safetyFlags.possibleVictimOrWitness ||
@@ -292,8 +287,10 @@ async function persistCandidate(input: {
   });
   if (candidateSourceError) throw new Error("candidate_source_write_failed");
   return {
-    eventCandidate:
-      shortlistCandidateTypes.has(persistedCandidateType) && classification.confidence >= 0.5,
+    eventCandidate: isCredibleEventCandidate({
+      ...classification,
+      candidateType: persistedCandidateType,
+    }),
   };
 }
 
@@ -331,7 +328,7 @@ export async function runDiscoveryScan(input: {
       ? dailyScannerLimits
       : manualDryRunLimits;
   const day = input.scheduledFor ?? new Date().toISOString().slice(0, 10);
-  const idempotencyKey = `${input.trigger}:${day}:discovery-v2`;
+  const idempotencyKey = `${input.trigger}:${day}:discovery-v3`;
   const { data: runId, error: startError } = controlledGdeltRun
     ? await input.supabase.rpc("claim_manual_gdelt_dry_run", {
         p_idempotency_key: idempotencyKey,
@@ -429,6 +426,9 @@ export async function runDiscoveryScan(input: {
   let candidates = 0;
   let itemsFetched = 0;
   let itemsRetained = 0;
+  let itemsPassingIndiaGate = 0;
+  let itemsPassingPreliminaryCivicFilter = 0;
+  let processingFailures = 0;
   const deadline =
     Date.now() +
     (controlledDailyScannerRun || scheduledRun ? dailyScannerLimits.maximumRuntimeMs : 10 * 60_000);
@@ -437,7 +437,15 @@ export async function runDiscoveryScan(input: {
     string,
     { sources: number; successes: number; failures: number; items: number; candidates: number }
   > = {};
-  let limitReached: "fetched_item_limit" | "stored_item_limit" | "candidate_limit" | null = null;
+  let limitReached:
+    "fetched_item_limit" | "stored_item_limit" | "candidate_limit" | "runtime_limit" | null = null;
+  const fetchedForRanking: Array<{
+    source: ScannerSource;
+    fetched: SafeFetchedSource;
+    processed: ReturnType<typeof processFetchedSource>;
+  }> = [];
+  const sourceJobs = new Map<string, string>();
+  const sourceStoredCounts = new Map<string, number>();
   await input.supabase
     .from("scan_runs")
     .update({ status: "running", source_count: sources.length })
@@ -445,7 +453,7 @@ export async function runDiscoveryScan(input: {
 
   for (const source of sources) {
     if (Date.now() >= deadline) {
-      limitReached = "fetched_item_limit";
+      limitReached = "runtime_limit";
       break;
     }
     const connector = (connectorResults[source.scan_method] ??= {
@@ -457,13 +465,6 @@ export async function runDiscoveryScan(input: {
     });
     connector.sources += 1;
     const boundedRun = controlledManualDryRun || scheduledRun;
-    const remainingFetchedItems = boundedRun
-      ? activeLimits.maximumFetchedItems - itemsFetched
-      : undefined;
-    if (remainingFetchedItems !== undefined && remainingFetchedItems <= 0) {
-      limitReached = "fetched_item_limit";
-      break;
-    }
     const { data: job } = await input.supabase
       .from("scan_jobs")
       .update({ status: "running", attempt_count: 1, started_at: new Date().toISOString() })
@@ -471,56 +472,25 @@ export async function runDiscoveryScan(input: {
       .eq("source_id", source.id)
       .select("id")
       .single();
+    if (job?.id) sourceJobs.set(source.id, job.id);
     try {
+      const perSourceMaximum = boundedRun
+        ? Math.min(
+            activeLimits.maximumItemsPerSource,
+            Math.max(1, Math.floor(activeLimits.maximumFetchedItems / Math.max(sources.length, 1))),
+          )
+        : undefined;
       const discovered = await discoverSourceItems({
         source,
         supabase: input.supabase,
         budget,
-        maximumItems: boundedRun
-          ? controlledGdeltRun
-            ? remainingFetchedItems
-            : Math.min(activeLimits.maximumItemsPerSource, remainingFetchedItems!)
-          : undefined,
+        maximumItems: perSourceMaximum,
       });
       itemsFetched += discovered.items.length;
       connector.items += discovered.items.length;
-      let itemCount = 0;
-      let sourceCandidateCount = 0;
       for (const fetched of discovered.items) {
-        if (Date.now() >= deadline) {
-          limitReached = "fetched_item_limit";
-          break;
-        }
-        if (boundedRun && candidates >= activeLimits.maximumCandidates) {
-          limitReached = "candidate_limit";
-          break;
-        }
-        if (
-          boundedRun &&
-          itemsRetained >=
-            ("maximumStoredItems" in activeLimits
-              ? activeLimits.maximumStoredItems
-              : activeLimits.maximumCandidates)
-        ) {
-          limitReached = "stored_item_limit";
-          break;
-        }
-        const persisted = await persistCandidate({
-          supabase: input.supabase,
-          runId,
-          source,
-          fetched,
-        });
-        if (persisted) {
-          itemCount += 1;
-          itemsRetained += 1;
-          if (persisted.eventCandidate) {
-            candidates += 1;
-            sourceCandidateCount += 1;
-          }
-        }
+        fetchedForRanking.push({ source, fetched, processed: processFetchedSource(fetched) });
       }
-      connector.candidates += sourceCandidateCount;
       successes += 1;
       connector.successes += 1;
       await input.supabase
@@ -528,7 +498,7 @@ export async function runDiscoveryScan(input: {
         .update({
           status: "completed",
           completed_at: new Date().toISOString(),
-          items_discovered: itemCount,
+          items_discovered: 0,
           request_count: discovered.requestCount,
         })
         .eq("id", job?.id);
@@ -544,9 +514,6 @@ export async function runDiscoveryScan(input: {
           last_modified_header: discovered.lastModified,
         })
         .eq("id", source.id);
-      if (boundedRun && itemsFetched >= activeLimits.maximumFetchedItems)
-        limitReached = "fetched_item_limit";
-      if (limitReached) break;
     } catch (error) {
       failures += 1;
       connector.failures += 1;
@@ -577,6 +544,67 @@ export async function runDiscoveryScan(input: {
         .eq("id", source.id);
     }
   }
+  const rankedItems = rankPreliminaryReviewItems(
+    fetchedForRanking.map((item) => ({
+      value: item,
+      classification: item.processed.classification,
+      publishedAt: item.fetched.discoveryMetadata?.publishedAt ?? null,
+    })),
+  );
+  itemsPassingIndiaGate = rankedItems.filter((item) => item.indiaGatePassed).length;
+  itemsPassingPreliminaryCivicFilter = rankedItems.filter(
+    (item) => item.preliminaryCivicPassed,
+  ).length;
+  let candidateLimitSkipped = 0;
+  const storedLimit =
+    "maximumStoredItems" in activeLimits
+      ? activeLimits.maximumStoredItems
+      : activeLimits.maximumCandidates;
+  for (const ranked of rankedItems) {
+    if (Date.now() >= deadline) {
+      limitReached = "runtime_limit";
+      break;
+    }
+    if (itemsRetained >= storedLimit) {
+      limitReached = "stored_item_limit";
+      break;
+    }
+    if (ranked.preliminaryCivicPassed && candidates >= activeLimits.maximumCandidates) {
+      candidateLimitSkipped += 1;
+      continue;
+    }
+    const { source, fetched, processed } = ranked.value;
+    let persisted: Awaited<ReturnType<typeof persistCandidate>>;
+    try {
+      persisted = await persistCandidate({
+        supabase: input.supabase,
+        runId,
+        source,
+        fetched,
+        processed,
+      });
+    } catch {
+      processingFailures += 1;
+      continue;
+    }
+    if (!persisted) continue;
+    itemsRetained += 1;
+    sourceStoredCounts.set(source.id, (sourceStoredCounts.get(source.id) ?? 0) + 1);
+    if (persisted.eventCandidate) {
+      candidates += 1;
+      connectorResults[source.scan_method]!.candidates += 1;
+    }
+  }
+  if (!limitReached && candidateLimitSkipped) limitReached = "candidate_limit";
+  for (const source of sources) {
+    const jobId = sourceJobs.get(source.id);
+    if (!jobId) continue;
+    await input.supabase
+      .from("scan_jobs")
+      .update({ items_discovered: sourceStoredCounts.get(source.id) ?? 0 })
+      .eq("id", jobId)
+      .eq("status", "completed");
+  }
   if (controlledManualDryRun && eligibleSources.length > sources.length)
     await input.supabase
       .from("scan_jobs")
@@ -594,7 +622,7 @@ export async function runDiscoveryScan(input: {
       ? "incomplete"
       : failures && !successes
         ? "failed"
-        : failures
+        : failures || processingFailures
           ? "incomplete"
           : "completed";
   const { count: duplicateCount } = await input.supabase
@@ -612,6 +640,9 @@ export async function runDiscoveryScan(input: {
     connectorResults,
     controlledManualDryRun,
     itemsFetched,
+    itemsPassingIndiaGate,
+    itemsPassingPreliminaryCivicFilter,
+    processingFailures,
     itemsRetained,
     limits: controlledManualDryRun ? activeLimits : null,
     limitReached,
@@ -647,6 +678,9 @@ export async function runDiscoveryScan(input: {
     failures,
     candidates,
     itemsFetched,
+    itemsPassingIndiaGate,
+    itemsPassingPreliminaryCivicFilter,
+    processingFailures,
     queriesUsed: budget.snapshot().gdelt?.used ?? 0,
     youtubeCalls: budget.snapshot().youtube?.used ?? 0,
     blueskyCalls: budget.snapshot().bluesky?.used ?? 0,

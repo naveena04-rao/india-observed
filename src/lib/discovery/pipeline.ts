@@ -38,6 +38,10 @@ function canonicalizeUrl(value: string) {
 
 export function processFetchedSource(source: SafeFetchedSource) {
   const originalText = redactUnnecessaryContactDetails(extractSafeText(source.body));
+  const geographyContext =
+    source.discoveryMetadata?.stateHint === "National"
+      ? "India"
+      : (source.discoveryMetadata?.stateHint ?? "");
   const language = detectLanguage(originalText);
   const canonicalUrl = canonicalizeUrl(source.finalUrl);
   const title = originalText.slice(0, 240) || canonicalUrl;
@@ -56,7 +60,7 @@ export function processFetchedSource(source: SafeFetchedSource) {
     safetyFlags: detectSafetyFlags(originalText),
     classification: classifyDiscoveredItem({
       title,
-      text: originalText,
+      text: `${originalText} ${geographyContext}`,
       sourceUrl: canonicalUrl,
       publishedAt: source.discoveryMetadata?.publishedAt ?? null,
     }),

@@ -19,9 +19,13 @@ function compile(path, requireModule) {
 }
 
 const geography = compile("src/lib/discovery/geography.ts", () => ({}));
+const keywordData = JSON.parse(
+  readFileSync(new URL("../data/discovery-keywords.json", import.meta.url), "utf8"),
+);
 const classification = compile("src/lib/discovery/classification.ts", (specifier) => {
   if (specifier === "./geography") return geography;
   if (specifier === "@/data/reviewed-events-preview") return { reviewedEventsPreview: [] };
+  if (specifier === "@/../data/discovery-keywords.json") return { default: keywordData };
   return {};
 });
 const { classifyDiscoveredItem } = classification;

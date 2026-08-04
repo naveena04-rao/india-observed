@@ -1,13 +1,18 @@
 import { reviewedEventsPreview } from "@/data/reviewed-events-preview";
+import keywordData from "@/../data/discovery-keywords.json";
 import { detectReviewedState } from "./geography";
 import type { DiscoveryClassification } from "./types";
 
 const stopWords = new Set(["and", "for", "from", "over", "the", "their", "with"]);
 
 const civicEventPattern =
-  /\b(protests?|strikes?|march(?:es)?|rall(?:y|ies)|dharnas?|demonstrations?|shutdowns?|hunger strikes?|blockades?|condemn(?:s|ed|ing|ation)?)\b/;
+  /\b(protests?|strikes?|march(?:es)?|rall(?:y|ies)|dharnas?|demonstrations?|shutdowns?|bandhs?|hartals?|sit-ins?|hunger strikes?|blockades?|agitations?|boycotts?|memorandum submissions?|condemn(?:s|ed|ing|ation)?)\b/;
 const civicContextPattern =
-  /\b(organisations?|organizations?|trade unions?|unions?|movements?|activists?|rights defenders?|civil society|bodies?|government|administration|authorit(?:y|ies)|courts?|workers?|students?|farmers?|residents?|employees?|communities?|groups?|detention|detained|demands?|demanded|urges?|grievances?)\b/;
+  /\b(organisations?|organizations?|trade unions?|unions?|movements?|activists?|rights defenders?|civil society|bodies?|government|administration|authorit(?:y|ies)|courts?|workers?|students?|farmers?|residents?|employees?|communities?|groups?|detention|detained|demands?|demanded|urges?|grievances?|evictions?|land acquisition|compensation|labour disputes?|community mobilisation)\b/;
+const multilingualCivicTerms = Object.values(keywordData.languages)
+  .flat()
+  .map((term) => term.toLocaleLowerCase())
+  .sort((left, right) => right.length - left.length);
 const indiaInstitutionPattern =
   /\b(government of india|union (?:government|ministry)|supreme court of india|high court|indian railways|election commission of india|bharatiya kisan union|bku|aituc|citu|intuc|asha workers?|anganwadi workers?)\b/;
 const ambiguousStrikePattern =
@@ -91,12 +96,14 @@ export function classifyDiscoveredItem(input: {
     ) ||
     (pibSource && /\b(government announced|ministry announced|cabinet approved)\b/.test(content));
   const outcomeOrStatusChange =
-    pibSource &&
-    /\b(settlement|settled|agreement reached|resolved|concluded|withdrawn|called off|court order|court directed|approved|decision|status change)\b/.test(
+    /\b(settlement|settled|agreement reached|resolved|concluded|withdrawn|called off|suspended|court order|court directed|approved|decision|status change)\b/.test(
       content,
     );
   const mediaEvidence = /\b(video|photograph|photo|footage|livestream)\b/.test(content);
-  const rawCivicEventSignal = content.match(civicEventPattern)?.[0] ?? null;
+  const rawCivicEventSignal =
+    content.match(civicEventPattern)?.[0] ??
+    multilingualCivicTerms.find((term) => content.includes(term)) ??
+    null;
   const civicEventSignal =
     rawCivicEventSignal?.includes("strike") && ambiguousStrikePattern.test(content)
       ? null
