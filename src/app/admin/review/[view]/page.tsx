@@ -110,6 +110,7 @@ export default async function EditorialReviewPage({
     redirect(`/auth/sign-in?returnTo=${encodeURIComponent(`/admin/review/${view}`)}`);
   if (!session.editor || !session.supabase) notFound();
 
+  const emptyPrivateDataResult = { data: [], error: null };
   const [
     candidateResult,
     scanResult,
@@ -118,47 +119,58 @@ export default async function EditorialReviewPage({
     mediaResult,
     requestResult,
     coverageResult,
-  ] = await Promise.all([
-    session.supabase
-      .from("editorial_candidates")
-      .select(
-        "id,candidate_type,suggested_title,state,district_or_region,priority,confidence,corroboration_status,independent_source_count,review_status,discovery_time,target_event_slug,target_event_internal_id,matching_signals,conflicting_signals,source_is_newer_than_event,action_type,event_date,planned_date,affected_group,demand,authority_response,dictionary_matches,detected_language,candidate_sources(publisher,canonical_url,published_at,source_family)",
-      )
-      .order("discovery_time", { ascending: false })
-      .limit(100),
-    session.supabase
-      .from("scan_runs")
-      .select(
-        "id,status,trigger_type,started_at,completed_at,source_count,success_count,failure_count,dry_run,quota_usage,scan_jobs(status,attempt_count,request_count,items_discovered,error_code,safe_error_summary)",
-      )
-      .order("started_at", { ascending: false })
-      .limit(20),
-    session.supabase
-      .from("scan_sources")
-      .select(
-        "id,name,source_type,state,language,enabled,scan_method,manual_dry_run_only,manual_run_consumed_at,connector_config,last_successful_scan,last_error_summary,compliance_registry_id",
-      )
-      .order("name"),
-    session.supabase
-      .from("compliance_registry")
-      .select(
-        "id,platform_or_source_name,subject_type,legal_review_status,review_expires_at,production_enabled,paywall_status,robots_policy,decision_reason",
-      )
-      .order("platform_or_source_name"),
-    session.supabase
-      .from("candidate_media")
-      .select(
-        "id,candidate_id,media_type,publisher,creator,rights_display_status,privacy_concern,safety_concern,review_status,created_at",
-      )
-      .order("created_at", { ascending: false })
-      .limit(100),
-    session.supabase
-      .from("compliance_requests")
-      .select("id,request_type,affected_url_or_record,received_at,emergency,status")
-      .order("received_at", { ascending: false })
-      .limit(50),
-    session.supabase.from("source_coverage_metrics").select("*").order("state").order("name"),
-  ]);
+  ] =
+    view === "verification"
+      ? [
+          emptyPrivateDataResult,
+          emptyPrivateDataResult,
+          emptyPrivateDataResult,
+          emptyPrivateDataResult,
+          emptyPrivateDataResult,
+          emptyPrivateDataResult,
+          emptyPrivateDataResult,
+        ]
+      : await Promise.all([
+          session.supabase
+            .from("editorial_candidates")
+            .select(
+              "id,candidate_type,suggested_title,state,district_or_region,priority,confidence,corroboration_status,independent_source_count,review_status,discovery_time,target_event_slug,target_event_internal_id,matching_signals,conflicting_signals,source_is_newer_than_event,action_type,event_date,planned_date,affected_group,demand,authority_response,dictionary_matches,detected_language,candidate_sources(publisher,canonical_url,published_at,source_family)",
+            )
+            .order("discovery_time", { ascending: false })
+            .limit(100),
+          session.supabase
+            .from("scan_runs")
+            .select(
+              "id,status,trigger_type,started_at,completed_at,source_count,success_count,failure_count,dry_run,quota_usage,scan_jobs(status,attempt_count,request_count,items_discovered,error_code,safe_error_summary)",
+            )
+            .order("started_at", { ascending: false })
+            .limit(20),
+          session.supabase
+            .from("scan_sources")
+            .select(
+              "id,name,source_type,state,language,enabled,scan_method,manual_dry_run_only,manual_run_consumed_at,connector_config,last_successful_scan,last_error_summary,compliance_registry_id",
+            )
+            .order("name"),
+          session.supabase
+            .from("compliance_registry")
+            .select(
+              "id,platform_or_source_name,subject_type,legal_review_status,review_expires_at,production_enabled,paywall_status,robots_policy,decision_reason",
+            )
+            .order("platform_or_source_name"),
+          session.supabase
+            .from("candidate_media")
+            .select(
+              "id,candidate_id,media_type,publisher,creator,rights_display_status,privacy_concern,safety_concern,review_status,created_at",
+            )
+            .order("created_at", { ascending: false })
+            .limit(100),
+          session.supabase
+            .from("compliance_requests")
+            .select("id,request_type,affected_url_or_record,received_at,emergency,status")
+            .order("received_at", { ascending: false })
+            .limit(50),
+          session.supabase.from("source_coverage_metrics").select("*").order("state").order("name"),
+        ]);
   const error = [
     candidateResult,
     scanResult,

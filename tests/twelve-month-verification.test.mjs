@@ -46,6 +46,12 @@ test("verification UI stays private and distinguishes decisions from publication
   assert.doesNotMatch(dashboard, /Publish event/);
 });
 
+test("verification UI does not depend on scanner schema availability", () => {
+  assert.match(dashboard, /view === "verification"/);
+  assert.match(dashboard, /emptyPrivateDataResult/);
+  assert.match(dashboard, /editorial_verification_decisions/);
+});
+
 test("decision action rechecks editor access and whitelists the bounded packet", () => {
   assert.match(actions, /const supabase = await editor\(\)/);
   assert.match(actions, /twelveMonthVerificationLeads\.some/);
