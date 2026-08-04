@@ -64,6 +64,12 @@ test("today separates event candidates from private scanner diagnostics", () => 
   assert.match(dashboard, /confidence >= 0\.5|partitionCandidateReviewRows/);
 });
 
+test("safety review never replaces a credible event classification with generic manual review", () => {
+  assert.match(orchestrator, /const persistedCandidateType = candidateType/);
+  assert.doesNotMatch(orchestrator, /candidate_type:\s*manualReview\s*\?/);
+  assert.match(orchestrator, /processing_status: manualReview \? "manual_review" : "classified"/);
+});
+
 test("focused iteration disables PIB and enables only the reviewed replacement", () => {
   assert.match(focusedMigration, /Press Information Bureau RSS/);
   assert.match(focusedMigration, /enabled = false/);

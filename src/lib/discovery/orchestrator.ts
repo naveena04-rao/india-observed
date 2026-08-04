@@ -245,7 +245,9 @@ async function persistCandidate(input: {
         ? "event_update"
         : "irrelevant"
       : classification.candidateType;
-  const persistedCandidateType = manualReview ? "manual_review" : candidateType;
+  // Safety flags require human review and elevated priority, but they must not erase a credible
+  // event classification. Non-event safety rows remain irrelevant and stay in diagnostics.
+  const persistedCandidateType = candidateType;
   const { data: candidate, error: candidateError } = await input.supabase
     .from("editorial_candidates")
     .insert({
