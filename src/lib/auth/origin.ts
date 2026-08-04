@@ -6,7 +6,13 @@ function isAllowedHost(host: string) {
     ? new URL(process.env.NEXT_PUBLIC_SITE_URL).host
     : "";
   const deploymentHost = process.env.VERCEL_URL ?? "";
-  return host === "localhost:3000" || host === configuredHost || host === deploymentHost;
+  const branchHost = process.env.VERCEL_BRANCH_URL ?? "";
+  return (
+    host === "localhost:3000" ||
+    host === configuredHost ||
+    host === deploymentHost ||
+    host === branchHost
+  );
 }
 
 export async function getAuthenticationOrigin() {
