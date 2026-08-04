@@ -9,11 +9,12 @@ function compile(path, requireModule) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText;
   const compiledModule = { exports: {} };
-  Function("require", "exports", "module", output)(
-    requireModule,
-    compiledModule.exports,
-    compiledModule,
-  );
+  Function(
+    "require",
+    "exports",
+    "module",
+    output,
+  )(requireModule, compiledModule.exports, compiledModule);
   return compiledModule.exports;
 }
 
