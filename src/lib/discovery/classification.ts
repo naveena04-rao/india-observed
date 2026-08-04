@@ -27,9 +27,9 @@ const stopWords = new Set([
 ]);
 
 const civicEventPattern =
-  /\b(protests?|strikes?|march(?:es)?|rall(?:y|ies)|dharnas?|demonstrations?|shutdowns?|bandhs?|hartals?|sit-ins?|hunger strikes?|indefinite fasts?|cease-works?|walkouts?|blockades?|road rokos?|rail rokos?|agitations?|gheraos?|picketing|boycotts?|memorandum submissions?|condemn(?:s|ed|ing|ation)?)\b/;
+  /\b(protests?|strikes?|march(?:es)?|rall(?:y|ies)|dharnas?|demonstrations?|shutdowns?|bandhs?|hartals?|sit-ins?|hunger strikes?|indefinite fasts?|cease-works?|walkouts?|suspend(?:s|ed|ing)? services?|blockades?|road rokos?|rail rokos?|agitations?|gheraos?|picketing|boycotts?|memorandum submissions?|condemn(?:s|ed|ing|ation)?)\b/;
 const civicContextPattern =
-  /\b(organisations?|organizations?|associations?|trade unions?|unions?|movements?|activists?|rights defenders?|civil society|workers?|students?|farmers?|residents?|employees?|villagers?|communities?|tribal groups?|groups?|detention|detained|demands?|grievances?|evictions?|land acquisition|compensation|labour disputes?|community mobilisation|police|courts?|government|administration|authorit(?:y|ies))\b/;
+  /\b(organisations?|organizations?|associations?|trade unions?|unions?|movements?|activists?|rights defenders?|civil society|mps?|lawmakers?|legislators?|workers?|students?|farmers?|residents?|employees?|villagers?|communities?|tribal groups?|groups?|detention|detained|demands?|grievances?|evictions?|land acquisition|compensation|labour disputes?|community mobilisation|police|courts?|government|administration|authorit(?:y|ies))\b/;
 const grievancePattern =
   /\b(demands?|seeking|against|oppose[ds]?|opposition|grievances?|rights?|wages?|salary|pension|compensation|eviction|land acquisition|jobs?|employment|water|electricity|fees?|policy|order|detention|release|justice|withdraw(?:al)?|cancel(?:lation)?|implementation)\b/;
 const authorityPattern =
@@ -37,7 +37,7 @@ const authorityPattern =
 const indiaInstitutionPattern =
   /\b(government of india|union (?:government|ministry)|supreme court of india|high court|indian railways|election commission of india|bharatiya kisan union|bku|aituc|citu|intuc|asha workers?|anganwadi workers?|kisan morcha|district administration)\b/;
 const explicitForeignPattern =
-  /\b(sudan|darfur|pakistan|bangladesh|dhaka|sri lanka|nepal|myanmar|china|russia|ukraine|israel|gaza|iran|iraq|afghanistan|united states|u\.s\.|united kingdom|britain|london|france|paris|germany|canada|toronto|australia|south africa|kenya|nigeria|brazil)\b/;
+  /\b(sudan|darfur|pakistan|bangladesh|dhaka|sri lanka|nepal|myanmar|china|russia|ukraine|israel|gaza|iran|iraq|afghanistan|united states|u\.s\.|united kingdom|britain|england|scotland|wales|london|france|paris|germany|canada|toronto|australia|south africa|kenya|nigeria|brazil)\b/;
 const ambiguousStrikePattern =
   /\b(?:military|air|airborne|drone|missile|surgical|lightning|precision) strikes?\b|\bstrike rate\b|\bstrikes? down\b/;
 const routineNonCivicPattern =
@@ -45,11 +45,11 @@ const routineNonCivicPattern =
 const routinePoliticalMeetingPattern =
   /\b(?:party|nda|bjp|congress|rss)\b.{0,80}\b(?:meeting|meet|conference|conclave|outreach|election rally)\b/;
 const plannedPattern =
-  /\b(?:announce[ds]?|plans?|planned|will|to hold|to stage|to begin|to launch|calls? for|scheduled|threatens?)\b.{0,100}\b(?:protest|march|strike|bandh|rally|dharna|blockade|hunger strike|agitation|walkout)\b|\b(?:protest|march|strike|bandh|rally|dharna|blockade|hunger strike|agitation|walkout)\b.{0,80}\b(?:from|starting|next|tomorrow|on\s+(?:\d{1,2}|monday|tuesday|wednesday|thursday|friday|saturday|sunday))\b/;
+  /\b(?:announce[ds]?|plans?|planned|will|to hold|to stage|to begin|to launch|calls? for|invites?.{0,40}join|scheduled|threatens?)\b.{0,100}\b(?:protest|march|strike|bandh|rally|dharna|blockade|hunger strike|agitation|walkout|suspend services?)\b|\b(?:protest|march|strike|bandh|rally|dharna|blockade|hunger strike|agitation|walkout|suspend services?)\b.{0,80}\b(?:from|starting|next|tomorrow|on\s+(?:\d{1,2}|monday|tuesday|wednesday|thursday|friday|saturday|sunday))\b/;
 const nationalInstitutionPattern =
   /\b(parliament|rajya sabha|lok sabha|supreme court|prime minister|union government|centre)\b/;
 const officialResponsePattern =
-  /\b(official response|government response|court order|court intervened|administration said|minister announced|assurance given|talks held|police detained protesters|fir withdrawn|government order issued)\b/;
+  /\b(official response|government response|court order|court intervened|administration said|minister announced|assurance given|talks held|police detained protesters|firs? (?:withdrawn|closed)|government order issued|supreme court.{0,100}(?:said|says|allows?|opens? the door|withdraw|close))\b/;
 const outcomePattern =
   /\b(settlement reached|settled|agreement reached|resolved|concluded|withdrawn|called off|suspended|blockade lifted|demands accepted|strike withdrawn|protest suspended|assurance given|talks held|agitation intensified|protest resumed)\b/;
 
@@ -183,21 +183,16 @@ export function classifyDiscoveredItem(input: {
   const contextSignal = content.match(civicContextPattern)?.[0] ?? null;
   const grievanceSignal = content.match(grievancePattern)?.[0] ?? null;
   const authoritySignal = content.match(authorityPattern)?.[0] ?? null;
-  const explicitState = detectReviewedState(content);
-  const locality = detectReviewedLocality(content);
+  const titleContent = normalize(input.title);
+  const explicitState = detectReviewedState(titleContent) ?? detectReviewedState(content);
+  const locality = detectReviewedLocality(titleContent) ?? detectReviewedLocality(content);
   const foreignSignal = content.match(explicitForeignPattern)?.[0] ?? null;
   const explicitIndia = content.match(/\b(?:india|indian)\b/)?.[0] ?? null;
   const institution = content.match(indiaInstitutionPattern)?.[0] ?? null;
   const nationalInstitution = content.match(nationalInstitutionPattern)?.[0] ?? null;
-  const stateHint =
-    input.sourceStateHint && input.sourceStateHint !== "National" ? input.sourceStateHint : null;
-  const indiaSignal =
-    explicitState ??
-    explicitIndia ??
-    institution ??
-    nationalInstitution ??
-    (!foreignSignal ? stateHint : null);
-  const resolvedState = explicitState ?? (nationalInstitution ? "National" : stateHint);
+  const indiaSignal = explicitState ?? explicitIndia ?? institution ?? nationalInstitution;
+  const resolvedState =
+    locality?.state ?? explicitState ?? (nationalInstitution ? "National" : null);
   const base = {
     targetEventSlug: null,
     state: resolvedState,
@@ -242,11 +237,13 @@ export function classifyDiscoveredItem(input: {
     ambiguousStrikePattern.test(content) ||
     routineNonCivicPattern.test(content) ||
     routinePoliticalMeetingPattern.test(content);
+  const affectedGroup = base.affectedGroup;
+  const ungroundedThreat = /\bprotest threats?\b/.test(content) && !affectedGroup;
   const collectiveEvidence = [
     civicSignal,
     contextSignal,
     grievanceSignal,
-    locality?.locality,
+    locality?.locality ?? explicitState,
     authoritySignal,
   ].filter(Boolean);
   const relevance = Math.min(
@@ -259,7 +256,7 @@ export function classifyDiscoveredItem(input: {
       (dictionaryMatches.length ? 0.05 : 0),
   );
   base.civicRelevanceScore = relevance;
-  if (routineNonCivic || !civicSignal || collectiveEvidence.length < 3) {
+  if (routineNonCivic || ungroundedThreat || !civicSignal || collectiveEvidence.length < 3) {
     return {
       ...base,
       candidateType: "irrelevant",
@@ -269,7 +266,9 @@ export function classifyDiscoveredItem(input: {
       conflictingSignals: [
         routineNonCivic
           ? "A military, market, sport, crime, routine-political or other non-civic use was detected."
-          : "The metadata lacks enough collective-action, group, grievance, location or authority context.",
+          : ungroundedThreat
+            ? "A protest threat without a named affected group or organiser is not treated as an event."
+            : "The metadata lacks enough collective-action, group, grievance, location or authority context.",
       ],
     };
   }

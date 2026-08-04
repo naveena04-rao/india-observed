@@ -195,3 +195,74 @@ test("native-script dictionaries are active across all 13 configured languages",
     assert.ok(entries.length >= 10, language);
   }
 });
+
+test("Supreme Court relief for protesters is an official response, not a new event", () => {
+  const result = classifyDiscoveredItem({
+    title: "States can close or withdraw FIRs against student protesters, says Supreme Court",
+    text: "The Supreme Court said states can close FIRs against student protesters in India.",
+    sourceUrl: "https://example.in/supreme-court-student-protesters",
+  });
+  assert.equal(result.candidateType, "official_response");
+  assert.equal(result.state, "National");
+});
+
+test("ungrounded protest threats do not become an event candidate", () => {
+  const result = classifyDiscoveredItem({
+    title:
+      "Cauvery dispute: Karnataka CM asks Tamil Nadu leader to delay visit amid protest threats",
+    text: "The Karnataka chief minister cited protest threats over water.",
+    sourceUrl: "https://example.in/cauvery-protest-threats",
+  });
+  assert.equal(result.candidateType, "irrelevant");
+});
+
+test("MPs protesting in Parliament pass the collective-action gate", () => {
+  const result = classifyDiscoveredItem({
+    title: "DMK MPs protest in Parliament over Cauvery water dispute",
+    text: "DMK MPs held a protest in Parliament over the Cauvery water dispute.",
+    sourceUrl: "https://example.in/dmk-mps-cauvery-protest",
+  });
+  assert.equal(result.candidateType, "new_event");
+  assert.equal(result.state, "National");
+});
+
+test("an association announcing a service suspension is a planned event", () => {
+  const result = classifyDiscoveredItem({
+    title: "Indian Medical Association to suspend services in Maharashtra on August 4",
+    text: "The association announced it will suspend services in Maharashtra on August 4.",
+    sourceUrl: "https://example.in/ima-service-suspension",
+  });
+  assert.equal(result.candidateType, "possible_planned_event");
+  assert.equal(result.state, "Maharashtra");
+});
+
+test("explicit title geography overrides a regional publisher hint", () => {
+  const result = classifyDiscoveredItem({
+    title: "Manipur commission orders probe after student complaints",
+    text: "The commission ordered a probe in Manipur.",
+    sourceUrl: "https://example.in/manipur-probe",
+    sourceStateHint: "Assam",
+  });
+  assert.equal(result.state, "Manipur");
+});
+
+test("UP authority abbreviations resolve to Uttar Pradesh before national references", () => {
+  const result = classifyDiscoveredItem({
+    title: "UP govt responds to workers protest after Supreme Court direction",
+    text: "Workers protested and the UP government issued an official response.",
+    sourceUrl: "https://example.in/up-workers-response",
+  });
+  assert.equal(result.state, "Uttar Pradesh");
+});
+
+test("a regional publisher hint cannot turn an England item into an Assam event", () => {
+  const result = classifyDiscoveredItem({
+    title: "England set to withdraw support for FIFA president Gianni Infantino",
+    text: "England officials discussed FIFA governance.",
+    sourceUrl: "https://example.in/england-fifa",
+    sourceStateHint: "Assam",
+  });
+  assert.equal(result.candidateType, "irrelevant");
+  assert.equal(result.reason, "irrelevant_non_india");
+  assert.equal(result.state, null);
+});

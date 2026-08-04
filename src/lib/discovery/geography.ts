@@ -54,11 +54,24 @@ const containsReviewedPhrase = (value: string, phrase: string) => {
 };
 
 export function detectReviewedState(value: string) {
+  const searchable = ` ${value
+    .toLocaleLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim()} `;
+  if (/\bup (?:govt|government|police|minister|state)\b/.test(searchable)) return "Uttar Pradesh";
+  if (/\bj k\b/.test(searchable)) return "Jammu and Kashmir";
+  const matches: Array<{ state: string; index: number }> = [];
   for (const [state, localities] of Object.entries(reviewedLocalitiesByState)) {
-    if (containsReviewedPhrase(value, state)) return state;
-    if (localities.some((locality) => containsReviewedPhrase(value, locality))) return state;
+    for (const phrase of [state, ...localities]) {
+      const expected = ` ${phrase
+        .toLocaleLowerCase()
+        .replace(/[^\p{L}\p{N}]+/gu, " ")
+        .trim()} `;
+      const index = searchable.indexOf(expected);
+      if (index >= 0) matches.push({ state, index });
+    }
   }
-  return null;
+  return matches.sort((left, right) => left.index - right.index)[0]?.state ?? null;
 }
 
 export function detectReviewedLocality(value: string) {

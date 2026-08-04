@@ -157,6 +157,9 @@ test("connectors retry temporary failures once and tightly gate targeted enrichm
   assert.match(discovery, /maximumBytes: 300_000/);
   assert.match(discovery, /used >= 4/);
   assert.match(discovery, /metadataOnly: true/);
+  assert.match(orchestrator, /enrichmentAttempts/);
+  assert.match(orchestrator, /enrichmentFailures/);
+  assert.match(orchestrator, /enrichmentDiagnostics/);
 });
 
 test("deduplication and all-record matching diagnostics are retained", () => {

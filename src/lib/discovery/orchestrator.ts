@@ -322,8 +322,7 @@ async function persistCandidate(input: {
       target_event_slug: classification.targetEventSlug,
       target_event_internal_id: classification.targetEventInternalId,
       suggested_title: processed.title,
-      state:
-        classification.state ?? input.fetched.discoveryMetadata?.stateHint ?? input.source.state,
+      state: classification.state,
       priority:
         processed.safetyFlags.possibleChild || processed.safetyFlags.liveTacticalLocation
           ? "urgent_editor_attention"
@@ -511,6 +510,12 @@ export async function runDiscoveryScan(input: {
   let itemsPassingPreliminaryCivicFilter = 0;
   let processingFailures = 0;
   let enrichmentFetches = 0;
+  let enrichmentAttempts = 0;
+  let enrichmentFailures = 0;
+  const enrichmentDiagnostics: Record<
+    string,
+    { attempts: number; successes: number; failures: number }
+  > = {};
   let candidateClusters = 0;
   const deadline =
     Date.now() +
@@ -664,6 +669,12 @@ export async function runDiscoveryScan(input: {
       Date.now() >= deadline
     )
       continue;
+    const enrichmentDomain = new URL(ranked.value.fetched.finalUrl).hostname;
+    const domainDiagnostics = (enrichmentDiagnostics[enrichmentDomain] ??= {
+      attempts: 0,
+      successes: 0,
+      failures: 0,
+    });
     try {
       const enriched = await enrichSourceItem({
         source: ranked.value.source,
@@ -671,10 +682,19 @@ export async function runDiscoveryScan(input: {
         domainRequestCounts: enrichmentDomainCounts,
         robotsDecisions: enrichmentRobotsDecisions,
       });
-      if (enriched.fetched) enrichmentFetches += 1;
+      if (enriched.fetched) {
+        enrichmentAttempts += 1;
+        enrichmentFetches += 1;
+        domainDiagnostics.attempts += 1;
+        domainDiagnostics.successes += 1;
+      }
       ranked.value.fetched = enriched.item;
       ranked.value.processed = processFetchedSource(enriched.item);
     } catch {
+      enrichmentAttempts += 1;
+      enrichmentFailures += 1;
+      domainDiagnostics.attempts += 1;
+      domainDiagnostics.failures += 1;
       processingFailures += 1;
     }
   }
@@ -783,7 +803,10 @@ export async function runDiscoveryScan(input: {
     itemsPassingIndiaGate,
     itemsPassingPreliminaryCivicFilter,
     processingFailures,
+    enrichmentAttempts,
     enrichmentFetches,
+    enrichmentFailures,
+    enrichmentDiagnostics,
     candidateClusters,
     itemsRetained,
     limits: controlledManualDryRun ? activeLimits : null,
@@ -823,7 +846,10 @@ export async function runDiscoveryScan(input: {
     itemsPassingIndiaGate,
     itemsPassingPreliminaryCivicFilter,
     processingFailures,
+    enrichmentAttempts,
     enrichmentFetches,
+    enrichmentFailures,
+    enrichmentDiagnostics,
     candidateClusters,
     queriesUsed: budget.snapshot().gdelt?.used ?? 0,
     youtubeCalls: budget.snapshot().youtube?.used ?? 0,
