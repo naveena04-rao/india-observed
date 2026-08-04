@@ -75,7 +75,7 @@ function extractPhrase(content: string, pattern: RegExp, maximum = 180) {
 
 function extractPlannedDate(content: string) {
   const raw = content.match(
-    /\b(?:on|from|starting)\s+((?:\d{1,2}\s+)?(?:january|february|march|april|may|june|july|august|september|october|november|december)(?:\s+\d{4})?|\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?)\b/i,
+    /\b(?:on|from|starting|join)\s+((?:\d{1,2}\s+)?(?:january|february|march|april|may|june|july|august|september|october|november|december)(?:\s+\d{1,2})?(?:\s+\d{4})?|\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?)\b/i,
   )?.[1];
   return raw ?? null;
 }
@@ -239,12 +239,14 @@ export function classifyDiscoveredItem(input: {
     routinePoliticalMeetingPattern.test(content);
   const affectedGroup = base.affectedGroup;
   const ungroundedThreat = /\bprotest threats?\b/.test(content) && !affectedGroup;
+  const plannedSignal = plannedPattern.test(content);
   const collectiveEvidence = [
     civicSignal,
     contextSignal,
     grievanceSignal,
     locality?.locality ?? explicitState,
     authoritySignal,
+    plannedSignal ? "dated or announced future action" : null,
   ].filter(Boolean);
   const relevance = Math.min(
     1,
@@ -280,7 +282,7 @@ export function classifyDiscoveredItem(input: {
   });
   const officialResponse = officialResponsePattern.test(content);
   const outcome = outcomePattern.test(content);
-  const planned = plannedPattern.test(content) && !outcome;
+  const planned = plannedSignal && !outcome;
 
   if (match && match.score >= 0.38) {
     return {

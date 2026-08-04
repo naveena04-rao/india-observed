@@ -266,3 +266,14 @@ test("a regional publisher hint cannot turn an England item into an Assam event"
   assert.equal(result.reason, "irrelevant_non_india");
   assert.equal(result.state, null);
 });
+
+test("a dated invitation to join a protest is a planned candidate without publisher geography", () => {
+  const result = classifyDiscoveredItem({
+    title: "MP Chowdry Ramzan invites leaders to join August 5 protest",
+    text: "The MP invited leaders to join the August 5 protest organised by the INDIA bloc.",
+    sourceUrl: "https://example.in/august-5-protest",
+  });
+  assert.equal(result.candidateType, "possible_planned_event");
+  assert.equal(result.state, null);
+  assert.equal(result.plannedDate, "august 5");
+});
