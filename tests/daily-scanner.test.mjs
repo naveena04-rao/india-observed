@@ -4,6 +4,9 @@ import test from "node:test";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const migration = read("supabase/migrations/20260803000400_add_minimum_daily_scanner.sql");
+const focusedMigration = read(
+  "supabase/migrations/20260804000100_focus_daily_scanner_iteration.sql",
+);
 const orchestrator = read("src/lib/discovery/orchestrator.ts");
 const discovery = read("src/lib/discovery/sourceDiscovery.ts");
 const classification = read("src/lib/discovery/classification.ts");
@@ -23,17 +26,28 @@ test("daily scanner contains only the two reviewed metadata sources", () => {
 
 test("scheduled runs enforce source, item, candidate and runtime limits", () => {
   for (const expected of [
-    /maximumSources: 5/,
+    /maximumSources: 2/,
     /maximumFetchedItems: 100/,
     /maximumStoredItems: 50/,
     /maximumCandidates: 25/,
     /maximumRuntimeMs: 230_000/,
-    /timeWindowHours: 48/,
+    /timeWindowHours: 72/,
   ])
     assert.match(orchestrator, expected);
   assert.match(orchestrator, /scheduledRun/);
   assert.match(orchestrator, /no_approved_source/);
   assert.match(orchestrator, /sourceQuery\.eq\("scan_frequency", "daily"\)/);
+});
+
+test("focused iteration disables PIB and enables only the reviewed replacement", () => {
+  assert.match(focusedMigration, /Press Information Bureau RSS/);
+  assert.match(focusedMigration, /enabled = false/);
+  assert.match(focusedMigration, /Telangana Today RSS/);
+  assert.match(focusedMigration, /https:\/\/telanganatoday\.com\/feed/);
+  assert.match(focusedMigration, /eligible_count <> 2/);
+  assert.match(focusedMigration, /"timeWindowHours":72/);
+  assert.match(focusedMigration, /"maximumSources":2/);
+  assert.doesNotMatch(focusedMigration, /GDELT|Bluesky|YouTube|youtube_api|bluesky_api/);
 });
 
 test("connectors retry temporary failures once and never crawl item pages", () => {
@@ -58,6 +72,24 @@ test("deduplication and all-record matching diagnostics are retained", () => {
   assert.doesNotMatch(classification, /publicationStatus === "published"/);
   assert.match(classification, /event\.directedAt/);
   assert.match(classification, /event\.topic/);
+});
+
+test("plural protest metadata requires a second civic context signal", () => {
+  const civicPatternSource = classification.match(/const civicEventPattern\s*=\s*(\/[^;]+\/);/s);
+  const contextPatternSource = classification.match(
+    /const civicContextPattern\s*=\s*(\/[^;]+\/);/s,
+  );
+  assert.ok(civicPatternSource);
+  assert.ok(contextPatternSource);
+  const civicPattern = Function(`return ${civicPatternSource[1]}`)();
+  const contextPattern = Function(`return ${contextPatternSource[1]}`)();
+  const falseNegative =
+    "Over 60 organisations and trade unions condemn government action against democratic protests in Assam after a court order.";
+  assert.match(falseNegative.toLowerCase(), civicPattern);
+  assert.match(falseNegative.toLowerCase(), contextPattern);
+  assert.match(classification, /if \(civicEventSignal && civicContextSignal\)/);
+  assert.doesNotMatch("A protest-themed food festival opens", contextPattern);
+  assert.doesNotMatch("The government publishes a routine budget", civicPattern);
 });
 
 test("readiness action is editor-only and gates schedule activation", () => {

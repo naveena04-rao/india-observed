@@ -5,7 +5,7 @@ alter table public.scan_runs drop constraint if exists scan_runs_trigger_type_ch
 alter table public.scan_runs add constraint scan_runs_trigger_type_check check (
   trigger_type in (
     'scheduled', 'manual', 'manual_gdelt_dry_run', 'manual_fallback_dry_run',
-    'manual_pib_rss_dry_run', 'retry'
+    'manual_pib_rss_dry_run', 'manual_daily_scanner_dry_run', 'retry'
   )
 );
 

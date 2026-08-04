@@ -26,13 +26,13 @@ export const pibRssDryRunLimits = {
 } as const;
 
 export const dailyScannerLimits = {
-  maximumSources: 5,
+  maximumSources: 2,
   maximumItemsPerSource: 50,
   maximumFetchedItems: 100,
   maximumStoredItems: 50,
   maximumCandidates: 25,
   maximumRuntimeMs: 230_000,
-  timeWindowHours: 48,
+  timeWindowHours: 72,
 } as const;
 
 const headlineTerms = (value: string) =>

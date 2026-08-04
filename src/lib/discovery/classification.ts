@@ -3,6 +3,11 @@ import type { DiscoveryClassification } from "./types";
 
 const stopWords = new Set(["and", "for", "from", "over", "the", "their", "with"]);
 
+const civicEventPattern =
+  /\b(protests?|strikes?|march(?:es)?|rall(?:y|ies)|dharnas?|demonstrations?|shutdowns?|hunger strikes?|blockades?)\b/;
+const civicContextPattern =
+  /\b(organisations?|organizations?|trade unions?|unions?|movements?|activists?|rights defenders?|government|administration|authorit(?:y|ies)|courts?|workers?|students?|farmers?|residents?|employees?|communities?|groups?)\b/;
+
 function terms(value: string) {
   return new Set(
     value
@@ -82,6 +87,8 @@ export function classifyDiscoveredItem(input: {
       content,
     );
   const mediaEvidence = /\b(video|photograph|photo|footage|livestream)\b/.test(content);
+  const civicEventSignal = content.match(civicEventPattern)?.[0] ?? null;
+  const civicContextSignal = content.match(civicContextPattern)?.[0] ?? null;
 
   if (best && best.score >= 0.12 && best.signals.length >= 2) {
     return {
@@ -107,9 +114,7 @@ export function classifyDiscoveredItem(input: {
     };
   }
 
-  if (
-    /\b(protest|strike|march|rally|dharna|demonstration|shutdown|hunger strike)\b/.test(content)
-  ) {
+  if (civicEventSignal && civicContextSignal) {
     return {
       candidateType: "new_event",
       targetEventSlug: null,
@@ -117,9 +122,12 @@ export function classifyDiscoveredItem(input: {
       confidence: 0.55,
       priority: "normal",
       reason:
-        "Civic-event terms were found, but no reviewed event passed the deterministic match threshold.",
+        "A civic-event term and a location, organisation, affected-group, authority or action context were found, but no reviewed event passed the deterministic match threshold.",
       targetEventInternalId: null,
-      matchingSignals: [],
+      matchingSignals: [
+        `civic-event term: ${civicEventSignal}`,
+        `context term: ${civicContextSignal}`,
+      ],
       conflictingSignals: [],
       sourceIsNewerThanEvent: null,
     };

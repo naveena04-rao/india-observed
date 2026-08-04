@@ -14,12 +14,12 @@ set production_enabled = true,
     reviewer = '66666666-6666-4666-8666-666666666666',
     reviewed_at = now(),
     review_expires_at = now() + interval '1 year'
-where subject_key in ('northeast-now-rss', 'press-information-bureau-rss');
+where subject_key in ('northeast-now-rss', 'telangana-today-rss');
 update public.scan_sources source
 set enabled = true
 from public.compliance_registry review
 where review.id = source.compliance_registry_id
-  and review.subject_key in ('northeast-now-rss', 'press-information-bureau-rss');
+  and review.subject_key in ('northeast-now-rss', 'telangana-today-rss');
 
 select is((select scan_cron_utc from public.discovery_schedule_settings where singleton), '30 1 * * *', 'daily scan is 07:00 IST');
 select is((select scheduler_enabled from public.discovery_schedule_settings where singleton), false, 'scanner remains disabled before rollout');
