@@ -6,6 +6,7 @@ const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf
 const data = read("src/data/twelveMonthVerification.ts");
 const dashboard = read("src/app/admin/review/[view]/page.tsx");
 const actions = read("src/app/admin/review/actions.ts");
+const decisionForm = read("src/app/admin/review/VerificationDecisionForm.tsx");
 const migration = read(
   "supabase/migrations/20260804000600_add_twelve_month_verification_review.sql",
 );
@@ -39,7 +40,7 @@ test("every dashboard lead has attributable primary evidence", () => {
 
 test("verification UI stays private and distinguishes decisions from publication", () => {
   assert.match(dashboard, /\["verification", "12-month verification"\]/);
-  assert.match(dashboard, /Approve private draft/);
+  assert.match(decisionForm, /Approve private draft/);
   assert.match(dashboard, /it cannot publish an event/);
   assert.match(dashboard, /getEditorialAdminSession/);
   assert.match(dashboard, /if \(!session\.editor \|\| !session\.supabase\) notFound\(\)/);
@@ -57,6 +58,16 @@ test("decision action rechecks editor access and whitelists the bounded packet",
   assert.match(actions, /twelveMonthVerificationLeads\.some/);
   assert.match(actions, /review_twelve_month_verification_lead/);
   assert.match(actions, /revalidatePath\("\/admin\/review\/verification"\)/);
+});
+
+test("decision controls expose pending, success and safe failure feedback", () => {
+  assert.match(decisionForm, /useActionState/);
+  assert.match(decisionForm, /Saving decision…/);
+  assert.match(decisionForm, /role="status"/);
+  assert.match(decisionForm, /aria-live="polite"/);
+  assert.match(actions, /status: "saved"/);
+  assert.match(actions, /status: "error"/);
+  assert.match(actions, /Please retry/);
 });
 
 test("database decisions fail closed and cannot write public records", () => {

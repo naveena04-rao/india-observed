@@ -410,6 +410,19 @@
 .verification-review__actions button:last-child {
   color: var(--brick);
 }
+.verification-review__action-status {
+  font-size: 0.85rem;
+  margin: 0;
+  min-height: 1.3rem;
+}
+.verification-review__action-status--saved {
+  color: var(--teal-dark);
+  font-weight: 700;
+}
+.verification-review__action-status--error {
+  color: var(--brick);
+  font-weight: 700;
+}
 
 @media (max-width: 720px) {
   .editor-review {

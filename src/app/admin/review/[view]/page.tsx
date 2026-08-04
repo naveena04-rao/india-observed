@@ -12,7 +12,7 @@ import { ManualGdeltDryRunControl } from "../ManualGdeltDryRunControl";
 import { ManualFallbackDryRunControl } from "../ManualFallbackDryRunControl";
 import { ManualPibRssDryRunControl } from "../ManualPibRssDryRunControl";
 import { ManualDailyScannerControl } from "../ManualDailyScannerControl";
-import { reviewTwelveMonthVerificationLeadAction } from "../actions";
+import { VerificationDecisionForm } from "../VerificationDecisionForm";
 import {
   twelveMonthVerificationLeads,
   type TwelveMonthVerificationLead,
@@ -581,43 +581,11 @@ function VerificationCard({
       {decision?.note ? (
         <p className="verification-review__saved-note">Note: {decision.note}</p>
       ) : null}
-      <form action={reviewTwelveMonthVerificationLeadAction}>
-        <input type="hidden" name="leadRef" value={lead.ref} />
-        <label htmlFor={`${lead.ref}-note`}>Owner note (required for hold or reject)</label>
-        <textarea
-          id={`${lead.ref}-note`}
-          name="note"
-          rows={2}
-          defaultValue={decision?.note ?? ""}
-          placeholder="Add context for the editorial record"
-          disabled={!persistenceAvailable}
-        />
-        <div
-          className="verification-review__actions"
-          role="group"
-          aria-label={`${lead.ref} decision`}
-        >
-          <button
-            type="submit"
-            name="decision"
-            value="approve_private_draft"
-            disabled={!persistenceAvailable}
-          >
-            Approve private draft
-          </button>
-          <button
-            type="submit"
-            name="decision"
-            value="hold_for_evidence"
-            disabled={!persistenceAvailable}
-          >
-            Hold for evidence
-          </button>
-          <button type="submit" name="decision" value="reject" disabled={!persistenceAvailable}>
-            Reject
-          </button>
-        </div>
-      </form>
+      <VerificationDecisionForm
+        leadRef={lead.ref}
+        initialNote={decision?.note ?? ""}
+        persistenceAvailable={persistenceAvailable}
+      />
     </li>
   );
 }
