@@ -6,6 +6,7 @@ import {
   applyVerifiedScannerEventPatches,
   verifiedScannerEventAdditions,
 } from "@/data/verified-scanner-events-2026-08-04";
+import { publishedVerificationEventAdditions } from "@/data/published-verification-events-2026-08-05";
 
 export function isCandidatePreviewEnabled() {
   const showCandidateRecords =
@@ -29,9 +30,11 @@ export async function getReviewedEvents(): Promise<readonly ReviewedEventPreview
   const { reviewedEventsPreview } = await import("../../data/reviewed-events-preview");
   const includeCandidates = isCandidatePreviewEnabled();
   const patchedReviewedEvents = applyVerifiedScannerEventPatches(reviewedEventsPreview);
-  const reviewedEventsWithVerifiedCandidates = includeCandidates
-    ? [...patchedReviewedEvents, ...verifiedScannerEventAdditions]
-    : patchedReviewedEvents;
+  const reviewedEventsWithVerifiedCandidates = [
+    ...patchedReviewedEvents,
+    ...publishedVerificationEventAdditions,
+    ...(includeCandidates ? verifiedScannerEventAdditions : []),
+  ];
   const publicationVisibleEvents = selectVisibleEvents(
     reviewedEventsWithVerifiedCandidates,
     includeCandidates,
