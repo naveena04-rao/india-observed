@@ -1,0 +1,71 @@
+begin;
+
+insert into public.media_event_registry (event_slug)
+values
+  ('karnataka-transport-employees-wage-strike'),
+  ('punjab-farmers-chandigarh-msp-compensation-rally'),
+  ('assam-tea-workers-wage-strike'),
+  ('tamil-nadu-noon-meal-anganwadi-workers-sit-in'),
+  ('national-trade-union-farmer-strike-labour-codes-trade-deal'),
+  ('mamata-banerjee-electoral-roll-dharna'),
+  ('west-bengal-government-employees-da-cease-work'),
+  ('punjab-himachal-border-entry-tax-blockade'),
+  ('telangana-road-transport-employees-strike'),
+  ('jaipur-city-transport-employees-hunger-strike'),
+  ('kuvempu-university-nsui-results-records-protest'),
+  ('madhya-pradesh-farmer-grievance-highway-protests'),
+  ('konkan-fruit-farmers-mumbai-compensation-march'),
+  ('andhra-pradesh-ysrcp-fuel-price-protests'),
+  ('kaniyambadi-brick-kiln-workers-extortion-allegation-protest'),
+  ('hassan-dairy-farmers-cattle-purchase-boycott-protest'),
+  ('panchana-dam-irrigation-water-farmers-protest'),
+  ('tamil-nadu-farmers-cases-withdrawal-hunger-strike'),
+  ('ranchi-cab-drivers-fare-revision-strike'),
+  ('bhim-rural-workers-mgnrega-replacement-rally'),
+  ('ranchi-auto-drivers-route-permit-protest'),
+  ('bengaluru-street-vendors-eviction-bandh'),
+  ('undavalli-seed-axis-road-land-acquisition-protest'),
+  ('bihar-neet-irregularities-bandh'),
+  ('kerala-neet-police-action-student-marches'),
+  ('chennai-college-students-neet-protests'),
+  ('kolkata-sealdah-esplanade-neet-march'),
+  ('odisha-farmers-paddy-procurement-bandh'),
+  ('samagra-shiksha-maharashtra-azad-maidan-hunger-strike'),
+  ('congress-student-campaign-paper-leaks-unemployment')
+on conflict (event_slug) do nothing;
+
+insert into public.media_event_sources (event_slug, source_url)
+values
+  ('karnataka-transport-employees-wage-strike', 'https://indianexpress.com/article/cities/bangalore/karnataka-transport-union-suspends-strike-ksrtc-staff-resume-work-10171719/'),
+  ('punjab-farmers-chandigarh-msp-compensation-rally', 'https://indianexpress.com/article/cities/chandigarh/farmers-rally-in-chandigarh-seek-hike-in-crop-loss-compensation-10388304/lite/'),
+  ('assam-tea-workers-wage-strike', 'https://www.sentinelassam.com/topheadlines/assam-tea-workers-strike-across-brahmaputra-valley-for-higher-wages-amid-rising-costs'),
+  ('tamil-nadu-noon-meal-anganwadi-workers-sit-in', 'https://www.thenewsminute.com/tamil-nadu/tn-midday-meal-workers-withdraw-protest-after-govt-promises-improved-pay-scales'),
+  ('national-trade-union-farmer-strike-labour-codes-trade-deal', 'https://apnews.com/article/90746ddd26679ba11a180aa36a4612c5'),
+  ('mamata-banerjee-electoral-roll-dharna', 'https://indianexpress.com/article/cities/kolkata/mamata-hails-supreme-courts-sir-order-on-forming-tribunals-calls-off-dharna-10575585/'),
+  ('west-bengal-government-employees-da-cease-work', 'https://indianexpress.com/article/cities/kolkata/west-bengal-da-protest-government-employees-cease-work-10581047/'),
+  ('punjab-himachal-border-entry-tax-blockade', 'https://indianexpress.com/article/cities/chandigarh/punjab-himachal-border-blockade-called-off-protesters-warn-of-escalation-if-ignored-10613670/'),
+  ('telangana-road-transport-employees-strike', 'https://timesofindia.indiatimes.com/city/hyderabad/tgsrtc-resumes-services-jac-leaders-thank-cm-for-accepting-key-demands/amp_articleshow/130521947.cms'),
+  ('jaipur-city-transport-employees-hunger-strike', 'https://timesofindia.indiatimes.com/city/jaipur/jctsl-employees-protest-over-demands/articleshow/127784461.cms'),
+  ('kuvempu-university-nsui-results-records-protest', 'https://www.newindianexpress.com/states/karnataka/2026/Apr/29/nsui-activists-stage-protest-in-kuvempu-university-in-karnataka-raising-slogans-against-vc'),
+  ('madhya-pradesh-farmer-grievance-highway-protests', 'https://www.freepressjournal.in/amp/indore/khalghat-road-blockade-over-farmers-demands-thousands-of-local-congress-workers-leaders-take-part-in-dhar'),
+  ('konkan-fruit-farmers-mumbai-compensation-march', 'https://indianexpress.com/article/cities/mumbai/konkan-mango-cashew-farmers-protest-mumbai-raju-shetti-10691781/'),
+  ('andhra-pradesh-ysrcp-fuel-price-protests', 'https://www.ap7am.com/en/127311/ysr-congress-holds-protests-across-andhra-pradesh-over-petrol-price-hike'),
+  ('kaniyambadi-brick-kiln-workers-extortion-allegation-protest', 'https://timesofindia.indiatimes.com/city/chennai/massive-protest-against-tvk-functionaries-over-extortion-threat-charges/articleshow/131314110.cms'),
+  ('hassan-dairy-farmers-cattle-purchase-boycott-protest', 'https://indianexpress.com/article/cities/bangalore/hassan-cattle-fair-boycott-bakrid-muslim-groups-karnataka-farmers-tension-10709254/'),
+  ('panchana-dam-irrigation-water-farmers-protest', 'https://www.newindianexpress.com/states/rajasthan/2026/Jul/01/20-year-panchana-dam-water-dispute-between-meena-and-gujjar-groups-resolved-release-by-july-6'),
+  ('tamil-nadu-farmers-cases-withdrawal-hunger-strike', 'https://indianexpress.com/article/legal-news/protest-hallmark-democracy-court-case-farmer-hunger-strike-10758406/'),
+  ('ranchi-cab-drivers-fare-revision-strike', 'https://timesofindia.indiatimes.com/city/ranchi/ranchi-cab-drivers-begin-indefinite-strike-over-fare-revision-demand-commuters-affected/articleshow/132054095.cms'),
+  ('bhim-rural-workers-mgnrega-replacement-rally', 'https://timesofindia.indiatimes.com/city/jaipur/protests-erupt-in-rajasthan-against-mgnrega-replacement-with-vb-gramg/amp/articleshow/132170201.cms'),
+  ('ranchi-auto-drivers-route-permit-protest', 'https://timesofindia.indiatimes.com/city/ranchi/ranchi-auto-drivers-threaten-indefinite-strike-over-pending-route-permits/articleshow/132217419.cms'),
+  ('bengaluru-street-vendors-eviction-bandh', 'https://www.thenewsminute.com/amp/story/karnataka/bengaluru-street-vendors-protest-eviction-drive-hold-bandh-against-safe-footpath-campaign'),
+  ('undavalli-seed-axis-road-land-acquisition-protest', 'https://timesofindia.indiatimes.com/city/vijayawada/tension-erupts-in-undavalli-as-crda-begins-seed-axis-road-land-acquisition/articleshow/132335500.cms'),
+  ('bihar-neet-irregularities-bandh', 'https://timesofindia.indiatimes.com/city/patna/bihar-bandh-protests-rock-state-amid-neet-row-demand-resignation-of-dharmendra-pradhan-tej-pratap-yadav-detained/amp/articleshow/132620836.cms'),
+  ('kerala-neet-police-action-student-marches', 'https://www.onmanorama.com/news/kerala/2026/07/23/sfi-protests-sweep-kerala-over-delhi-student-crackdown-ksu-observes-educational-bandh.html'),
+  ('chennai-college-students-neet-protests', 'https://timesofindia.indiatimes.com/city/chennai/chennai-college-students-protest-on-campus-in-their-own-ways-in-support-of-delhi-protesters/articleshow/132610713.cms'),
+  ('kolkata-sealdah-esplanade-neet-march', 'https://indianexpress.com/article/cities/kolkata/kolkata-neet-protest-esplanade-clashes-dharmendra-pradhan-10802102/'),
+  ('odisha-farmers-paddy-procurement-bandh', 'https://www.thehawk.in/news/india/odisha-bandh-by-nkss-partially-disrupts-normal-life'),
+  ('samagra-shiksha-maharashtra-azad-maidan-hunger-strike', 'https://www.loksatta.com/mumbai/samagra-shiksha-scheme-halted-by-centre-3800-employees-in-maharashtra-face-unemployment-mumbai-print-news-rub-99-5813449/'),
+  ('congress-student-campaign-paper-leaks-unemployment', 'https://newsarenaindia.com/nation/education-system-puts-pressure-on-students-rahul-in-kota/80170')
+on conflict (event_slug, source_url) do nothing;
+
+commit;
