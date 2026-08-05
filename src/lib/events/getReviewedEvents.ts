@@ -2,6 +2,10 @@ import "server-only";
 
 import type { ReviewedEventPreview } from "./types";
 import { loadApprovedEventMedia } from "@/lib/media/public";
+import {
+  applyVerifiedScannerEventPatches,
+  verifiedScannerEventAdditions,
+} from "@/data/verified-scanner-events-2026-08-04";
 
 export function isCandidatePreviewEnabled() {
   const showCandidateRecords =
@@ -24,7 +28,14 @@ export function selectVisibleEvents(
 export async function getReviewedEvents(): Promise<readonly ReviewedEventPreview[]> {
   const { reviewedEventsPreview } = await import("../../data/reviewed-events-preview");
   const includeCandidates = isCandidatePreviewEnabled();
-  const publicationVisibleEvents = selectVisibleEvents(reviewedEventsPreview, includeCandidates);
+  const patchedReviewedEvents = applyVerifiedScannerEventPatches(reviewedEventsPreview);
+  const reviewedEventsWithVerifiedCandidates = includeCandidates
+    ? [...patchedReviewedEvents, ...verifiedScannerEventAdditions]
+    : patchedReviewedEvents;
+  const publicationVisibleEvents = selectVisibleEvents(
+    reviewedEventsWithVerifiedCandidates,
+    includeCandidates,
+  );
   const approvedMedia = await loadApprovedEventMedia(publicationVisibleEvents);
   const mediaReadyEvents = includeCandidates
     ? publicationVisibleEvents

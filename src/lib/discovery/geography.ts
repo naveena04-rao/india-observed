@@ -41,12 +41,43 @@ export const reviewedLocalitiesByState: Record<string, readonly string[]> = {
   "West Bengal": ["Kolkata", "Howrah", "Darjeeling"],
 };
 
+const containsReviewedPhrase = (value: string, phrase: string) => {
+  const searchable = ` ${value
+    .toLocaleLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim()} `;
+  const expected = ` ${phrase
+    .toLocaleLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim()} `;
+  return searchable.includes(expected);
+};
+
 export function detectReviewedState(value: string) {
-  const normalized = value.toLocaleLowerCase();
+  const searchable = ` ${value
+    .toLocaleLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim()} `;
+  if (/\bup (?:govt|government|police|minister|state)\b/.test(searchable)) return "Uttar Pradesh";
+  if (/\bj k\b/.test(searchable)) return "Jammu and Kashmir";
+  const matches: Array<{ state: string; index: number }> = [];
   for (const [state, localities] of Object.entries(reviewedLocalitiesByState)) {
-    if (normalized.includes(state.toLocaleLowerCase())) return state;
-    if (localities.some((locality) => normalized.includes(locality.toLocaleLowerCase())))
-      return state;
+    for (const phrase of [state, ...localities]) {
+      const expected = ` ${phrase
+        .toLocaleLowerCase()
+        .replace(/[^\p{L}\p{N}]+/gu, " ")
+        .trim()} `;
+      const index = searchable.indexOf(expected);
+      if (index >= 0) matches.push({ state, index });
+    }
+  }
+  return matches.sort((left, right) => left.index - right.index)[0]?.state ?? null;
+}
+
+export function detectReviewedLocality(value: string) {
+  for (const [state, localities] of Object.entries(reviewedLocalitiesByState)) {
+    const locality = localities.find((item) => containsReviewedPhrase(value, item));
+    if (locality) return { state, locality };
   }
   return null;
 }

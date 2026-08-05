@@ -17,6 +17,7 @@ const privacy = read("src/app/privacy/page.tsx");
 const featureGate = read("src/lib/events/following.ts");
 const returnPath = read("src/lib/auth/returnPath.ts");
 const authenticationAvailability = read("src/lib/auth/availability.ts");
+const authenticationOrigin = read("src/lib/auth/origin.ts");
 const sameOrigin = read("src/lib/http/sameOrigin.ts");
 const sameOriginModule = await import(
   `data:text/javascript,${encodeURIComponent(
@@ -209,6 +210,12 @@ test("editor authentication remains available independently of reader feature fl
   assert.match(signIn, /getAuthenticationAvailability\(returnTo\)/);
   assert.match(confirm, /getAuthenticationAvailability\(returnTo\)/);
   assert.doesNotMatch(signIn + confirm, /SUPABASE_SERVICE_ROLE_KEY/);
+});
+
+test("editor authentication accepts the exact Vercel branch alias", () => {
+  assert.match(authenticationOrigin, /process\.env\.VERCEL_BRANCH_URL/);
+  assert.match(authenticationOrigin, /host === branchHost/);
+  assert.doesNotMatch(authenticationOrigin, /endsWith\(["']\.vercel\.app/);
 });
 
 test("Production gate rejects the known development project and fails closed", () => {

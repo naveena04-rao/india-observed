@@ -3,6 +3,36 @@ export type GroupableCandidate = {
   discovery_time: string;
 };
 
+export type ReviewCandidate = GroupableCandidate & {
+  candidate_type: string;
+  confidence: number | null;
+};
+
+export const eventCandidateTypes = new Set([
+  "new_event",
+  "possible_planned_event",
+  "event_update",
+  "official_response",
+  "outcome_status_change",
+]);
+
+export function partitionCandidateReviewRows<T extends ReviewCandidate>(candidates: readonly T[]) {
+  const eventCandidates: T[] = [];
+  const diagnostics: T[] = [];
+
+  for (const candidate of candidates) {
+    if (
+      eventCandidateTypes.has(candidate.candidate_type) &&
+      candidate.confidence !== null &&
+      candidate.confidence >= 0.5
+    )
+      eventCandidates.push(candidate);
+    else diagnostics.push(candidate);
+  }
+
+  return { eventCandidates, diagnostics };
+}
+
 export const unknownStateGroup = "Unknown / National";
 
 export function groupCandidatesByState<T extends GroupableCandidate>(candidates: readonly T[]) {

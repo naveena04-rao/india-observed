@@ -4,6 +4,16 @@ import test from "node:test";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const migration = read("supabase/migrations/20260803000400_add_minimum_daily_scanner.sql");
+const focusedMigration = read(
+  "supabase/migrations/20260804000100_focus_daily_scanner_iteration.sql",
+);
+const shortlistMigration = read(
+  "supabase/migrations/20260804000200_add_event_candidate_shortlist.sql",
+);
+const indiaWideMigration = read("supabase/migrations/20260804000300_expand_india_wide_scanner.sql");
+const fullScaleMigration = read(
+  "supabase/migrations/20260804000400_full_scale_india_civic_scanner.sql",
+);
 const orchestrator = read("src/lib/discovery/orchestrator.ts");
 const discovery = read("src/lib/discovery/sourceDiscovery.ts");
 const classification = read("src/lib/discovery/classification.ts");
@@ -23,27 +33,133 @@ test("daily scanner contains only the two reviewed metadata sources", () => {
 
 test("scheduled runs enforce source, item, candidate and runtime limits", () => {
   for (const expected of [
-    /maximumSources: 5/,
-    /maximumFetchedItems: 100/,
-    /maximumStoredItems: 50/,
-    /maximumCandidates: 25/,
-    /maximumRuntimeMs: 230_000/,
-    /timeWindowHours: 48/,
+    /maximumSources: 30/,
+    /maximumFetchedItems: 800/,
+    /maximumIndiaGatedItems: 300/,
+    /maximumPreliminaryCivicMatches: 120/,
+    /maximumEnrichments: 40/,
+    /maximumStoredItems: 150/,
+    /maximumCandidates: 60/,
+    /maximumRuntimeMs: 500_000/,
+    /timeWindowHours: 96/,
   ])
     assert.match(orchestrator, expected);
   assert.match(orchestrator, /scheduledRun/);
   assert.match(orchestrator, /no_approved_source/);
   assert.match(orchestrator, /sourceQuery\.eq\("scan_frequency", "daily"\)/);
+  assert.match(orchestrator, /discovery-v4/);
+  assert.match(orchestrator, /rankPreliminaryReviewItems/);
+  assert.match(orchestrator, /itemsPassingIndiaGate/);
+  assert.match(orchestrator, /itemsPassingPreliminaryCivicFilter/);
+  assert.match(orchestrator, /persisted\.eventCandidate/);
 });
 
-test("connectors retry temporary failures once and never crawl item pages", () => {
+test("India-wide migration selects reviewed regional feeds without enabling automation", () => {
+  for (const expected of [
+    /Indian Express India RSS/,
+    /Hindustan Times India RSS/,
+    /Times of India India RSS/,
+    /Indian Express Delhi RSS/,
+    /Hindustan Times Lucknow RSS/,
+    /Indian Express Bengaluru RSS/,
+    /Telangana Today RSS/,
+    /Indian Express Kolkata RSS/,
+    /Hindustan Times Patna RSS/,
+    /Indian Express Mumbai RSS/,
+    /Indian Express Ahmedabad RSS/,
+    /NorthEast Now RSS/,
+    /EastMojo RSS/,
+    /Madhya Pradesh Information RSS/,
+    /"maximumRawItems":300/,
+    /"maximumStoredItems":100/,
+    /"maximumCandidates":40/,
+    /eligible_count < 8 or eligible_count > 15/,
+  ])
+    assert.match(indiaWideMigration, expected);
+  assert.doesNotMatch(
+    indiaWideMigration,
+    /scheduler_enabled\s*=\s*true|outbound_email_enabled\s*=\s*true|real_notifications_enabled\s*=\s*true|github_write_enabled\s*=\s*true/,
+  );
+});
+
+test("full-scale migration selects 30 bounded sources and preserves disabled effects", () => {
+  for (const expected of [
+    /Indian Express India RSS/,
+    /The Hindu National RSS/,
+    /India Civic Query RSS/,
+    /North India Civic Query RSS/,
+    /South India Civic Query RSS/,
+    /East India Civic Query RSS/,
+    /West India Civic Query RSS/,
+    /Northeast India Civic Query RSS/,
+    /Central India Civic Query RSS/,
+    /Sentinel Assam RSS/,
+    /Assam Tribune RSS/,
+    /Madhya Pradesh Information RSS/,
+    /"maximumRawItems":800/,
+    /"maximumIndiaGatedItems":300/,
+    /"maximumTargetedEnrichments":40/,
+    /eligible_count < 24 or eligible_count > 30/,
+  ])
+    assert.match(fullScaleMigration, expected);
+  assert.doesNotMatch(
+    fullScaleMigration,
+    /scheduler_enabled\s*=\s*true|outbound_email_enabled\s*=\s*true|real_notifications_enabled\s*=\s*true|github_write_enabled\s*=\s*true/,
+  );
+});
+
+test("the shortlist migration tightens limits without enabling automation", () => {
+  assert.match(shortlistMigration, /"maximumRawItems":60/);
+  assert.match(shortlistMigration, /"maximumStoredItems":30/);
+  assert.match(shortlistMigration, /"maximumCandidates":15/);
+  assert.match(shortlistMigration, /not coalesce\(public\.is_authorised_editor\(\), false\)/);
+  assert.doesNotMatch(
+    shortlistMigration,
+    /scheduler_enabled\s*=\s*true|outbound_email_enabled\s*=\s*true|real_notifications_enabled\s*=\s*true|github_write_enabled\s*=\s*true/,
+  );
+});
+
+test("today separates event candidates from private scanner diagnostics", () => {
+  assert.match(dashboard, /partitionCandidateReviewRows/);
+  assert.match(dashboard, /heading="Event candidates"/);
+  assert.match(dashboard, /heading="Scanner diagnostics"/);
+  assert.match(dashboard, /collapsed/);
+  assert.match(dashboard, /confidence >= 0\.5|partitionCandidateReviewRows/);
+});
+
+test("safety review never replaces a credible event classification with generic manual review", () => {
+  assert.match(orchestrator, /const persistedCandidateType = candidateType/);
+  assert.doesNotMatch(orchestrator, /candidate_type:\s*manualReview\s*\?/);
+  assert.match(orchestrator, /processing_status: manualReview \? "manual_review" : "classified"/);
+});
+
+test("focused iteration disables PIB and enables only the reviewed replacement", () => {
+  assert.match(focusedMigration, /Press Information Bureau RSS/);
+  assert.match(focusedMigration, /enabled = false/);
+  assert.match(focusedMigration, /Telangana Today RSS/);
+  assert.match(focusedMigration, /https:\/\/telanganatoday\.com\/feed/);
+  assert.match(focusedMigration, /eligible_count <> 2/);
+  assert.match(focusedMigration, /"timeWindowHours":72/);
+  assert.match(focusedMigration, /"maximumSources":2/);
+  assert.doesNotMatch(focusedMigration, /GDELT|Bluesky|YouTube|youtube_api|bluesky_api/);
+});
+
+test("connectors retry temporary failures once and tightly gate targeted enrichment", () => {
   assert.match(discovery, /fetchWithOneTemporaryRetry/);
   assert.match(discovery, /status === 408 \|\| status === 425 \|\| status >= 500/);
   assert.doesNotMatch(discovery, /status === 429 \|\|/);
   assert.match(discovery, /Math\.min\(Math\.max\(retryAfter, 250\), 5_000\)/);
   assert.match(discovery, /feedSummary: item\.summary/);
   assert.match(discovery, /metadataOnly: true/);
-  assert.doesNotMatch(discovery, /fetchApprovedSource\(item\.url/);
+  assert.match(discovery, /enrichmentApproved/);
+  assert.match(discovery, /robotsAllowed/);
+  assert.match(discovery, /robotsAllowsPath/);
+  assert.match(discovery, /maximumBytes: 300_000/);
+  assert.match(discovery, /used >= 4/);
+  assert.match(discovery, /metadataOnly: true/);
+  assert.match(orchestrator, /enrichmentAttempts/);
+  assert.match(orchestrator, /enrichmentFailures/);
+  assert.match(orchestrator, /enrichmentDiagnostics/);
 });
 
 test("deduplication and all-record matching diagnostics are retained", () => {
@@ -58,6 +174,26 @@ test("deduplication and all-record matching diagnostics are retained", () => {
   assert.doesNotMatch(classification, /publicationStatus === "published"/);
   assert.match(classification, /event\.directedAt/);
   assert.match(classification, /event\.topic/);
+  assert.match(classification, /state mismatch/);
+  assert.match(classification, /positives\.length >= 3/);
+});
+
+test("plural protest metadata requires a second civic context signal", () => {
+  const civicPatternSource = classification.match(/const civicEventPattern\s*=\s*(\/[^;]+\/);/s);
+  const contextPatternSource = classification.match(
+    /const civicContextPattern\s*=\s*(\/[^;]+\/);/s,
+  );
+  assert.ok(civicPatternSource);
+  assert.ok(contextPatternSource);
+  const civicPattern = Function(`return ${civicPatternSource[1]}`)();
+  const contextPattern = Function(`return ${contextPatternSource[1]}`)();
+  const falseNegative =
+    "Over 60 organisations and trade unions condemn government action against democratic protests in Assam after a court order.";
+  assert.match(falseNegative.toLowerCase(), civicPattern);
+  assert.match(falseNegative.toLowerCase(), contextPattern);
+  assert.match(classification, /collectiveEvidence\.length < 3/);
+  assert.doesNotMatch("A protest-themed food festival opens", contextPattern);
+  assert.doesNotMatch("The government publishes a routine budget", civicPattern);
 });
 
 test("readiness action is editor-only and gates schedule activation", () => {

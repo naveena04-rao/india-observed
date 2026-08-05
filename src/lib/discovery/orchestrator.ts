@@ -2,9 +2,11 @@ import "server-only";
 import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { processFetchedSource } from "./pipeline";
+import { createEventClusterKey, representsSameEvent } from "./clustering";
 import { QueryBudget } from "./queryStrategy";
-import { discoverSourceItems, type ScannerSource } from "./sourceDiscovery";
+import { discoverSourceItems, enrichSourceItem, type ScannerSource } from "./sourceDiscovery";
 import { SafeSourceFetchError } from "./fetchSafety";
+import { isCredibleEventCandidate, rankPreliminaryReviewItems } from "./ranking";
 import type { SafeFetchedSource } from "./types";
 
 export const manualDryRunLimits = {
@@ -26,30 +28,17 @@ export const pibRssDryRunLimits = {
 } as const;
 
 export const dailyScannerLimits = {
-  maximumSources: 5,
+  maximumSources: 30,
   maximumItemsPerSource: 50,
-  maximumFetchedItems: 100,
-  maximumStoredItems: 50,
-  maximumCandidates: 25,
-  maximumRuntimeMs: 230_000,
-  timeWindowHours: 48,
+  maximumFetchedItems: 800,
+  maximumIndiaGatedItems: 300,
+  maximumPreliminaryCivicMatches: 120,
+  maximumEnrichments: 40,
+  maximumStoredItems: 150,
+  maximumCandidates: 60,
+  maximumRuntimeMs: 500_000,
+  timeWindowHours: 96,
 } as const;
-
-const headlineTerms = (value: string) =>
-  new Set(
-    value
-      .toLocaleLowerCase()
-      .replace(/[^\p{L}\p{N}]+/gu, " ")
-      .split(/\s+/)
-      .filter((term) => term.length > 2),
-  );
-
-const headlineSimilarity = (left: string, right: string) => {
-  const a = headlineTerms(left);
-  const b = headlineTerms(right);
-  const intersection = [...a].filter((term) => b.has(term)).length;
-  return Math.max(a.size, b.size) ? intersection / Math.max(a.size, b.size) : 0;
-};
 
 function safeError(error: unknown, source: ScannerSource) {
   const code =
@@ -100,8 +89,9 @@ async function persistCandidate(input: {
   runId: string;
   source: ScannerSource;
   fetched: SafeFetchedSource;
+  processed?: ReturnType<typeof processFetchedSource>;
 }) {
-  const processed = processFetchedSource(input.fetched);
+  const processed = input.processed ?? processFetchedSource(input.fetched);
   const manualReview =
     processed.safetyFlags.possibleChild ||
     processed.safetyFlags.possibleVictimOrWitness ||
@@ -151,9 +141,30 @@ async function persistCandidate(input: {
     const metadata = item.source_metadata as { publisher?: string } | null;
     return metadata?.publisher === publisher && item.published_at === publishedAt;
   });
-  const syndicatedDuplicate = (recentItems ?? []).find(
-    (item) => headlineSimilarity(item.title, processed.title) >= 0.85,
-  );
+  const currentClusterSignals = {
+    title: processed.title,
+    canonicalUrl: processed.canonicalUrl,
+    state: processed.classification.state,
+    district: processed.classification.districtOrRegion,
+    eventDate: processed.classification.eventDate ?? publishedAt,
+    actionType: processed.classification.actionType,
+    affectedGroup: processed.classification.affectedGroup,
+    demand: processed.classification.demand,
+  };
+  const syndicatedDuplicate = (recentItems ?? []).find((item) => {
+    const metadata = item.source_metadata as Record<string, unknown> | null;
+    return representsSameEvent(currentClusterSignals, {
+      title: item.title,
+      canonicalUrl: String(metadata?.canonicalUrl ?? ""),
+      state: typeof metadata?.stateHint === "string" ? metadata.stateHint : null,
+      district: typeof metadata?.districtOrRegion === "string" ? metadata.districtOrRegion : null,
+      eventDate:
+        typeof metadata?.eventDate === "string" ? metadata.eventDate : (item.published_at ?? null),
+      actionType: typeof metadata?.actionType === "string" ? metadata.actionType : null,
+      affectedGroup: typeof metadata?.affectedGroup === "string" ? metadata.affectedGroup : null,
+      demand: typeof metadata?.demand === "string" ? metadata.demand : null,
+    });
+  });
   const duplicate =
     exactDuplicate ??
     canonicalDuplicate ??
@@ -180,7 +191,54 @@ async function persistCandidate(input: {
       { onConflict: "scan_run_id,observed_url", ignoreDuplicates: true },
     );
     if (error) throw new Error("duplicate_observation_write_failed");
-    return false;
+    const { data: clusteredCandidate } = await input.supabase
+      .from("editorial_candidates")
+      .select("id")
+      .eq("discovered_item_id", duplicate.id)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (clusteredCandidate?.id) {
+      const { error: clusteredSourceError } = await input.supabase.from("candidate_sources").upsert(
+        {
+          candidate_id: clusteredCandidate.id,
+          source_url: input.fetched.finalUrl,
+          canonical_url: processed.canonicalUrl,
+          publisher,
+          headline: processed.title,
+          published_at: publishedAt,
+          reliability_tier: input.source.reliability_tier,
+          evidence_summary: input.fetched.discoveryMetadata?.feedSummary ?? null,
+          original_language: processed.originalLanguage,
+          original_supporting_passage: null,
+          translated_supporting_passage: null,
+          source_family: new URL(processed.canonicalUrl).hostname,
+          ownership_group: null,
+          independence_key: new URL(processed.canonicalUrl).hostname,
+          source_relationship:
+            input.source.reliability_tier === "primary" ? "official" : "independent",
+          content_fingerprint: processed.fingerprint,
+        },
+        { onConflict: "candidate_id,canonical_url", ignoreDuplicates: true },
+      );
+      if (clusteredSourceError) throw new Error("candidate_cluster_source_write_failed");
+      const { data: clusterSources } = await input.supabase
+        .from("candidate_sources")
+        .select("independence_key")
+        .eq("candidate_id", clusteredCandidate.id);
+      const independentCount = new Set(
+        (clusterSources ?? []).map((source) => source.independence_key),
+      ).size;
+      await input.supabase
+        .from("editorial_candidates")
+        .update({
+          independent_source_count: independentCount,
+          corroboration_status:
+            independentCount >= 2 ? "multiple_independent_sources" : "syndicated_only",
+        })
+        .eq("id", clusteredCandidate.id);
+    }
+    return { stored: false, eventCandidate: false, clustered: Boolean(clusteredCandidate?.id) };
   }
   const { data: item, error: itemError } = await input.supabase
     .from("discovered_items")
@@ -203,7 +261,7 @@ async function persistCandidate(input: {
           safetyFlags: processed.safetyFlags,
           pipelineTrace: processed.pipelineTrace,
           publisher: input.fetched.discoveryMetadata?.publisher ?? input.source.name,
-          detectedLanguage: input.fetched.discoveryMetadata?.detectedLanguage ?? null,
+          feedDetectedLanguage: input.fetched.discoveryMetadata?.detectedLanguage ?? null,
           stateHint: input.fetched.discoveryMetadata?.stateHint ?? null,
           queryFamily: input.fetched.discoveryMetadata?.queryFamily ?? null,
           queryIndex: input.fetched.discoveryMetadata?.queryIndex ?? null,
@@ -218,6 +276,21 @@ async function persistCandidate(input: {
           matchingSignals: processed.classification.matchingSignals,
           conflictingSignals: processed.classification.conflictingSignals,
           sourceIsNewerThanEvent: processed.classification.sourceIsNewerThanEvent,
+          classificationReason: processed.classification.reason,
+          actionType: processed.classification.actionType,
+          districtOrRegion: processed.classification.districtOrRegion,
+          eventDate: processed.classification.eventDate,
+          plannedDate: processed.classification.plannedDate,
+          affectedGroup: processed.classification.affectedGroup,
+          demand: processed.classification.demand,
+          authorityResponse: processed.classification.authorityResponse,
+          dictionaryMatches: processed.classification.dictionaryMatches,
+          detectedLanguage: processed.classification.detectedLanguage,
+          civicRelevanceScore: processed.classification.civicRelevanceScore,
+          canonicalUrl: processed.canonicalUrl,
+          clusterKey: createEventClusterKey(currentClusterSignals),
+          enrichedExcerpt: input.fetched.discoveryMetadata?.enrichedExcerpt ?? null,
+          enrichmentFetchedAt: input.fetched.discoveryMetadata?.enrichmentFetchedAt ?? null,
         },
         content_fingerprint: processed.fingerprint,
         normalized_title_fingerprint: normalizedTitleFingerprint,
@@ -229,7 +302,7 @@ async function persistCandidate(input: {
     .select("id")
     .maybeSingle();
   if (itemError) throw new Error("discovered_item_write_failed");
-  if (!item) return false;
+  if (!item) return { stored: false, eventCandidate: false, clustered: false };
   const classification = processed.classification;
   const candidateType =
     classification.candidateType === "media_evidence" &&
@@ -238,16 +311,18 @@ async function persistCandidate(input: {
         ? "event_update"
         : "irrelevant"
       : classification.candidateType;
+  // Safety flags require human review and elevated priority, but they must not erase a credible
+  // event classification. Non-event safety rows remain irrelevant and stay in diagnostics.
+  const persistedCandidateType = candidateType;
   const { data: candidate, error: candidateError } = await input.supabase
     .from("editorial_candidates")
     .insert({
       discovered_item_id: item.id,
-      candidate_type: manualReview ? "manual_review" : candidateType,
+      candidate_type: persistedCandidateType,
       target_event_slug: classification.targetEventSlug,
       target_event_internal_id: classification.targetEventInternalId,
       suggested_title: processed.title,
-      state:
-        classification.state ?? input.fetched.discoveryMetadata?.stateHint ?? input.source.state,
+      state: classification.state,
       priority:
         processed.safetyFlags.possibleChild || processed.safetyFlags.liveTacticalLocation
           ? "urgent_editor_attention"
@@ -258,6 +333,14 @@ async function persistCandidate(input: {
       matching_signals: classification.matchingSignals,
       conflicting_signals: classification.conflictingSignals,
       source_is_newer_than_event: classification.sourceIsNewerThanEvent,
+      action_type: classification.actionType,
+      event_date: classification.eventDate,
+      planned_date: classification.plannedDate,
+      affected_group: classification.affectedGroup,
+      demand: classification.demand,
+      authority_response: classification.authorityResponse,
+      dictionary_matches: classification.dictionaryMatches,
+      detected_language: classification.detectedLanguage,
     })
     .select("id")
     .single();
@@ -281,7 +364,14 @@ async function persistCandidate(input: {
     content_fingerprint: processed.fingerprint,
   });
   if (candidateSourceError) throw new Error("candidate_source_write_failed");
-  return true;
+  return {
+    stored: true,
+    clustered: false,
+    eventCandidate: isCredibleEventCandidate({
+      ...classification,
+      candidateType: persistedCandidateType,
+    }),
+  };
 }
 
 export async function runDiscoveryScan(input: {
@@ -318,7 +408,7 @@ export async function runDiscoveryScan(input: {
       ? dailyScannerLimits
       : manualDryRunLimits;
   const day = input.scheduledFor ?? new Date().toISOString().slice(0, 10);
-  const idempotencyKey = `${input.trigger}:${day}:discovery-v1`;
+  const idempotencyKey = `${input.trigger}:${day}:discovery-v4`;
   const { data: runId, error: startError } = controlledGdeltRun
     ? await input.supabase.rpc("claim_manual_gdelt_dry_run", {
         p_idempotency_key: idempotencyKey,
@@ -352,7 +442,7 @@ export async function runDiscoveryScan(input: {
   let sourceQuery = input.supabase
     .from("scan_sources")
     .select(
-      "id,name,scan_url,scan_method,scan_frequency,state,reliability_tier,failure_count,compliance_registry_id,last_etag,last_modified_header,connector_config,daily_request_limit,manual_dry_run_only,manual_run_consumed_at,cooldown_until,compliance_registry!inner(production_enabled,legal_review_status,review_expires_at)",
+      "id,name,base_url,scan_url,scan_method,scan_frequency,state,reliability_tier,failure_count,compliance_registry_id,last_etag,last_modified_header,connector_config,daily_request_limit,manual_dry_run_only,manual_run_consumed_at,cooldown_until,compliance_registry!inner(production_enabled,legal_review_status,review_expires_at)",
     )
     .eq("compliance_registry.production_enabled", true)
     .order("name");
@@ -416,6 +506,17 @@ export async function runDiscoveryScan(input: {
   let candidates = 0;
   let itemsFetched = 0;
   let itemsRetained = 0;
+  let itemsPassingIndiaGate = 0;
+  let itemsPassingPreliminaryCivicFilter = 0;
+  let processingFailures = 0;
+  let enrichmentFetches = 0;
+  let enrichmentAttempts = 0;
+  let enrichmentFailures = 0;
+  const enrichmentDiagnostics: Record<
+    string,
+    { attempts: number; successes: number; failures: number }
+  > = {};
+  let candidateClusters = 0;
   const deadline =
     Date.now() +
     (controlledDailyScannerRun || scheduledRun ? dailyScannerLimits.maximumRuntimeMs : 10 * 60_000);
@@ -424,7 +525,15 @@ export async function runDiscoveryScan(input: {
     string,
     { sources: number; successes: number; failures: number; items: number; candidates: number }
   > = {};
-  let limitReached: "fetched_item_limit" | "candidate_limit" | null = null;
+  let limitReached:
+    "fetched_item_limit" | "stored_item_limit" | "candidate_limit" | "runtime_limit" | null = null;
+  const fetchedForRanking: Array<{
+    source: ScannerSource;
+    fetched: SafeFetchedSource;
+    processed: ReturnType<typeof processFetchedSource>;
+  }> = [];
+  const sourceJobs = new Map<string, string>();
+  const sourceStoredCounts = new Map<string, number>();
   await input.supabase
     .from("scan_runs")
     .update({ status: "running", source_count: sources.length })
@@ -432,7 +541,7 @@ export async function runDiscoveryScan(input: {
 
   for (const source of sources) {
     if (Date.now() >= deadline) {
-      limitReached = "fetched_item_limit";
+      limitReached = "runtime_limit";
       break;
     }
     const connector = (connectorResults[source.scan_method] ??= {
@@ -444,13 +553,6 @@ export async function runDiscoveryScan(input: {
     });
     connector.sources += 1;
     const boundedRun = controlledManualDryRun || scheduledRun;
-    const remainingFetchedItems = boundedRun
-      ? activeLimits.maximumFetchedItems - itemsFetched
-      : undefined;
-    if (remainingFetchedItems !== undefined && remainingFetchedItems <= 0) {
-      limitReached = "fetched_item_limit";
-      break;
-    }
     const { data: job } = await input.supabase
       .from("scan_jobs")
       .update({ status: "running", attempt_count: 1, started_at: new Date().toISOString() })
@@ -458,46 +560,25 @@ export async function runDiscoveryScan(input: {
       .eq("source_id", source.id)
       .select("id")
       .single();
+    if (job?.id) sourceJobs.set(source.id, job.id);
     try {
+      const perSourceMaximum = boundedRun
+        ? Math.min(
+            activeLimits.maximumItemsPerSource,
+            Math.max(1, Math.floor(activeLimits.maximumFetchedItems / Math.max(sources.length, 1))),
+          )
+        : undefined;
       const discovered = await discoverSourceItems({
         source,
         supabase: input.supabase,
         budget,
-        maximumItems: boundedRun
-          ? controlledGdeltRun
-            ? remainingFetchedItems
-            : Math.min(activeLimits.maximumItemsPerSource, remainingFetchedItems!)
-          : undefined,
+        maximumItems: perSourceMaximum,
       });
       itemsFetched += discovered.items.length;
       connector.items += discovered.items.length;
-      let itemCount = 0;
       for (const fetched of discovered.items) {
-        if (Date.now() >= deadline) {
-          limitReached = "fetched_item_limit";
-          break;
-        }
-        if (boundedRun && candidates + itemCount >= activeLimits.maximumCandidates) {
-          limitReached = "candidate_limit";
-          break;
-        }
-        if (
-          boundedRun &&
-          itemsRetained >=
-            ("maximumStoredItems" in activeLimits
-              ? activeLimits.maximumStoredItems
-              : activeLimits.maximumCandidates)
-        ) {
-          limitReached = "candidate_limit";
-          break;
-        }
-        if (await persistCandidate({ supabase: input.supabase, runId, source, fetched })) {
-          itemCount += 1;
-          itemsRetained += 1;
-        }
+        fetchedForRanking.push({ source, fetched, processed: processFetchedSource(fetched) });
       }
-      candidates += itemCount;
-      connector.candidates += itemCount;
       successes += 1;
       connector.successes += 1;
       await input.supabase
@@ -505,7 +586,7 @@ export async function runDiscoveryScan(input: {
         .update({
           status: "completed",
           completed_at: new Date().toISOString(),
-          items_discovered: itemCount,
+          items_discovered: 0,
           request_count: discovered.requestCount,
         })
         .eq("id", job?.id);
@@ -519,11 +600,11 @@ export async function runDiscoveryScan(input: {
           last_error_summary: null,
           last_etag: discovered.etag,
           last_modified_header: discovered.lastModified,
+          last_http_status: discovered.statusCode,
+          last_content_type: discovered.contentType,
+          last_item_count: discovered.items.length,
         })
         .eq("id", source.id);
-      if (boundedRun && itemsFetched >= activeLimits.maximumFetchedItems)
-        limitReached = "fetched_item_limit";
-      if (limitReached) break;
     } catch (error) {
       failures += 1;
       connector.failures += 1;
@@ -549,10 +630,140 @@ export async function runDiscoveryScan(input: {
           last_error_code: safe.code,
           last_error_summary: safe.summary,
           failure_count: failureCount,
+          last_http_status: safe.code.match(/^source_http_(\d{3})$/)?.[1]
+            ? Number(safe.code.slice(-3))
+            : null,
+          ...(failureCount >= 3 ? { enabled: false, scan_frequency: "manual" } : {}),
           ...(cooldownUntil ? { cooldown_until: cooldownUntil } : {}),
         })
         .eq("id", source.id);
     }
+  }
+  const initiallyRankedItems = rankPreliminaryReviewItems(
+    fetchedForRanking.map((item) => ({
+      value: item,
+      classification: item.processed.classification,
+      publishedAt: item.fetched.discoveryMetadata?.publishedAt ?? null,
+    })),
+  );
+  const boundedItems: typeof initiallyRankedItems = [];
+  let gatedCount = 0;
+  let preliminaryCount = 0;
+  for (const item of initiallyRankedItems) {
+    if (item.indiaGatePassed) {
+      if (gatedCount >= dailyScannerLimits.maximumIndiaGatedItems) continue;
+      gatedCount += 1;
+    }
+    if (item.preliminaryCivicPassed) {
+      if (preliminaryCount >= dailyScannerLimits.maximumPreliminaryCivicMatches) continue;
+      preliminaryCount += 1;
+    }
+    boundedItems.push(item);
+  }
+  const enrichmentDomainCounts = new Map<string, number>();
+  const enrichmentRobotsDecisions = new Map<string, boolean>();
+  for (const ranked of boundedItems) {
+    if (
+      !ranked.preliminaryCivicPassed ||
+      enrichmentFetches >= dailyScannerLimits.maximumEnrichments ||
+      Date.now() >= deadline
+    )
+      continue;
+    const enrichmentDomain = new URL(ranked.value.fetched.finalUrl).hostname;
+    const domainDiagnostics = (enrichmentDiagnostics[enrichmentDomain] ??= {
+      attempts: 0,
+      successes: 0,
+      failures: 0,
+    });
+    try {
+      const enriched = await enrichSourceItem({
+        source: ranked.value.source,
+        item: ranked.value.fetched,
+        domainRequestCounts: enrichmentDomainCounts,
+        robotsDecisions: enrichmentRobotsDecisions,
+      });
+      if (enriched.fetched) {
+        enrichmentAttempts += 1;
+        enrichmentFetches += 1;
+        domainDiagnostics.attempts += 1;
+        domainDiagnostics.successes += 1;
+      }
+      ranked.value.fetched = enriched.item;
+      ranked.value.processed = processFetchedSource(enriched.item);
+    } catch {
+      enrichmentAttempts += 1;
+      enrichmentFailures += 1;
+      domainDiagnostics.attempts += 1;
+      domainDiagnostics.failures += 1;
+      processingFailures += 1;
+    }
+  }
+  const rankedItems = rankPreliminaryReviewItems(
+    boundedItems.map((item) => ({
+      value: item.value,
+      classification: item.value.processed.classification,
+      publishedAt: item.publishedAt,
+    })),
+  );
+  itemsPassingIndiaGate = Math.min(
+    rankedItems.filter((item) => item.indiaGatePassed).length,
+    dailyScannerLimits.maximumIndiaGatedItems,
+  );
+  itemsPassingPreliminaryCivicFilter = Math.min(
+    rankedItems.filter((item) => item.preliminaryCivicPassed).length,
+    dailyScannerLimits.maximumPreliminaryCivicMatches,
+  );
+  let candidateLimitSkipped = 0;
+  const storedLimit =
+    "maximumStoredItems" in activeLimits
+      ? activeLimits.maximumStoredItems
+      : activeLimits.maximumCandidates;
+  for (const ranked of rankedItems) {
+    if (Date.now() >= deadline) {
+      limitReached = "runtime_limit";
+      break;
+    }
+    if (itemsRetained >= storedLimit) {
+      limitReached = "stored_item_limit";
+      break;
+    }
+    if (ranked.preliminaryCivicPassed && candidates >= activeLimits.maximumCandidates) {
+      candidateLimitSkipped += 1;
+      continue;
+    }
+    const { source, fetched, processed } = ranked.value;
+    let persisted: Awaited<ReturnType<typeof persistCandidate>>;
+    try {
+      persisted = await persistCandidate({
+        supabase: input.supabase,
+        runId,
+        source,
+        fetched,
+        processed,
+      });
+    } catch {
+      processingFailures += 1;
+      continue;
+    }
+    if (!persisted) continue;
+    if (persisted.clustered) candidateClusters += 1;
+    if (!persisted.stored) continue;
+    itemsRetained += 1;
+    sourceStoredCounts.set(source.id, (sourceStoredCounts.get(source.id) ?? 0) + 1);
+    if (persisted.eventCandidate) {
+      candidates += 1;
+      connectorResults[source.scan_method]!.candidates += 1;
+    }
+  }
+  if (!limitReached && candidateLimitSkipped) limitReached = "candidate_limit";
+  for (const source of sources) {
+    const jobId = sourceJobs.get(source.id);
+    if (!jobId) continue;
+    await input.supabase
+      .from("scan_jobs")
+      .update({ items_discovered: sourceStoredCounts.get(source.id) ?? 0 })
+      .eq("id", jobId)
+      .eq("status", "completed");
   }
   if (controlledManualDryRun && eligibleSources.length > sources.length)
     await input.supabase
@@ -571,7 +782,7 @@ export async function runDiscoveryScan(input: {
       ? "incomplete"
       : failures && !successes
         ? "failed"
-        : failures
+        : failures || processingFailures
           ? "incomplete"
           : "completed";
   const { count: duplicateCount } = await input.supabase
@@ -589,6 +800,14 @@ export async function runDiscoveryScan(input: {
     connectorResults,
     controlledManualDryRun,
     itemsFetched,
+    itemsPassingIndiaGate,
+    itemsPassingPreliminaryCivicFilter,
+    processingFailures,
+    enrichmentAttempts,
+    enrichmentFetches,
+    enrichmentFailures,
+    enrichmentDiagnostics,
+    candidateClusters,
     itemsRetained,
     limits: controlledManualDryRun ? activeLimits : null,
     limitReached,
@@ -624,6 +843,14 @@ export async function runDiscoveryScan(input: {
     failures,
     candidates,
     itemsFetched,
+    itemsPassingIndiaGate,
+    itemsPassingPreliminaryCivicFilter,
+    processingFailures,
+    enrichmentAttempts,
+    enrichmentFetches,
+    enrichmentFailures,
+    enrichmentDiagnostics,
+    candidateClusters,
     queriesUsed: budget.snapshot().gdelt?.used ?? 0,
     youtubeCalls: budget.snapshot().youtube?.used ?? 0,
     blueskyCalls: budget.snapshot().bluesky?.used ?? 0,

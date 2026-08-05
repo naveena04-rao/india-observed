@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { getEditorialAdminSession } from "@/lib/editorial/admin";
 import { runDiscoveryScan } from "@/lib/discovery/orchestrator";
+import { twelveMonthVerificationLeads } from "@/data/twelveMonthVerification";
 
 export type ManualDryRunActionState = {
   status: "idle" | "completed" | "incomplete" | "failed" | "already_running";
@@ -20,6 +21,12 @@ export type FallbackDryRunActionState = ManualDryRunActionState & {
     string,
     { sources: number; successes: number; failures: number; items: number; candidates: number }
   >;
+};
+
+export type VerificationDecisionActionState = {
+  status: "idle" | "saved" | "error";
+  message: string;
+  completedAt: string | null;
 };
 
 async function editor() {
@@ -61,6 +68,49 @@ export async function reviewCandidateAction(formData: FormData) {
   if (error) throw new Error("Candidate decision could not be saved.");
   revalidatePath(`/admin/review/candidates/${candidateId}`);
   revalidatePath("/admin/review/today");
+}
+
+export async function reviewTwelveMonthVerificationLeadAction(
+  previousState: VerificationDecisionActionState,
+  formData: FormData,
+): Promise<VerificationDecisionActionState> {
+  void previousState;
+  try {
+    const supabase = await editor();
+    const leadRef = required(formData, "leadRef");
+    const decision = required(formData, "decision");
+    const note = String(formData.get("note") ?? "").trim();
+    if (!twelveMonthVerificationLeads.some((lead) => lead.ref === leadRef))
+      throw new Error("Verification lead not found.");
+    if (!["approve_private_draft", "hold_for_evidence", "reject"].includes(decision))
+      throw new Error("Verification decision not recognised.");
+    if (decision !== "approve_private_draft" && note.length < 4)
+      throw new Error("Add a short note before holding or rejecting a lead.");
+
+    const { error } = await supabase.rpc("review_twelve_month_verification_lead", {
+      p_lead_ref: leadRef,
+      p_decision: decision,
+      p_note: note || null,
+    });
+    if (error) throw new Error("The private verification decision could not be saved.");
+    revalidatePath("/admin/review/verification");
+    return {
+      status: "saved",
+      message: "Decision saved.",
+      completedAt: new Date().toISOString(),
+    };
+  } catch (error) {
+    const message =
+      error instanceof Error &&
+      [
+        "Verification lead not found.",
+        "Verification decision not recognised.",
+        "Add a short note before holding or rejecting a lead.",
+      ].includes(error.message)
+        ? error.message
+        : "The private verification decision could not be saved. Please retry.";
+    return { status: "error", message, completedAt: new Date().toISOString() };
+  }
 }
 
 export async function createChangeSetAction(formData: FormData) {

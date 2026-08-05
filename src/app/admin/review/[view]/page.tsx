@@ -4,11 +4,19 @@ import { notFound, redirect } from "next/navigation";
 import { ArchiveShell } from "@/app/events/components/ArchiveShell";
 import { connectorManifests } from "@/lib/discovery/connectors/registry";
 import { getEditorialAdminSession } from "@/lib/editorial/admin";
-import { groupCandidatesByState } from "@/lib/editorial/candidateGrouping";
+import {
+  groupCandidatesByState,
+  partitionCandidateReviewRows,
+} from "@/lib/editorial/candidateGrouping";
 import { ManualGdeltDryRunControl } from "../ManualGdeltDryRunControl";
 import { ManualFallbackDryRunControl } from "../ManualFallbackDryRunControl";
 import { ManualPibRssDryRunControl } from "../ManualPibRssDryRunControl";
 import { ManualDailyScannerControl } from "../ManualDailyScannerControl";
+import { VerificationDecisionForm } from "../VerificationDecisionForm";
+import {
+  twelveMonthVerificationLeads,
+  type TwelveMonthVerificationLead,
+} from "@/data/twelveMonthVerification";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -18,6 +26,7 @@ export const metadata: Metadata = {
 
 const views = [
   ["today", "Today"],
+  ["verification", "12-month verification"],
   ["new-events", "New Events"],
   ["event-updates", "Event Updates"],
   ["media", "Media"],
@@ -46,6 +55,14 @@ type Candidate = {
   matching_signals: string[];
   conflicting_signals: string[];
   source_is_newer_than_event: boolean | null;
+  action_type: string | null;
+  event_date: string | null;
+  planned_date: string | null;
+  affected_group: string | null;
+  demand: string | null;
+  authority_response: string | null;
+  dictionary_matches: string[];
+  detected_language: string;
   candidate_sources: Array<{
     publisher: string | null;
     canonical_url: string;
@@ -93,6 +110,7 @@ export default async function EditorialReviewPage({
     redirect(`/auth/sign-in?returnTo=${encodeURIComponent(`/admin/review/${view}`)}`);
   if (!session.editor || !session.supabase) notFound();
 
+  const emptyPrivateDataResult = { data: [], error: null };
   const [
     candidateResult,
     scanResult,
@@ -101,47 +119,58 @@ export default async function EditorialReviewPage({
     mediaResult,
     requestResult,
     coverageResult,
-  ] = await Promise.all([
-    session.supabase
-      .from("editorial_candidates")
-      .select(
-        "id,candidate_type,suggested_title,state,district_or_region,priority,confidence,corroboration_status,independent_source_count,review_status,discovery_time,target_event_slug,target_event_internal_id,matching_signals,conflicting_signals,source_is_newer_than_event,candidate_sources(publisher,canonical_url,published_at,source_family)",
-      )
-      .order("discovery_time", { ascending: false })
-      .limit(100),
-    session.supabase
-      .from("scan_runs")
-      .select(
-        "id,status,trigger_type,started_at,completed_at,source_count,success_count,failure_count,dry_run,quota_usage,scan_jobs(status,attempt_count,request_count,items_discovered,error_code,safe_error_summary)",
-      )
-      .order("started_at", { ascending: false })
-      .limit(20),
-    session.supabase
-      .from("scan_sources")
-      .select(
-        "id,name,source_type,state,language,enabled,scan_method,manual_dry_run_only,manual_run_consumed_at,connector_config,last_successful_scan,last_error_summary,compliance_registry_id",
-      )
-      .order("name"),
-    session.supabase
-      .from("compliance_registry")
-      .select(
-        "id,platform_or_source_name,subject_type,legal_review_status,review_expires_at,production_enabled,paywall_status,robots_policy,decision_reason",
-      )
-      .order("platform_or_source_name"),
-    session.supabase
-      .from("candidate_media")
-      .select(
-        "id,candidate_id,media_type,publisher,creator,rights_display_status,privacy_concern,safety_concern,review_status,created_at",
-      )
-      .order("created_at", { ascending: false })
-      .limit(100),
-    session.supabase
-      .from("compliance_requests")
-      .select("id,request_type,affected_url_or_record,received_at,emergency,status")
-      .order("received_at", { ascending: false })
-      .limit(50),
-    session.supabase.from("source_coverage_metrics").select("*").order("state").order("name"),
-  ]);
+  ] =
+    view === "verification"
+      ? [
+          emptyPrivateDataResult,
+          emptyPrivateDataResult,
+          emptyPrivateDataResult,
+          emptyPrivateDataResult,
+          emptyPrivateDataResult,
+          emptyPrivateDataResult,
+          emptyPrivateDataResult,
+        ]
+      : await Promise.all([
+          session.supabase
+            .from("editorial_candidates")
+            .select(
+              "id,candidate_type,suggested_title,state,district_or_region,priority,confidence,corroboration_status,independent_source_count,review_status,discovery_time,target_event_slug,target_event_internal_id,matching_signals,conflicting_signals,source_is_newer_than_event,action_type,event_date,planned_date,affected_group,demand,authority_response,dictionary_matches,detected_language,candidate_sources(publisher,canonical_url,published_at,source_family)",
+            )
+            .order("discovery_time", { ascending: false })
+            .limit(100),
+          session.supabase
+            .from("scan_runs")
+            .select(
+              "id,status,trigger_type,started_at,completed_at,source_count,success_count,failure_count,dry_run,quota_usage,scan_jobs(status,attempt_count,request_count,items_discovered,error_code,safe_error_summary)",
+            )
+            .order("started_at", { ascending: false })
+            .limit(20),
+          session.supabase
+            .from("scan_sources")
+            .select(
+              "id,name,source_type,state,language,enabled,scan_method,manual_dry_run_only,manual_run_consumed_at,connector_config,last_successful_scan,last_error_summary,compliance_registry_id",
+            )
+            .order("name"),
+          session.supabase
+            .from("compliance_registry")
+            .select(
+              "id,platform_or_source_name,subject_type,legal_review_status,review_expires_at,production_enabled,paywall_status,robots_policy,decision_reason",
+            )
+            .order("platform_or_source_name"),
+          session.supabase
+            .from("candidate_media")
+            .select(
+              "id,candidate_id,media_type,publisher,creator,rights_display_status,privacy_concern,safety_concern,review_status,created_at",
+            )
+            .order("created_at", { ascending: false })
+            .limit(100),
+          session.supabase
+            .from("compliance_requests")
+            .select("id,request_type,affected_url_or_record,received_at,emergency,status")
+            .order("received_at", { ascending: false })
+            .limit(50),
+          session.supabase.from("source_coverage_metrics").select("*").order("state").order("name"),
+        ]);
   const error = [
     candidateResult,
     scanResult,
@@ -155,6 +184,15 @@ export default async function EditorialReviewPage({
   const candidates = (candidateResult.data ?? []) as Candidate[];
   const compliance = (complianceResult.data ?? []) as Compliance[];
   const sources = (sourceResult.data ?? []) as ScanSource[];
+  const verificationDecisionResult =
+    view === "verification"
+      ? await session.supabase
+          .from("editorial_verification_decisions")
+          .select("lead_ref,decision,note,decided_at")
+      : { data: [], error: null };
+  const verificationDecisions = new Map(
+    (verificationDecisionResult.data ?? []).map((decision) => [decision.lead_ref, decision]),
+  );
   const approvedManualSources = sources.filter((source) => {
     const review = compliance.find((record) => record.id === source.compliance_registry_id);
     return (
@@ -255,14 +293,17 @@ export default async function EditorialReviewPage({
       : null;
   const dailyScannerDisabledReason = activeDailyScannerRun
     ? "A daily-scanner run is already active."
-    : approvedDailySources.length < 2
-      ? "At least two approved, working daily sources are required."
+    : approvedDailySources.length < 24
+      ? "At least 24 approved daily metadata sources are required."
       : null;
-  const filtered = candidates.filter((candidate) =>
+  const { eventCandidates, diagnostics } = partitionCandidateReviewRows(candidates);
+  const filtered = eventCandidates.filter((candidate) =>
     view === "new-events"
-      ? candidate.candidate_type === "new_event"
+      ? ["new_event", "possible_planned_event"].includes(candidate.candidate_type)
       : view === "event-updates"
-        ? ["event_update", "official_response", "new_source"].includes(candidate.candidate_type)
+        ? ["event_update", "official_response", "outcome_status_change"].includes(
+            candidate.candidate_type,
+          )
         : true,
   );
   const title = views.find(([key]) => key === view)?.[1] ?? "Review";
@@ -298,13 +339,13 @@ export default async function EditorialReviewPage({
         <dl className="editor-review__metrics">
           <div>
             <dt>Unreviewed</dt>
-            <dd>{candidates.filter((item) => item.review_status === "unreviewed").length}</dd>
+            <dd>{eventCandidates.filter((item) => item.review_status === "unreviewed").length}</dd>
           </div>
           <div>
             <dt>High priority</dt>
             <dd>
               {
-                candidates.filter((item) =>
+                eventCandidates.filter((item) =>
                   ["high", "urgent_editor_attention"].includes(item.priority),
                 ).length
               }
@@ -328,7 +369,12 @@ export default async function EditorialReviewPage({
             <ManualDailyScannerControl disabledReason={dailyScannerDisabledReason} />
           </>
         ) : null}
-        {view === "compliance" ? (
+        {view === "verification" ? (
+          <TwelveMonthVerificationView
+            decisions={verificationDecisions}
+            persistenceAvailable={!verificationDecisionResult.error}
+          />
+        ) : view === "compliance" ? (
           <ComplianceView
             records={compliance}
             media={mediaResult.data ?? []}
@@ -345,97 +391,322 @@ export default async function EditorialReviewPage({
             title="Media awaiting rights, privacy and safety review"
             rows={mediaResult.data ?? []}
           />
+        ) : view === "today" ? (
+          <>
+            <CandidateList heading="Event candidates" candidates={filtered} />
+            <CandidateList heading="Scanner diagnostics" candidates={diagnostics} collapsed />
+          </>
         ) : (
-          <CandidateList candidates={filtered} />
+          <CandidateList heading={title} candidates={filtered} />
         )}
       </main>
     </ArchiveShell>
   );
 }
 
-function CandidateList({ candidates }: { candidates: Candidate[] }) {
-  const groups = groupCandidatesByState(candidates);
+type VerificationDecision = {
+  lead_ref: string;
+  decision: string;
+  note: string | null;
+  decided_at: string;
+};
+
+function TwelveMonthVerificationView({
+  decisions,
+  persistenceAvailable,
+}: {
+  decisions: Map<string, VerificationDecision>;
+  persistenceAvailable: boolean;
+}) {
+  const ready = twelveMonthVerificationLeads.filter(
+    (lead) => lead.recommendation === "approve_new_event_draft",
+  );
+  const held = twelveMonthVerificationLeads.filter(
+    (lead) => lead.recommendation === "retain_for_more_evidence",
+  );
+  const duplicates = twelveMonthVerificationLeads.filter(
+    (lead) => lead.recommendation === "reject_duplicate",
+  );
   return (
-    <section aria-labelledby="candidate-heading">
-      <h2 id="candidate-heading">Review queue</h2>
-      {candidates.length === 0 ? (
-        <p className="editor-review__empty">
-          No candidates in this view. Production scanning is disabled.
-        </p>
-      ) : (
-        <div className="editor-review__state-groups">
-          {groups.map((group) => (
-            <section key={group.state} aria-labelledby={`state-${group.state}`}>
-              <h3 id={`state-${group.state}`}>{group.state}</h3>
-              <ol className="editor-review__list">
-                {group.items.map((item) => (
-                  <li key={item.id}>
-                    <div>
-                      <span className="editor-review__badge">
-                        {item.candidate_type.replaceAll("_", " ")}
-                      </span>
-                      <span>{item.priority}</span>
-                    </div>
-                    <h3>
-                      <Link href={`/admin/review/candidates/${item.id}`}>
-                        {item.suggested_title ?? "Untitled candidate"}
-                      </Link>
-                    </h3>
-                    <p>
-                      {[
-                        item.state,
-                        item.district_or_region,
-                        item.target_event_internal_id ?? item.target_event_slug,
-                      ]
-                        .filter(Boolean)
-                        .join(" · ") || "Location or event match requires review"}
-                    </p>
-                    {item.candidate_sources[0] ? (
-                      <p>
-                        <a
-                          href={item.candidate_sources[0].canonical_url}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          {item.candidate_sources[0].publisher ??
-                            item.candidate_sources[0].source_family ??
-                            "Open source"}
-                        </a>
-                        {item.candidate_sources[0].published_at
-                          ? ` · ${new Date(item.candidate_sources[0].published_at).toLocaleString("en-IN")}`
-                          : ""}
-                      </p>
-                    ) : null}
-                    <p>{item.matching_signals.join(" · ") || "No existing-event match signals"}</p>
-                    <dl>
-                      <div>
-                        <dt>Confidence</dt>
-                        <dd>
-                          {item.confidence === null
-                            ? "Not scored"
-                            : `${Math.round(item.confidence * 100)}%`}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Corroboration</dt>
-                        <dd>
-                          {item.corroboration_status.replaceAll("_", " ")} (
-                          {item.independent_source_count})
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Status</dt>
-                        <dd>{item.review_status.replaceAll("_", " ")}</dd>
-                      </div>
-                    </dl>
-                  </li>
-                ))}
-              </ol>
-            </section>
-          ))}
+    <section className="verification-review" aria-labelledby="verification-heading">
+      <div className="verification-review__intro">
+        <div>
+          <p className="section-kicker">EDITORIAL DECISION PACKET</p>
+          <h2 id="verification-heading">Fresh leads from the last 12 months</h2>
+          <p>
+            Each lead was checked against dated, attributable reporting. Approving here creates an
+            owner decision for a <strong>private draft only</strong>; it cannot publish an event.
+          </p>
         </div>
+        <span className="verification-review__window">4 Aug 2025–4 Aug 2026</span>
+      </div>
+      <dl className="verification-review__summary">
+        <div>
+          <dt>Reviewed</dt>
+          <dd>{twelveMonthVerificationLeads.length}</dd>
+        </div>
+        <div>
+          <dt>Draft-ready</dt>
+          <dd>{ready.length}</dd>
+        </div>
+        <div>
+          <dt>Need evidence</dt>
+          <dd>{held.length}</dd>
+        </div>
+        <div>
+          <dt>Duplicate</dt>
+          <dd>{duplicates.length}</dd>
+        </div>
+        <div>
+          <dt>Owner decisions</dt>
+          <dd>{decisions.size}</dd>
+        </div>
+      </dl>
+      {!persistenceAvailable ? (
+        <p className="verification-review__notice" role="status">
+          The evidence packet is available for review. Decision saving will become available after
+          its private database migration is applied.
+        </p>
+      ) : null}
+      <VerificationGroup
+        id="draft-ready"
+        title="Ready for your decision"
+        description="Sufficiently evidenced for a private draft. Nothing is made public from this screen."
+        leads={ready}
+        decisions={decisions}
+        persistenceAvailable={persistenceAvailable}
+      />
+      <VerificationGroup
+        id="needs-evidence"
+        title="Needs more evidence"
+        description="Held because occurrence, legal sensitivity, or a bounded action is not yet sufficiently established."
+        leads={held}
+        decisions={decisions}
+        persistenceAvailable={persistenceAvailable}
+      />
+      <VerificationGroup
+        id="duplicates"
+        title="Duplicate check"
+        description="Matched to an existing reviewed record and should not create another event."
+        leads={duplicates}
+        decisions={decisions}
+        persistenceAvailable={persistenceAvailable}
+      />
+    </section>
+  );
+}
+
+function VerificationGroup({
+  id,
+  title,
+  description,
+  leads,
+  decisions,
+  persistenceAvailable,
+}: {
+  id: string;
+  title: string;
+  description: string;
+  leads: TwelveMonthVerificationLead[];
+  decisions: Map<string, VerificationDecision>;
+  persistenceAvailable: boolean;
+}) {
+  return (
+    <section className="verification-review__group" aria-labelledby={`${id}-heading`}>
+      <header>
+        <div>
+          <h3 id={`${id}-heading`}>{title}</h3>
+          <p>{description}</p>
+        </div>
+        <span>{leads.length}</span>
+      </header>
+      <ol className="verification-review__list">
+        {leads.map((lead) => (
+          <VerificationCard
+            key={lead.ref}
+            lead={lead}
+            decision={decisions.get(lead.ref)}
+            persistenceAvailable={persistenceAvailable}
+          />
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+function VerificationCard({
+  lead,
+  decision,
+  persistenceAvailable,
+}: {
+  lead: TwelveMonthVerificationLead;
+  decision: VerificationDecision | undefined;
+  persistenceAvailable: boolean;
+}) {
+  const recommendation = lead.recommendation.replaceAll("_", " ");
+  return (
+    <li className="verification-review__card">
+      <div className="verification-review__card-topline">
+        <span className="editor-review__badge">{lead.ref}</span>
+        <span>{lead.confidence} confidence</span>
+        {decision ? (
+          <span className="verification-review__decision">
+            Saved: {decision.decision.replaceAll("_", " ")}
+          </span>
+        ) : null}
+      </div>
+      <h4>{lead.title}</h4>
+      <dl className="verification-review__facts">
+        <div>
+          <dt>Where</dt>
+          <dd>{lead.state}</dd>
+        </div>
+        <div>
+          <dt>When</dt>
+          <dd>{lead.eventDate}</dd>
+        </div>
+        <div>
+          <dt>Record</dt>
+          <dd>{lead.proposedEventId ?? lead.matchedEventId ?? "Not assigned"}</dd>
+        </div>
+        <div>
+          <dt>Recommendation</dt>
+          <dd>{recommendation}</dd>
+        </div>
+      </dl>
+      <p className="verification-review__evidence">{lead.evidenceNote}</p>
+      <a href={lead.primarySource.url} target="_blank" rel="noreferrer">
+        Open primary evidence · {lead.primarySource.publisher}
+      </a>
+      {decision?.note ? (
+        <p className="verification-review__saved-note">Note: {decision.note}</p>
+      ) : null}
+      <VerificationDecisionForm
+        leadRef={lead.ref}
+        initialNote={decision?.note ?? ""}
+        persistenceAvailable={persistenceAvailable}
+      />
+    </li>
+  );
+}
+
+function CandidateList({
+  heading,
+  candidates,
+  collapsed = false,
+}: {
+  heading: string;
+  candidates: Candidate[];
+  collapsed?: boolean;
+}) {
+  const groups = groupCandidatesByState(candidates);
+  const headingId = `candidate-heading-${heading.toLowerCase().replaceAll(" ", "-")}`;
+  const content =
+    candidates.length === 0 ? (
+      <p className="editor-review__empty">No candidates in this view.</p>
+    ) : (
+      <div className="editor-review__state-groups">
+        {groups.map((group) => (
+          <section key={group.state} aria-labelledby={`${headingId}-${group.state}`}>
+            <h3 id={`${headingId}-${group.state}`}>{group.state}</h3>
+            <CandidateCards items={group.items} />
+          </section>
+        ))}
+      </div>
+    );
+  return (
+    <section aria-labelledby={headingId} className="editor-review__candidate-section">
+      <h2 id={headingId}>{heading}</h2>
+      {collapsed ? (
+        <details>
+          <summary>Show {candidates.length} diagnostic rows</summary>
+          <p>
+            Irrelevant, duplicate, failed, generic manual-review and sub-50% confidence rows remain
+            available here for private scanner QA.
+          </p>
+          {content}
+        </details>
+      ) : (
+        content
       )}
     </section>
+  );
+}
+
+function CandidateCards({ items }: { items: Candidate[] }) {
+  return (
+    <ol className="editor-review__list">
+      {items.map((item) => (
+        <li key={item.id}>
+          <div>
+            <span className="editor-review__badge">{item.candidate_type.replaceAll("_", " ")}</span>
+            <span>{item.priority}</span>
+          </div>
+          <h3>
+            <Link href={`/admin/review/candidates/${item.id}`}>
+              {item.suggested_title ?? "Untitled candidate"}
+            </Link>
+          </h3>
+          <p>
+            {[
+              item.state,
+              item.district_or_region,
+              item.planned_date ? `Planned ${item.planned_date}` : item.event_date,
+              item.target_event_internal_id ?? item.target_event_slug,
+            ]
+              .filter(Boolean)
+              .join(" · ") || "Location or event match requires review"}
+          </p>
+          {item.candidate_sources.length ? (
+            <ul aria-label="Candidate sources">
+              {item.candidate_sources.map((source) => (
+                <li key={source.canonical_url}>
+                  <a href={source.canonical_url} target="_blank" rel="noreferrer">
+                    {source.publisher ?? source.source_family ?? "Open source"}
+                  </a>
+                  {source.published_at
+                    ? ` · ${new Date(source.published_at).toLocaleString("en-IN")}`
+                    : ""}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <p>
+            {[
+              item.action_type ? `Action: ${item.action_type}` : null,
+              item.affected_group ? `Affected group: ${item.affected_group}` : null,
+              item.demand ? `Demand: ${item.demand}` : null,
+              item.authority_response ? `Authority response: ${item.authority_response}` : null,
+            ]
+              .filter(Boolean)
+              .join(" · ") || "Structured event details require editor review"}
+          </p>
+          <p>{item.matching_signals.join(" · ") || "No existing-event match signals"}</p>
+          <dl>
+            <div>
+              <dt>Confidence</dt>
+              <dd>
+                {item.confidence === null ? "Not scored" : `${Math.round(item.confidence * 100)}%`}
+              </dd>
+            </div>
+            <div>
+              <dt>Corroboration</dt>
+              <dd>
+                {item.corroboration_status.replaceAll("_", " ")} ({item.independent_source_count})
+              </dd>
+            </div>
+            <div>
+              <dt>Status</dt>
+              <dd>{item.review_status.replaceAll("_", " ")}</dd>
+            </div>
+            <div>
+              <dt>Language</dt>
+              <dd>{item.detected_language}</dd>
+            </div>
+          </dl>
+        </li>
+      ))}
+    </ol>
   );
 }
 function CoverageView({

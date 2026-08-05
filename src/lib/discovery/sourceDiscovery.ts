@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getServerEnvironment } from "@/lib/env";
 import { detectReviewedState } from "./geography";
-import { fetchApprovedSource, SafeSourceFetchError } from "./fetchSafety";
+import { extractSafeText, fetchApprovedSource, SafeSourceFetchError } from "./fetchSafety";
 import { getPrivateLeadDiscoveryInputs } from "./leadInputs";
 import { buildManualGdeltDryRunQueries, QueryBudget } from "./queryStrategy";
 import {
@@ -18,6 +18,7 @@ import type { SafeFetchedSource } from "./types";
 export type ScannerSource = {
   id: string;
   name: string;
+  base_url: string;
   scan_url: string;
   scan_method: string;
   state: string | null;
@@ -36,6 +37,8 @@ type DiscoveryResult = {
   etag: string | null;
   lastModified: string | null;
   requestCount: number;
+  statusCode: number | null;
+  contentType: string | null;
 };
 const virtualItem = (
   url: string,
@@ -98,6 +101,8 @@ export async function discoverSourceItems(input: {
     const fetched = await fetchWithOneTemporaryRetry(source.scan_url, {
       etag: source.last_etag,
       lastModified: source.last_modified_header,
+      acceptHeader:
+        "application/rss+xml, application/atom+xml, application/xml, text/xml;q=0.9, */*;q=0.1",
       ...(controlledPibRss ? { maximumRedirects: 0 } : {}),
     });
     const { response } = fetched;
@@ -107,6 +112,8 @@ export async function discoverSourceItems(input: {
         etag: response.etag,
         lastModified: response.lastModified,
         requestCount: fetched.requestCount,
+        statusCode: response.statusCode ?? 304,
+        contentType: response.contentType || null,
       };
     const timeWindowHours = configNumber(source, "timeWindowHours");
     const cutoff = timeWindowHours
@@ -121,8 +128,9 @@ export async function discoverSourceItems(input: {
         })
         .slice(0, Math.min(source.daily_request_limit * 50, maximumItems))
         .map((item) =>
-          virtualItem(item.url, item.title, {
+          virtualItem(item.url, [item.title, item.summary].filter(Boolean).join(" "), {
             publisher: source.name,
+            headline: item.title,
             publishedAt: item.publishedAt,
             stateHint:
               detectReviewedState(`${item.title ?? ""} ${item.summary ?? ""}`) ?? source.state,
@@ -134,6 +142,8 @@ export async function discoverSourceItems(input: {
       etag: response.etag,
       lastModified: response.lastModified,
       requestCount: fetched.requestCount,
+      statusCode: response.statusCode ?? 200,
+      contentType: response.contentType,
     };
   }
   if (source.scan_method === "sitemap") {
@@ -143,7 +153,8 @@ export async function discoverSourceItems(input: {
     });
     const parsed = parseSitemap(fetched.response.body, fetched.response.finalUrl);
     if (parsed.isIndex) throw new Error("nested_sitemap_not_allowed_for_daily_scan");
-    const cutoff = Date.now() - 48 * 60 * 60 * 1000;
+    const cutoff =
+      Date.now() - Math.max(1, configNumber(source, "timeWindowHours") ?? 48) * 60 * 60 * 1000;
     const items = parsed.entries.filter((item) => {
       const publishedAt = item.publishedAt ? Date.parse(item.publishedAt) : Number.NaN;
       return Number.isFinite(publishedAt) && publishedAt >= cutoff;
@@ -161,6 +172,8 @@ export async function discoverSourceItems(input: {
       etag: fetched.response.etag,
       lastModified: fetched.response.lastModified,
       requestCount: fetched.requestCount,
+      statusCode: fetched.response.statusCode ?? 200,
+      contentType: fetched.response.contentType,
     };
   }
   if (source.scan_method === "html_list") {
@@ -178,6 +191,7 @@ export async function discoverSourceItems(input: {
         .map((item) =>
           virtualItem(item.url, item.title, {
             publisher: source.name,
+            headline: item.title,
             publishedAt: item.publishedAt,
             stateHint: source.state,
             metadataOnly: true,
@@ -187,6 +201,8 @@ export async function discoverSourceItems(input: {
       etag: response.etag,
       lastModified: response.lastModified,
       requestCount: fetched.requestCount,
+      statusCode: response.statusCode ?? 200,
+      contentType: response.contentType,
     };
   }
   if (source.scan_method === "gdelt") {
@@ -236,6 +252,8 @@ export async function discoverSourceItems(input: {
       etag: null,
       lastModified: null,
       requestCount,
+      statusCode: 200,
+      contentType: "application/json",
     };
   }
   if (source.scan_method === "youtube_api") {
@@ -255,6 +273,8 @@ export async function discoverSourceItems(input: {
       etag: null,
       lastModified: null,
       requestCount: 1,
+      statusCode: 200,
+      contentType: "application/json",
     };
   }
   if (source.scan_method === "bluesky_api") {
@@ -267,6 +287,8 @@ export async function discoverSourceItems(input: {
       etag: null,
       lastModified: null,
       requestCount: 1,
+      statusCode: 200,
+      contentType: "application/json",
     };
   }
   if (source.scan_method === "lead_submission") {
@@ -283,8 +305,117 @@ export async function discoverSourceItems(input: {
       etag: null,
       lastModified: null,
       requestCount: 0,
+      statusCode: 200,
+      contentType: "application/json",
     };
   }
   if (source.scan_method === "telegram_tdlib") throw new Error("telegram_connector_disabled");
   throw new Error("connector_unavailable");
+}
+
+const enrichmentSignal =
+  /\b(protest|strike|march|rally|dharna|bandh|hartal|blockade|agitation|gherao|walkout|boycott|memorandum|demands?|settlement|withdrawn|suspended|court order|police detained)\b/i;
+
+function relevantExcerpt(value: string) {
+  const text = extractSafeText(value);
+  const sentences = text.split(/(?<=[.!?])\s+/).filter(Boolean);
+  const index = sentences.findIndex((sentence) => enrichmentSignal.test(sentence));
+  const selected =
+    index < 0 ? sentences.slice(0, 2) : sentences.slice(Math.max(0, index - 1), index + 2);
+  return selected.join(" ").slice(0, 900);
+}
+
+export function robotsAllowsPath(body: string, pathname: string) {
+  const groups = new Map<string, Array<{ allow: boolean; path: string }>>();
+  let agents: string[] = [];
+  for (const rawLine of body.split(/\r?\n/)) {
+    const line = rawLine.replace(/#.*$/, "").trim();
+    if (!line) continue;
+    const separator = line.indexOf(":");
+    if (separator < 0) continue;
+    const field = line.slice(0, separator).trim().toLocaleLowerCase();
+    const value = line.slice(separator + 1).trim();
+    if (field === "user-agent") {
+      agents = [value.toLocaleLowerCase()];
+      if (!groups.has(agents[0]!)) groups.set(agents[0]!, []);
+    } else if ((field === "allow" || field === "disallow") && agents.length && value) {
+      for (const agent of agents)
+        groups.get(agent)?.push({ allow: field === "allow", path: value.replace(/\*.*$/, "") });
+    }
+  }
+  const specific = groups.get("indiaobservededitorialdiscovery") ?? [];
+  const rules = specific.length ? specific : (groups.get("*") ?? []);
+  const match = rules
+    .filter((rule) => pathname.startsWith(rule.path))
+    .sort((left, right) => right.path.length - left.path.length)[0];
+  return match?.allow ?? true;
+}
+
+export async function enrichSourceItem(input: {
+  source: ScannerSource;
+  item: SafeFetchedSource;
+  domainRequestCounts: Map<string, number>;
+  robotsDecisions: Map<string, boolean>;
+}) {
+  if (
+    input.source.connector_config.enrichmentApproved !== true ||
+    input.source.connector_config.robotsAllowed !== true
+  )
+    return { item: input.item, fetched: false };
+  const target = new URL(input.item.finalUrl);
+  const configuredDomains = Array.isArray(input.source.connector_config.enrichmentDomains)
+    ? input.source.connector_config.enrichmentDomains.map(String)
+    : [];
+  const allowedDomains = [
+    ...configuredDomains.filter((domain) => /^(?:[a-z0-9-]+\.)*[a-z0-9-]+$/i.test(domain)),
+    new URL(input.source.base_url).hostname,
+  ];
+  if (
+    !allowedDomains.some(
+      (domain) => target.hostname === domain || target.hostname.endsWith(`.${domain}`),
+    )
+  )
+    return { item: input.item, fetched: false };
+  const used = input.domainRequestCounts.get(target.hostname) ?? 0;
+  if (used >= 4) return { item: input.item, fetched: false };
+  if (!input.robotsDecisions.has(target.hostname)) {
+    try {
+      const robots = await fetchApprovedSource(`https://${target.hostname}/robots.txt`, {
+        maximumBytes: 100_000,
+        timeoutMs: 4_000,
+        maximumRedirects: 1,
+        acceptHeader: "text/plain, text/*;q=0.8",
+      });
+      input.robotsDecisions.set(target.hostname, robotsAllowsPath(robots.body, target.pathname));
+    } catch {
+      input.robotsDecisions.set(target.hostname, false);
+    }
+  }
+  if (!input.robotsDecisions.get(target.hostname)) return { item: input.item, fetched: false };
+  input.domainRequestCounts.set(target.hostname, used + 1);
+  const response = await fetchApprovedSource(target.toString(), {
+    maximumBytes: 300_000,
+    timeoutMs: 6_000,
+    maximumRedirects: 3,
+    acceptHeader: "text/html, application/xhtml+xml;q=0.9, text/plain;q=0.5",
+  });
+  const excerpt = relevantExcerpt(response.body);
+  if (!excerpt) return { item: input.item, fetched: true };
+  const headline = input.item.discoveryMetadata?.headline ?? input.item.body;
+  return {
+    fetched: true,
+    item: {
+      ...input.item,
+      body: `${headline}\n${excerpt}`,
+      bytesRead: response.bytesRead,
+      discoveryMetadata: {
+        ...input.item.discoveryMetadata,
+        metadataOnly: true,
+        headline,
+        enrichedExcerpt: excerpt,
+        enrichmentFetchedAt: new Date().toISOString(),
+        feedSummary: excerpt,
+      },
+    },
+  };
 }

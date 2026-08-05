@@ -40,7 +40,8 @@ export function processFetchedSource(source: SafeFetchedSource) {
   const originalText = redactUnnecessaryContactDetails(extractSafeText(source.body));
   const language = detectLanguage(originalText);
   const canonicalUrl = canonicalizeUrl(source.finalUrl);
-  const title = originalText.slice(0, 240) || canonicalUrl;
+  const title =
+    source.discoveryMetadata?.headline?.slice(0, 500) || originalText.slice(0, 240) || canonicalUrl;
   const fingerprint = createHash("sha256")
     .update(`${canonicalUrl}\n${originalText.slice(0, 50_000)}`)
     .digest("hex");
@@ -59,6 +60,8 @@ export function processFetchedSource(source: SafeFetchedSource) {
       text: originalText,
       sourceUrl: canonicalUrl,
       publishedAt: source.discoveryMetadata?.publishedAt ?? null,
+      sourceStateHint: source.discoveryMetadata?.stateHint ?? null,
+      detectedLanguage: source.discoveryMetadata?.detectedLanguage ?? language.language,
     }),
     pipelineTrace: pipelineStages,
   };

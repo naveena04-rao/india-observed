@@ -1,5 +1,6 @@
 export const candidateTypes = [
   "new_event",
+  "possible_planned_event",
   "event_update",
   "official_response",
   "outcome_status_change",
@@ -24,6 +25,16 @@ export type DiscoveryClassification = {
   matchingSignals: string[];
   conflictingSignals: string[];
   sourceIsNewerThanEvent: boolean | null;
+  actionType: string | null;
+  districtOrRegion: string | null;
+  eventDate: string | null;
+  plannedDate: string | null;
+  affectedGroup: string | null;
+  demand: string | null;
+  authorityResponse: string | null;
+  dictionaryMatches: string[];
+  detectedLanguage: string;
+  civicRelevanceScore: number;
 };
 
 export type SafeFetchedSource = {
@@ -34,6 +45,7 @@ export type SafeFetchedSource = {
   etag: string | null;
   lastModified: string | null;
   notModified: boolean;
+  statusCode?: number;
   discoveryMetadata?: {
     publisher?: string | null;
     publishedAt?: string | null;
@@ -44,5 +56,8 @@ export type SafeFetchedSource = {
     metadataOnly?: boolean;
     feedSummary?: string | null;
     connector?: string | null;
+    headline?: string | null;
+    enrichedExcerpt?: string | null;
+    enrichmentFetchedAt?: string | null;
   };
 };

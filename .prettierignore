@@ -3,3 +3,5 @@ node_modules
 coverage
 prototype
 *.xlsx
+src/data/verified-scanner-events-2026-08-04.ts
+src/app/admin/review/cleanup-incorrect-new-events/page.tsx

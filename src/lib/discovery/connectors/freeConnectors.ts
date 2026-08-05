@@ -15,8 +15,33 @@ const text = (value: string) =>
     .replace(/&amp;/g, "&")
     .replace(/&quot;/g, '"')
     .replace(/&#39;|&apos;/g, "'")
+    .replace(/&#x([0-9a-f]+);/gi, (_, code: string) =>
+      String.fromCodePoint(Number.parseInt(code, 16)),
+    )
+    .replace(/&#(\d+);/g, (_, code: string) => String.fromCodePoint(Number(code)))
     .replace(/\s+/g, " ")
     .trim();
+const feedDate = (value: string) => {
+  const raw = text(value);
+  if (!raw) return null;
+  const normalized = raw
+    .replace(/^(?:रविवार|सोमवार|मंगलवार|बुधवार|गुरुवार|शुक्रवार|शनिवार),?\s*/u, "")
+    .replace(/जनवरी/u, "January")
+    .replace(/फरवरी/u, "February")
+    .replace(/मार्च/u, "March")
+    .replace(/अप्रैल/u, "April")
+    .replace(/मई/u, "May")
+    .replace(/जून/u, "June")
+    .replace(/जुलाई/u, "July")
+    .replace(/अगस्त/u, "August")
+    .replace(/सितंबर/u, "September")
+    .replace(/अक्टूबर/u, "October")
+    .replace(/नवंबर/u, "November")
+    .replace(/दिसंबर/u, "December")
+    .replace(/\bIST\b/u, "+05:30");
+  const timestamp = Date.parse(normalized);
+  return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : raw;
+};
 const tag = (block: string, name: string) =>
   block.match(new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${name}>`, "i"))?.[1] ?? null;
 const safeAbsolute = (value: string, base: string) => {
@@ -58,9 +83,9 @@ export function parseFeed(xml: string, baseUrl: string): DiscoveredLink[] {
         {
           url,
           title: text(tag(block, "title") ?? "") || null,
-          publishedAt:
-            text(tag(block, "pubDate") ?? tag(block, "published") ?? tag(block, "updated") ?? "") ||
-            null,
+          publishedAt: feedDate(
+            tag(block, "pubDate") ?? tag(block, "published") ?? tag(block, "updated") ?? "",
+          ),
           sourceKind: "feed" as const,
           summary:
             text(tag(block, "description") ?? tag(block, "summary") ?? "").slice(0, 500) || null,
